@@ -2,7 +2,7 @@
 id: cart-total-add-change-remove
 title: Cart total stays correct after add, quantity change and remove
 app: toolshop
-status: draft            # draft | confirmed
+status: confirmed            # draft | confirmed
 request: "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
 products:
   A: { pick: first-available }

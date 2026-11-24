@@ -5,7 +5,8 @@ import { compileScenario, inspectTestFile } from '../support/core/compiler';
 import { parseScenarioText, scenarioHash, setStatusLine } from '../support/core/scenario';
 import { validateScenario } from '../support/core/validator';
 
-const specFile = path.join(__dirname, '..', 'specs', 'cart-total-add-change-remove.md');
+// The selftest fixture is the draft copy of specs/cart-total-add-change-remove.md.
+const specFile = path.join(__dirname, '..', 'support', 'harness', 'fixtures', 'cart-total-add-change-remove.md');
 const text = fs.readFileSync(specFile, 'utf8');
 
 function scenarioOf(t: string) {
