@@ -151,7 +151,7 @@ page or browser is used.
 **Measurements**
 
 - Wall-clock: 00:29 (worktree created) to 00:48 (report written), by the session's system clock.
-- Files committed under `templates/e2e/`: 40, including `package-lock.json`, 8 selftest fixtures, and the
+- Files committed under `templates/e2e/`: 41, including `package-lock.json`, 8 selftest fixtures, and the
   reference spec with its example, lock and compiled test.
 - Lines of code:
   - `support/core`: 1,568 (13 files)
