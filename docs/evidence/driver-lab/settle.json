@@ -1,0 +1,103 @@
+{
+  "quantity": {
+    "min": 4,
+    "median": 6,
+    "max": 117,
+    "samples": [
+      6,
+      111,
+      5,
+      117,
+      4
+    ]
+  },
+  "removal": {
+    "min": 112,
+    "median": 115,
+    "max": 137,
+    "samples": [
+      112,
+      114,
+      124,
+      137,
+      115
+    ]
+  },
+  "raw": [
+    {
+      "kind": "quantity",
+      "i": 0,
+      "qty": 2,
+      "elapsed": 6,
+      "reads": 1,
+      "settled": true
+    },
+    {
+      "kind": "quantity",
+      "i": 1,
+      "qty": 3,
+      "elapsed": 111,
+      "reads": 25,
+      "settled": true
+    },
+    {
+      "kind": "quantity",
+      "i": 2,
+      "qty": 2,
+      "elapsed": 5,
+      "reads": 1,
+      "settled": true
+    },
+    {
+      "kind": "quantity",
+      "i": 3,
+      "qty": 3,
+      "elapsed": 117,
+      "reads": 27,
+      "settled": true
+    },
+    {
+      "kind": "quantity",
+      "i": 4,
+      "qty": 2,
+      "elapsed": 4,
+      "reads": 1,
+      "settled": true
+    },
+    {
+      "kind": "removal",
+      "i": 0,
+      "elapsed": 112,
+      "reads": 26,
+      "settled": true
+    },
+    {
+      "kind": "removal",
+      "i": 1,
+      "elapsed": 114,
+      "reads": 24,
+      "settled": true
+    },
+    {
+      "kind": "removal",
+      "i": 2,
+      "elapsed": 124,
+      "reads": 29,
+      "settled": true
+    },
+    {
+      "kind": "removal",
+      "i": 3,
+      "elapsed": 137,
+      "reads": 31,
+      "settled": true
+    },
+    {
+      "kind": "removal",
+      "i": 4,
+      "elapsed": 115,
+      "reads": 27,
+      "settled": true
+    }
+  ]
+}

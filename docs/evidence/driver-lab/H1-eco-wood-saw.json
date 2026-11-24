@@ -1,0 +1,69 @@
+{
+  "facts": {
+    "name": "Wood Saw",
+    "unitPrice": {
+      "numerator": "1218",
+      "denominator": "100",
+      "currency": "USD"
+    },
+    "inStock": true,
+    "attrs": {
+      "co2_rating": "B"
+    }
+  },
+  "settled": true,
+  "view": {
+    "empty": false,
+    "lines": [
+      {
+        "name": "Wood Saw",
+        "qty": 1,
+        "unitPrice": {
+          "value": {
+            "numerator": "1218",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$12.18"
+        },
+        "lineTotal": {
+          "value": {
+            "numerator": "1218",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$12.18"
+        }
+      }
+    ],
+    "adjustments": [
+      {
+        "value": {
+          "numerator": "-61",
+          "denominator": "100",
+          "currency": "USD"
+        },
+        "rawText": "- $0.61",
+        "label": "Eco-Friendly Discount (5%)"
+      }
+    ],
+    "total": {
+      "value": {
+        "numerator": "1157",
+        "denominator": "100",
+        "currency": "USD"
+      },
+      "rawText": "$11.57",
+      "label": "Total"
+    },
+    "subtotal": {
+      "value": {
+        "numerator": "1218",
+        "denominator": "100",
+        "currency": "USD"
+      },
+      "rawText": "$12.18",
+      "label": "Subtotal"
+    }
+  }
+}

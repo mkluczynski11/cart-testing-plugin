@@ -1,0 +1,60 @@
+{
+  "step": "add Pliers 1",
+  "settled": true,
+  "elapsedMs": 234,
+  "view": {
+    "empty": false,
+    "lines": [
+      {
+        "name": "Combination Pliers",
+        "qty": 1,
+        "unitPrice": {
+          "value": {
+            "numerator": "1415",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$14.15"
+        },
+        "lineTotal": {
+          "value": {
+            "numerator": "1415",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$14.15"
+        }
+      },
+      {
+        "name": "Pliers",
+        "qty": 1,
+        "unitPrice": {
+          "value": {
+            "numerator": "1201",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$12.01"
+        },
+        "lineTotal": {
+          "value": {
+            "numerator": "1201",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$12.01"
+        }
+      }
+    ],
+    "adjustments": [],
+    "total": {
+      "value": {
+        "numerator": "2616",
+        "denominator": "100",
+        "currency": "USD"
+      },
+      "rawText": "$26.16",
+      "label": "Total"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "step": "remove Pliers",
+  "settled": true,
+  "elapsedMs": 36,
+  "view": {
+    "empty": false,
+    "lines": [
+      {
+        "name": "Combination Pliers",
+        "qty": 3,
+        "unitPrice": {
+          "value": {
+            "numerator": "1415",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$14.15"
+        },
+        "lineTotal": {
+          "value": {
+            "numerator": "4245",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$42.45"
+        }
+      }
+    ],
+    "adjustments": [],
+    "total": {
+      "value": {
+        "numerator": "4245",
+        "denominator": "100",
+        "currency": "USD"
+      },
+      "rawText": "$42.45",
+      "label": "Total"
+    }
+  }
+}

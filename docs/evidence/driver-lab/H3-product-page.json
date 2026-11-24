@@ -1,0 +1,57 @@
+{
+  "facts": {
+    "name": "Combination Pliers",
+    "unitPrice": {
+      "numerator": "1415",
+      "denominator": "100",
+      "currency": "USD"
+    },
+    "inStock": true,
+    "attrs": {
+      "co2_rating": "D"
+    }
+  },
+  "dataTest": [
+    "notification-bar",
+    "nav-home",
+    "nav-categories",
+    "nav-hand-tools",
+    "nav-power-tools",
+    "nav-other",
+    "nav-special-tools",
+    "nav-rentals",
+    "nav-contact",
+    "nav-sign-in",
+    "language-select",
+    "lang-de",
+    "lang-el",
+    "lang-en",
+    "lang-es",
+    "lang-fr",
+    "lang-nl",
+    "lang-tr",
+    "product-name",
+    "unit-price",
+    "co2-rating-badge",
+    "product-description",
+    "decrease-quantity",
+    "quantity",
+    "increase-quantity",
+    "add-to-cart",
+    "add-to-favorites",
+    "add-to-compare",
+    "specs-title",
+    "product-specs",
+    "spec-row",
+    "spec-name",
+    "spec-value",
+    "spec-value-text",
+    "spec-unit",
+    "footer-explore",
+    "footer-learn-courses",
+    "footer-learn-spector",
+    "footer-learn-github",
+    "chat-toggle",
+    "live-activity-toggle"
+  ]
+}
