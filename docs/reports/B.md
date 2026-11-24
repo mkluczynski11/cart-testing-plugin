@@ -74,7 +74,7 @@ See Deviations 2 and 3.
 6. The driver reaches product pages through site search. Products whose names are not unique in search results are handled by exact name matching. A product whose search result is not on the first result page would fail with `LOCATOR:`. That is not seen today.
 
 **Measurements**
-- Wall-clock: 00:29:53 to about 00:50, about 20 minutes of the 120-minute box.
+- Wall-clock: 00:29:53 to 00:47:17 (last commit), about 17 minutes of the 120-minute box.
 - Browser runs, one at a time:
   - 1 manual exploration session: 1 browser, about 8 interactions, 4 cart actions.
   - 2 probe scripts for the search race: 6 fresh contexts, searches only, no cart actions.
