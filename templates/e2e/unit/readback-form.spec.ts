@@ -16,15 +16,15 @@ type Cp = { step: string; action: string; total: string; comp: string; raw: stri
 function checkpoint(c: Cp): Record<string, unknown> {
   return {
     step: c.step, action: c.action,
-    ledger: [{ name: 'Pliers', qty: 1, unitPrice: '$12.01', attrs: { energy_class: 'D' } }, { name: 'Wood Saw', qty: 1, unitPrice: '$12.18', attrs: { energy_class: 'B' } }],
+    ledger: [{ name: 'Steel Kettle', qty: 1, unitPrice: '$12.01', attrs: { energy_class: 'D' } }, { name: 'Paper Lamp', qty: 1, unitPrice: '$12.18', attrs: { energy_class: 'B' } }],
     expected: { empty: false, subtotal: c.total, adjustments: c.comp.includes('−') ? [{ rule: 'green-discount', amount: '0.61' }] : [], total: c.total, composition: `$${c.total} = ${c.comp}` },
     displayed: { empty: false, lines: [], total: { label: 'Total', value: c.raw.replace('$', ''), rawText: c.raw } },
     result: c.result, screenshot: `${c.step}.png`, ...(c.result === 'fail' ? { verdict: 'ORACLE_MISMATCH', layer: 'total' } : {}),
   };
 }
 
-const S1: Cp = { step: 'S1', action: 'add Pliers, 1 unit', total: '12.01', comp: 'subtotal $12.01', raw: '$12.01', result: 'pass' };
-const S2: Cp = { step: 'S2', action: 'add Wood Saw, 1 unit', total: '23.58', comp: 'subtotal $24.19 − green-discount $0.61', raw: '$23.58', result: 'pass' };
+const S1: Cp = { step: 'S1', action: 'add Steel Kettle, 1 unit', total: '12.01', comp: 'subtotal $12.01', raw: '$12.01', result: 'pass' };
+const S2: Cp = { step: 'S2', action: 'add Paper Lamp, 1 unit', total: '23.58', comp: 'subtotal $24.19 − green-discount $0.61', raw: '$23.58', result: 'pass' };
 
 /** A run directory with run.json, verification.json and, when given, review.md. */
 function runDir(root: string, id: string, opts: { cps: Cp[]; verdict: string; gates: Record<string, string>; driverSha?: string | null; review?: string; error?: string }): string {
@@ -40,7 +40,7 @@ function runDir(root: string, id: string, opts: { cps: Cp[]; verdict: string; ga
     runId: id, slug: SLUG, scenarioSha256: '', rulesSha256: '', testSha256: '', driverSha256: opts.driverSha === undefined ? null : opts.driverSha, testOrigin: 'compiled',
     gates: opts.gates, defects: [row('lost-add', 'detected'), row('round-down', 'not-applicable', 'Use other prices.')],
     ...(opts.gates.G4 ? {
-      livePass: { defects: [row('lost-add', 'detected'), row('rule-boundary', 'not-applicable', 'Add a step at the threshold of rule green-discount.')], products: 'A = Pliers 12.01' },
+      livePass: { defects: [row('lost-add', 'detected'), row('rule-boundary', 'not-applicable', 'Add a step at the threshold of rule green-discount.')], products: 'A = Steel Kettle 12.01' },
       controls: ['skew-total', 'drift-price', 'stale-cart', 'lost-remove'].map((control) => ({ control, result: 'caught', activated: true, target: 'row', shownAtRead: null, reactedAt: 'S1', expected: 'red' })),
     } : {}),
     gaps: [], verdict: opts.verdict,
@@ -64,8 +64,8 @@ test('report.md of a verified run follows the readback form, section by section'
   expect(cells(text, 'Status')?.[1]).toBe('PASS, 3 of 3 repeats · verified');
   expect(cells(text, 'Environment')?.[1]).toBe('https://shop.example · Chromium · en-US · 2026-11-25 12:00 UTC · run `20990101T000000Z-gree`');
   expect(cells(text, 'Preconditions')?.[1]).toBe('empty cart, guest, no geolocation');
-  expect(cells(text, 'Test data')?.[1]).toBe('A = Pliers, $12.01, energy_class D · B = Wood Saw, $12.18, energy_class B (read from the product pages in this run)');
-  expect(cells(text, 'S1')?.slice(0, 5)).toEqual(['S1', 'add Pliers, 1 unit', '$12.01', '"$12.01"', 'pass']);
+  expect(cells(text, 'Test data')?.[1]).toBe('A = Steel Kettle, $12.01, energy_class D · B = Paper Lamp, $12.18, energy_class B (read from the product pages in this run)');
+  expect(cells(text, 'S1')?.slice(0, 5)).toEqual(['S1', 'add Steel Kettle, 1 unit', '$12.01', '"$12.01"', 'pass']);
   expect(cells(text, 'S2')?.slice(2, 3)).toEqual(['$23.58 = $24.19 − green-discount $0.61']);
   expect(cells(text, 'S2')?.[5]).toMatch(/^`.*reports\/cart-total-add-change-remove\/screens\/S2\.png`$/);
   expect(cells(text, 'S3')?.slice(3, 6)).toEqual(['—', 'not run', '—']);

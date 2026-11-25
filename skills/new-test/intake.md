@@ -49,7 +49,7 @@ S4    removes B                   A×3
 The cart state and the total are checked after <every step | the steps named>.
 
 Example on stub prices:
-<each alias as `example` printed it, one per line: "A = Product A, $10.00, co2_rating A">
+<each alias as `example` printed it, one per line: "A = Product A, $10.00, <attribute> <value>">
 S1 $10.00 · S2 $30.00 · S3 $50.00 · S4 $30.00
 Rules: <each rule as `example` printed it after "Rules:">, or "no pricing rule applies".
 Source: <the text `example` printed after "Source:">.

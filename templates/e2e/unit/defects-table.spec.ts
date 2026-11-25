@@ -39,7 +39,7 @@ test('report.md lists every defect with origin, why, and result and first red of
     row('gen-skew-subtotal', 'generated', 'The subtotal is one cent high.', 'not-applicable', null),
     row('round-down', 'default', 'Amounts are truncated at the cent.', 'missed', null),
   ];
-  const ver = { runId: id, slug: SLUG, scenarioSha256: '', rulesSha256: '', testSha256: '', driverSha256: null, testOrigin: 'compiled', gates: { dry: 'PASS', G3: 'PASS' }, defects: stub, livePass: { defects: live, products: 'A = Pliers $12.01' }, gaps: [], verdict: 'PASS' } as unknown as Verification;
+  const ver = { runId: id, slug: SLUG, scenarioSha256: '', rulesSha256: '', testSha256: '', driverSha256: null, testOrigin: 'compiled', gates: { dry: 'PASS', G3: 'PASS' }, defects: stub, livePass: { defects: live, products: 'A = Steel Kettle $12.01' }, gaps: [], verdict: 'PASS' } as unknown as Verification;
   fs.writeFileSync(path.join(dir, 'verification.json'), JSON.stringify(ver, null, 2));
   fs.writeFileSync(path.join(dir, 'run.json'), JSON.stringify({ meta: { runId: id, mode: 'live' }, verdict: 'PASS', repeats: [], errors: [] }));
   const text = buildReport(root, SLUG, dir, 'screens/');

@@ -61,7 +61,7 @@ export function price(lines: LedgerLine[], rules: PricingRule[], currency: Money
   return { lines, subtotal, adjustments, total };
 }
 
-/** "subtotal $50.00 − eco-discount $2.50", the composition of an expected total (9.1). */
+/** "subtotal $50.00 − green-discount $2.50", the composition of an expected total (9.1). */
 export function composition(snap: LedgerSnapshot, fmt: AmountFormat): string {
   if (!snap.lines.length) return 'empty cart';
   const parts = [`subtotal ${formatMoney(snap.subtotal, fmt)}`, ...snap.adjustments.map((a) => `− ${a.id} ${formatMoney(a.amount, fmt)}`)];

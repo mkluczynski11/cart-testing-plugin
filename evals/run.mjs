@@ -6,6 +6,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CASES } from './cases.mjs';
+import { callsFrom } from './transcript.mjs';
 
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const qa = path.join(pluginRoot, 'bin', 'qa-harness');
@@ -65,22 +66,7 @@ function transcript(sessionId) {
     const sub = path.join(projects, p, sessionId, 'subagents');
     if (fs.existsSync(sub)) for (const f of fs.readdirSync(sub)) if (f.endsWith('.jsonl')) files.push(path.join(sub, f));
   }
-  const calls = new Map();
-  for (const f of files) {
-    for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
-      let o;
-      try { o = JSON.parse(line); } catch { continue; }
-      const content = Array.isArray(o?.message?.content) ? o.message.content : [];
-      for (const part of content) {
-        if (part.type === 'tool_use') calls.set(part.id, { name: part.name, input: part.input, result: '', file: path.basename(f) });
-        if (part.type === 'tool_result' && calls.has(part.tool_use_id)) {
-          const text = Array.isArray(part.content) ? part.content.map((x) => x.text ?? '').join('\n') : String(part.content ?? '');
-          calls.get(part.tool_use_id).result = text;
-        }
-      }
-    }
-  }
-  return [...calls.values()];
+  return callsFrom(files);
 }
 
 function runSession(c, ctx) {
