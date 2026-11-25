@@ -20,9 +20,10 @@ const EVIDENCE: Partial<Record<Verdict, Classification['evidence']>> = {
 };
 
 export function classify(run: PlaywrightRun, expected: string[]): Classification {
-  if (run.globalErrors.length || run.tests === 0) {
-    const reason = run.globalErrors[0]?.split('\n')[0] ?? 'Playwright found no test to run';
-    return { verdict: run.globalErrors.length ? 'INFRA_FAIL' : 'NO_TESTS_RUN', perRepeat: [], reason };
+  if (run.tests === 0 || run.globalErrors.length) {
+    const other = run.globalErrors.filter((e) => !/no tests found/i.test(e));
+    if (other.length) return { verdict: 'INFRA_FAIL', perRepeat: [], reason: other[0].split('\n')[0] };
+    if (run.tests === 0) return { verdict: 'NO_TESTS_RUN', perRepeat: [], reason: 'Playwright executed no test' };
   }
   const perRepeat = run.repeats.map((r) => repeatVerdict(r, expected));
   if (perRepeat.includes('INFRA_FAIL')) return { verdict: 'INFRA_FAIL', perRepeat, reason: 'the environment failed in at least one repeat' };

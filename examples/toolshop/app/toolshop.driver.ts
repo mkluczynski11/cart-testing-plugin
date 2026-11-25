@@ -106,8 +106,11 @@ export function createDriver(page: Page, options: DriverOptions): CartDriver {
     await onLocator(action, heading.filter({ hasText: name }), (l) => l.waitFor({ timeout: actionMs }));
   }
 
+  /** The path of the page the browser shows; empty before the first navigation. */
+  const currentPath = () => (page.url().startsWith('http') ? new URL(page.url()).pathname : '');
+
   async function onCartPage(action: string): Promise<void> {
-    if (new URL(page.url(), 'http://x').pathname !== '/checkout') await navigate(action, '/checkout');
+    if (currentPath() !== '/checkout') await navigate(action, '/checkout');
   }
 
   const cartLineRow = (name: string) =>
@@ -196,7 +199,7 @@ export function createDriver(page: Page, options: DriverOptions): CartDriver {
       const action = 'readCart';
       // A session that never had a cart: /checkout then throws in the application ("cart_items" of null)
       // and may render nothing, so the header is read instead. No cart counter there means no cart.
-      if (new URL(page.url(), 'http://x').pathname !== '/checkout') {
+      if (currentPath() !== '/checkout') {
         if (page.url() === 'about:blank') await navigate(action, '/');
         await onLocator(action, page.getByTestId('nav-home'), (l) => l.waitFor({ timeout: actionMs }));
         if (await page.getByTestId('nav-cart').count() === 0) return { empty: true, emptyMessage: NO_CART };

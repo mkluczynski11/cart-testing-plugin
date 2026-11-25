@@ -16,6 +16,7 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@babel/parser": "^7.29.15",
     "@playwright/test": "^1.65.1",
     "@types/node": "^20.19.43",
     "tsx": "^4.23.15",

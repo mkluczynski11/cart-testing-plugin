@@ -98,3 +98,64 @@ Deviations:
   "templates/e2e contains no Toolshop name, selector, product or price".
 - The design's `Displayed.value` is kept in the driver contract, but the checkpoint re-parses every `rawText`
   with the configured locale and currency, so a driver cannot hand the oracle a value the page did not show.
+
+## Stage 2 — contracts and oracle as designed (8.1–8.4, 9.1–9.3)
+
+Started `Wed Nov 25 00:53:08 UTC 2026`, committed at 00:55 UTC.
+
+Built (most of it already written in final form during stage 1; listed here against the order):
+- Grammar: `preconditions` (`empty-cart`, `guest`, `no-geolocation`) and `price_source` are required fields
+  (V1); `where` on unnamed picks. V1–V8 with the numbering of 8.1: V4 step conditions, V5 a `setQty` that
+  changes nothing, V6 `cart_after` agreement, V7 checkpoints including "the last step has a checkpoint", V8
+  limits from the rules file (by-name products also get their product-specific limits).
+- Freeze: `example <slug> --confirm` sets `status: confirmed` and writes `confirmed: { scenarioSha256,
+  rulesSha256 }` into the example. The lock file is gone. A changed scenario or rules file is reported by name
+  (`scenario-changed`, `rules-changed`).
+- Example (8.2, order 6.1): stubs `Product A`, `Product B`… or the `by-name` name; $10, $20… in declaration order;
+  the attribute search over "first alias matching, then the next combination", pinned by `where`; a rule that is
+  always or never in force is a scenario gap, never a failure. The reference scenario reproduces 8.2:
+  $9.50 · $30.00 · $47.50 · $28.50.
+- Driver interface 8.3 in full (`controls`, `provides`, optional `setAttribute`, `apiPrice`, `listPrice`);
+  `ProductFilters { needQty, where }`; selection in `support/core/selection.ts`.
+- Rule vocabulary 9.2: `always`, `shareOfUnits`, `hasUnits`, `subtotalAtLeast`; percent of the subtotal, of the
+  running value, or fixed. The "rules only reduce" comment is at the top of `pricing.ts`.
+- Compiler output as 8.4: `test.use({ preconditions, priceSource[, reserved] })`, `filters: { needQty[, where] }`,
+  a blank line after each checkpoint; golden file `support/harness/fixtures/golden/reference.spec.txt`.
+- Checkpoint 9.1: layers state, labels (and "is it an amount" — read errors before any amount), lines, unit price,
+  line total (exact), adjustments (by absolute value), subtotal (exact), total (half a cent); soft: the shopper
+  records a red checkpoint, keeps going from the expected state, and fails at the last checkpoint with the first
+  mismatch. Verdict precedence inside a checkpoint: LOCATOR_FAIL > UNMODELED_ADJUSTMENT > ORACLE_MISMATCH.
+- Fixture: preconditions before the first step (6.8); `price_source: api` takes the unit price from `apiPrice`
+  and checks the product page price at the next checkpoint.
+- `run <slug> --dry` = G1: the compiled test on the reference cart with the example's stubs; the ledger trace must
+  equal `cart_after` and every checkpoint's exact total must equal the example's (`CONFORMANCE_FAIL` otherwise).
+
+Check output:
+
+```text
+$ npm run test:unit            -> 112 passed
+$ npm run qa:toolshop -- run cart-total-add-change-remove --dry
+Run 20261125T005309Z-9028 of cart-total-add-change-remove (dry)
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+VERDICT: PASS
+$ npm run qa:toolshop -- run cart-total-add-change-remove        (live invocation 5)
+Run 20261125T005355Z-b4d8 of cart-total-add-change-remove
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+G3 live, 3 repeat(s) on https://practicesoftwaretesting.com: 3/3 pass; 3/3 repeats ended PASS
+   products: Combination Pliers ($14.15, co2_rating D) · Pliers ($12.01, co2_rating D)
+   S1   add Combination Pliers, 1 unit         expected $14.15    displayed "$14.15" in row "Total"  pass
+   S2   add Pliers, 1 unit                     expected $26.16    displayed "$26.16" in row "Total"  pass
+   S3   set quantity of Combination Pliers to 3 expected $54.46    displayed "$54.46" in row "Total"  pass
+   S4   remove Pliers                          expected $42.45    displayed "$42.45" in row "Total"  pass
+Evidence: reports/cart-total-add-change-remove/runs/20261125T005355Z-b4d8/
+VERDICT: PASS
+```
+
+Deviations and choices:
+- `ExampleRow` carries `totalExact` (the exact fraction) besides the rounded `total`, so G1 compares "exactly"
+  (order 6.1) and not on rounded strings.
+- V3 "lists all earlier aliases" is read as "all earlier unnamed aliases": a by-name product is already excluded by
+  `reserved`, and the order's own `cart-eco-threshold` (A by-name, B `first-available`) requires it.
+- The reference cart displays a rule's row with a literal text derived from its label pattern
+  (`/^total\b/i` → `total`); a pattern that is not plain text is rejected with a message. The design does not say
+  how the in-memory cart labels its rows.

@@ -1,11 +1,15 @@
 // qa-harness run <slug> [--dry]: gates G0–G2 dry, or G0–G3 with a live run, in a new run directory.
-// Implements design 6.1 (run, classification order), 10 (gates) and 8.5 (run evidence).
+// Implements design 6.1 (run, classification order), 10 (gates), 10.5 (results) and 8.5 (run evidence).
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { files } from '../core/config';
-import { freezeMessage } from '../core/scenario';
+import { deriveDefects } from '../core/operators';
+import { fileHash, freezeMessage } from '../core/scenario';
+import type { Verdict } from '../core/verdicts';
 import { classify } from './classify';
 import { loadScenario, rel, type CommandResult, type Loaded } from './common';
-import { gateG1 } from './gates';
+import { admitAdditional } from './defects';
+import { exampleProducts, gateG0, gateG1, gateG2, judgedByTest, type DefectRow } from './gates';
 import { runPlaywright, type PlaywrightRun } from './playwright-runner';
 import { createRunDir } from './run-dir';
 
@@ -19,14 +23,14 @@ export function checkpointLines(run: PlaywrightRun, n = 0): string[] {
   });
 }
 
-export async function liveGate(loaded: Loaded, runDir: string): Promise<{ run: PlaywrightRun; verdict: CommandResult['verdict']; lines: string[] }> {
-  const { config, scenario } = loaded;
+export async function liveGate(loaded: Loaded, runDir: string): Promise<{ run: PlaywrightRun; verdict: Verdict; lines: string[] }> {
+  const { config } = loaded;
   const repeat = config.repeat;
   const run = await runPlaywright({ root: loaded.root, project: 'live', slug: loaded.slug, runDir, repeat, timeoutMs: repeat * config.timeouts.testMs + 60_000 });
-  const c = classify(run, scenario.checkpoints);
+  const c = classify(run, judgedByTest(loaded));
   const pass = c.perRepeat.filter((v) => v === 'PASS').length;
   const lines = [`G3 live, ${repeat} repeat(s) on ${config.baseURL}: ${pass}/${c.perRepeat.length} pass; ${c.reason}`];
-  const seen = new Map((run.repeats[0]?.checkpoints ?? []).flatMap((c) => c.ledger).map((p) => [p.name, p]));
+  const seen = new Map((run.repeats[0]?.checkpoints ?? []).flatMap((cp) => cp.ledger).map((p) => [p.name, p]));
   const products = [...seen.values()];
   if (products.length) lines.push(`   products: ${products.map((p) => `${p.name} (${p.unitPrice}${Object.keys(p.attrs).length ? `, ${Object.entries(p.attrs).map(([k, v]) => `${k} ${v}`).join(', ')}` : ''})`).join(' · ')}`);
   lines.push(...checkpointLines(run).map((l) => `   ${l}`));
@@ -35,17 +39,76 @@ export async function liveGate(loaded: Loaded, runDir: string): Promise<{ run: P
   return { run, verdict: c.verdict, lines };
 }
 
+/** The probe of the application address before the browser starts (6.1, point 1). Null when it answers. */
+export async function probeAddress(baseURL: string, probeMs: number): Promise<string | null> {
+  try {
+    const res = await fetch(baseURL, { method: 'GET', redirect: 'follow', signal: AbortSignal.timeout(probeMs) });
+    return res.status >= 500 ? `${baseURL} answered HTTP ${res.status}; retry later or check the application.` : null;
+  } catch (e) {
+    const cause = (e as { cause?: { code?: string } }).cause?.code ?? (e as Error).name;
+    return `${baseURL} did not answer within ${probeMs} ms (${cause}); check baseURL in qa.config.json and the network.`;
+  }
+}
+
+export type DryGates = { verdict: Verdict; lines: string[]; rows: DefectRow[]; gaps: string[]; handEdited: boolean };
+
+/** G0, G1 and G2 on the example's stubs. */
+export async function dryGates(loaded: Loaded, dir: string): Promise<DryGates> {
+  const g0 = gateG0(loaded);
+  if (g0.verdict !== 'PASS') return { ...g0, rows: [], gaps: [] };
+  const g1 = await gateG1(loaded, path.join(dir, 'dry', 'g1'));
+  const lines = [...g0.lines, ...g1.lines];
+  if (g1.verdict !== 'PASS') return { verdict: g1.verdict, lines, rows: [], gaps: [], handEdited: g0.handEdited };
+  const admission = await admitAdditional(loaded);
+  const defects = [...deriveDefects(loaded.scenario, loaded.pricing.rules), ...admission.admitted];
+  const g2 = await gateG2(loaded, path.join(dir, 'dry', 'g2'), exampleProducts(loaded), defects);
+  const gaps = [...(loaded.example?.gaps ?? []), ...g2.rows.filter((r) => r.result === 'not-applicable').map((r) => `${r.defect} is not applicable: ${r.hint}`)];
+  lines.push(...g2.lines);
+  for (const r of admission.rejected) lines.push(`   additional defect ${r.id} rejected: ${r.reason}`);
+  return { verdict: g2.verdict, lines, rows: g2.rows, gaps, handEdited: g0.handEdited };
+}
+
+/** The verification record of a run (design 8.5): hashes, gate results, defects, gaps. */
+export function writeVerification(loaded: Loaded, dir: string, gates: Record<string, unknown>, dry: DryGates): void {
+  const driver = files.driver(loaded.root, loaded.config.app);
+  const record = {
+    runId: path.basename(dir),
+    slug: loaded.slug,
+    scenarioSha256: loaded.scenarioSha256,
+    rulesSha256: loaded.rulesSha256,
+    testSha256: fileHash(files.test(loaded.root, loaded.slug)),
+    driverSha256: fs.existsSync(driver) ? fileHash(driver) : null,
+    testOrigin: dry.handEdited ? 'edited' : 'compiled',
+    gates,
+    defects: dry.rows,
+    gaps: dry.gaps,
+  };
+  fs.writeFileSync(path.join(dir, 'verification.json'), JSON.stringify(record, null, 2) + '\n');
+}
+
 export async function run(root: string, slug: string, dry: boolean): Promise<CommandResult> {
   const got = loadScenario(root, slug);
   if (!got.ok) return got.result;
   const loaded = got.loaded;
   if (loaded.freeze !== 'frozen') return { verdict: 'SCENARIO_CHANGED', lines: [freezeMessage(loaded.freeze, slug)] };
-  if (!fs.existsSync(files.test(root, slug))) return { verdict: 'FILE_CONFLICT', lines: [`${rel(root, files.test(root, slug))} does not exist; run qa-harness compile ${slug}.`] };
   const { runId, dir } = createRunDir(root, slug);
-  const lines = [`Run ${runId} of ${slug}${dry ? ' (dry)' : ''}`];
-  const g1 = await gateG1(loaded, `${dir}/dry/g1`);
-  lines.push(...g1.lines);
-  if (g1.verdict !== 'PASS' || dry) return { verdict: g1.verdict, lines: [...lines, `Evidence: ${rel(root, dir)}/`], data: { runId } };
+  const lines = [`Run ${runId} of ${slug}${dry ? ' (dry: gates G0–G2 on the reference cart)' : ''}`];
+  const d = await dryGates(loaded, dir);
+  lines.push(...d.lines);
+  const gates: Record<string, unknown> = { dry: d.verdict };
+  if (d.verdict !== 'PASS' || dry) {
+    writeVerification(loaded, dir, gates, d);
+    lines.push(...d.gaps.slice(0, 4).map((g) => `Scenario gap: ${g}`));
+    return { verdict: d.verdict, lines: [...lines, `Evidence: ${rel(root, dir)}/`], data: { runId, rows: d.rows } };
+  }
+  const probe = await probeAddress(loaded.config.baseURL, loaded.config.timeouts.probeMs);
+  if (probe) {
+    gates.G3 = 'INFRA_FAIL';
+    writeVerification(loaded, dir, gates, d);
+    return { verdict: 'INFRA_FAIL', lines: [...lines, `G3 not started: ${probe}`, `Evidence: ${rel(root, dir)}/`], data: { runId } };
+  }
   const g3 = await liveGate(loaded, dir);
+  gates.G3 = g3.verdict;
+  writeVerification(loaded, dir, gates, d);
   return { verdict: g3.verdict, lines: [...lines, ...g3.lines, `Evidence: ${rel(root, dir)}/`], data: { runId } };
 }

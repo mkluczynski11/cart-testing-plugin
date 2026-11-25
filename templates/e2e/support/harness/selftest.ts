@@ -10,10 +10,15 @@ import { amountFormat, parseAmount, roundToCents } from '../core/money';
 import { ReferenceCart } from '../core/reference-cart';
 import { selectProduct } from '../core/selection';
 import type { CurrencyCode } from '../core/types';
-import type { CommandResult } from './common';
+import { classify } from './classify';
+import type { CommandResult, Loaded } from './common';
 import { loadScenario } from './common';
 import { compile } from './compile';
 import { example } from './example';
+import { dryRun, exampleCatalog, exampleProducts, gateG1, gateG2 } from './gates';
+import { manifestChanges } from './manifest';
+import { run } from './run';
+import { deriveDefects } from '../core/operators';
 
 export const FIXTURES = path.join(__dirname, 'fixtures');
 const REF = 'cart-total-add-change-remove';
@@ -60,6 +65,14 @@ export function prepare(root: string, slug: string): string {
 }
 
 export type Row = { area: string; run: () => Promise<string> };
+
+/** Load a workspace scenario or fail the row. */
+function loadedOf(root: string, slug: string): Loaded {
+  if (!fs.existsSync(files.example(root, slug))) prepare(root, slug);
+  const got = loadScenario(root, slug);
+  check(got.ok, `scenario ${slug} does not load`);
+  return got.loaded;
+}
 
 const STEP = (...l: string[]) => l.join('\n');
 
@@ -132,6 +145,92 @@ const ROWS: Row[] = [
       const picked = await selectProduct(cart, { pick: 'first-available' }, { reserved: reservedNames(s), pickLimit: 30, constraints: [] });
       check(picked.name === 'Product A', `the unnamed pick selected "${picked.name}", which the scenario names later`);
       return 'needQty 4 for two adds of 2; an unnamed pick skips "Green Lamp", named by a later alias';
+    },
+  },
+  {
+    area: 'reference cart',
+    run: async () => {
+      const root = workspace('reference-cart', [REF, 'swapped-objects', 'green-threshold']);
+      const notes: string[] = [];
+      for (const slug of [REF, 'swapped-objects', 'green-threshold']) {
+        prepare(root, slug);
+        const r = await run(root, slug, true);
+        expectVerdict(r, 'PASS', `run ${slug} --dry`);
+        const rows = r.data?.rows as Array<{ result: string }>;
+        notes.push(`${slug} ${rows.filter((x) => x.result === 'detected').length}/${rows.length}`);
+      }
+      return `healthy carts green; every applicable default defect red where expected (${notes.join(', ')})`;
+    },
+  },
+  {
+    area: 'equal prices',
+    run: async () => {
+      const loaded = loadedOf(workspace('equal-prices', [REF]), REF);
+      const products = exampleProducts(loaded).map((p) => ({ ...p, item: { ...p.item, price: '10.00' } }));
+      const defects = deriveDefects(loaded.scenario, loaded.pricing.rules).filter((d) => d.operator === 'wrong-target');
+      const g2 = await gateG2(loaded, path.join(loaded.root, 'g2'), products, defects);
+      check(g2.rows.length === 2 && g2.rows.every((r) => r.result === 'detected'), `wrong-target defects with equal prices: ${g2.rows.map((r) => `${r.defect} ${r.result}`).join(', ')}`);
+      return 'all stubs at $10.00: qty-wrong-line and remove-wrong-line still detected, so lines are compared';
+    },
+  },
+  {
+    area: 'empty cart',
+    run: async () => {
+      const loaded = loadedOf(workspace('empty-cart', ['remove-only-line']), 'remove-only-line');
+      for (const emptyTotal of [false, true]) {
+        const g1 = await gateG1(loaded, path.join(loaded.root, `g1-${emptyTotal}`), emptyTotal);
+        expectVerdict({ verdict: g1.verdict, lines: g1.lines }, 'PASS', `G1 with ${emptyTotal ? 'a zero total' : 'no total element'} in the empty cart`);
+      }
+      const lostRemove = deriveDefects(loaded.scenario, loaded.pricing.rules).filter((d) => d.id === 'lost-remove');
+      const g2 = await gateG2(loaded, path.join(loaded.root, 'g2'), exampleProducts(loaded), lostRemove);
+      check(g2.rows[0]?.result === 'detected', `lost-remove is ${g2.rows[0]?.result}`);
+      return 'green with a zero total and without a total element; lost-remove red at S2';
+    },
+  },
+  {
+    area: 'classification',
+    run: async () => {
+      const root = workspace('classification', [REF, 'green-threshold']);
+      prepare(root, REF);
+      prepare(root, 'green-threshold');
+      expectVerdict(await run(root, REF, false), 'INFRA_FAIL', 'a live run against an unreachable address');
+      const green = loadedOf(root, 'green-threshold');
+      const outOfStock = exampleCatalog(green).map((c, i) => (i === 0 ? { ...c, inStock: false } : c));
+      const pre = classify(await dryRun(green, path.join(root, 'pre'), { catalog: outOfStock }), green.scenario.checkpoints);
+      check(pre.verdict === 'PRECONDITION_FAIL', `a by-name product out of stock gave ${pre.verdict}`);
+      fs.writeFileSync(files.test(root, 'empty'), "import { test } from '../support/core/fixtures';\n");
+      fs.copyFileSync(files.scenario(root, REF), files.scenario(root, 'empty'));
+      const ref = loadedOf(root, REF);
+      const none = classify(await dryRun({ ...ref, slug: 'empty' }, path.join(root, 'none'), { catalog: exampleCatalog(ref) }), ref.scenario.checkpoints);
+      check(none.verdict === 'NO_TESTS_RUN', `zero tests gave ${none.verdict}`);
+      const lostAdd = deriveDefects(ref.scenario, ref.pricing.rules).find((d) => d.id === 'lost-add');
+      const after = classify(await dryRun(ref, path.join(root, 'after'), { catalog: exampleCatalog(ref), defect: lostAdd }), ref.scenario.checkpoints);
+      check(after.verdict === 'ORACLE_MISMATCH', `an action failure after a red checkpoint gave ${after.verdict}`);
+      return 'unreachable address INFRA_FAIL; PreconditionError PRECONDITION_FAIL; zero tests NO_TESTS_RUN; action failure after a red checkpoint ORACLE_MISMATCH';
+    },
+  },
+  {
+    area: 'parallelism',
+    run: async () => {
+      const root = workspace('parallelism', [REF]);
+      prepare(root, REF);
+      const [a, b] = await Promise.all([run(root, REF, true), run(root, REF, true)]);
+      const ids = [a.data?.runId, b.data?.runId] as string[];
+      check(a.verdict === 'PASS' && b.verdict === 'PASS', `parallel dry runs ended ${a.verdict} and ${b.verdict}`);
+      check(ids[0] !== ids[1], 'two runs got the same run directory');
+      for (const id of ids) {
+        const v = JSON.parse(fs.readFileSync(path.join(files.runs(root, REF), id, 'verification.json'), 'utf8')) as { runId: string };
+        check(v.runId === id, `run directory ${id} holds the evidence of ${v.runId}`);
+      }
+      return `two runs at once: ${ids.join(' and ')}, each with its own evidence`;
+    },
+  },
+  {
+    area: 'integrity',
+    run: async () => {
+      const changes = manifestChanges();
+      check(changes.length === 0, `the library differs from support/core/MANIFEST.json: ${changes.slice(0, 3).join(', ')}`);
+      return 'support/core and support/harness match support/core/MANIFEST.json';
     },
   },
 ];
