@@ -235,6 +235,15 @@ No survivor: 13 of 13 mutations turn at least one check red; the tree was clean 
 the stage 3 commit; stage 4 rewrote the goto line of `lint.ts` (exact origin), so V's O1 string no longer applies to
 the final tree, and the O1 tests still assert the goto rule's own text.
 
+Replay repeated on the final tree (`7ca8bd3`, clean export, 10:30–10:45 UTC, runner `replay2.mjs`: the same list, O1
+written against the new form of the goto line, `if (lit !== undefined && !lit.startsWith('/') && originOf(lit) !==
+origin) v(n,` → `if (false) v(n,`): 13 of 13 applied, 13 of 13 red, `git status` clean after each. Caught by, in order:
+#10 unit (2 poll tests, `2 failed, 186 passed`); #16 guarantees "expected DEFECT_LATE, got PASS"; #18 unit
+classification; #19 unit raw text; #20 guarantees (no `HARNESS_MODIFIED` line); #25 guarantees "expected
+RETRY_REFUSED, got DEFECT_LATE"; #26 guarantees "expected LIMIT_REACHED, got DEFECT_LATE"; #27 guarantees "no
+VERIFICATION_STALE line"; O1 unit lint (2); O2 guarantees "expected CONFORMANCE_FAIL, got PASS"; O5 unit conditions and
+guarantees; O6 guarantees "a run after the rules file changed: PASS"; #28 unit promotion (8). No survivor.
+
 ## Stage 4 — the remaining fixes (V: F9, F5, F7, F8, N2, N3 · D: request 7)
 
 `date -u`: `Wed Nov 25 09:55:41 UTC 2026`.
@@ -460,7 +469,7 @@ $ git status --short
 ```
 
 `claude plugin validate .` also prints its separate directory check (the README has no marketplace install line); the
-README is the final session's file. Plus: the replay table (stage 3, no survivor; repeated on the final tree below),
+README is the final session's file. Plus: the replay table (stage 3, no survivor, on `a8054d5` and again on the final tree `7ca8bd3`),
 the eval table (stage 5, 14/14), the outcomes of stage 6 (two `VERIFIED`, one refused promotion, four green commands
 in the clone without Claude Code, one live repair).
 
@@ -508,7 +517,8 @@ defects); expected 12 of 12 (13)` (and `guarantees FAIL … expected DEFECT_LATE
   a checkpoint is retried silently); D request 5 (readback headline flag).
 - The Playwright HTML report of the promoted run of 2 was not copied into `examples/` (absolute local paths in its
   data; stage 6).
-- The replay of stage 3 ran on the stage 3 commit `a8054d5`; a second replay on the final tree is below.
+- The replay of stage 3 ran first on the stage 3 commit `a8054d5`, then again on the final tree `7ca8bd3` (no survivor
+  either time).
 - Stage 6 started at minute 25, in parallel with the stage 5 eval run, not after it; no live call overlapped another.
 - Step 2 was resumed with `/qa:new-test <slug> --yes` (the resumption form of the same command), not by retyping the
   request.
