@@ -4,3 +4,7 @@ node_modules/
 .playwright-mcp/
 .worktrees/
 node_modules/
+.playwright-mcp/
+.worktrees/
+node_modules/
+.claude/settings.local.json
