@@ -1,0 +1,38 @@
+{
+  "settled": true,
+  "view": {
+    "empty": false,
+    "lines": [
+      {
+        "name": "Combination Pliers",
+        "qty": 2,
+        "unitPrice": {
+          "value": {
+            "numerator": "1415",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$14.15"
+        },
+        "lineTotal": {
+          "value": {
+            "numerator": "2830",
+            "denominator": "100",
+            "currency": "USD"
+          },
+          "rawText": "$28.30"
+        }
+      }
+    ],
+    "adjustments": [],
+    "total": {
+      "value": {
+        "numerator": "2830",
+        "denominator": "100",
+        "currency": "USD"
+      },
+      "rawText": "$28.30",
+      "label": "Total"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+
+Running 18 tests using 1 worker
+
+S1 (add Combination Pliers 1) settled=true 375ms: Combination Pliers x1 @ $14.15 = $14.15 | Total: $14.15
+S2 (add Pliers 1) settled=true 229ms: Combination Pliers x1 @ $14.15 = $14.15 | Pliers x1 @ $12.01 = $12.01 | Total: $26.16
+S3 (set Combination Pliers 3) settled=true 59ms: Combination Pliers x3 @ $14.15 = $42.45 | Pliers x1 @ $12.01 = $12.01 | Total: $54.46
+S4 (remove Pliers) settled=true 44ms: Combination Pliers x3 @ $14.15 = $42.45 | Total: $42.45
+  ✓   1 [chromium] › driver.live.spec.ts:109:1 › 1. reference sequence S1–S4 on the first two in-stock products (5.9s)
+H4 settled=true 100ms: EMPTY "The cart is empty. Nothing to display."
+  ✓   2 [chromium] › driver.live.spec.ts:148:1 › 2. removing the only line gives the empty variant (2.7s)
+ECO facts={"co2_rating":"B"} in stock: Wood Saw x1 @ $12.18 = $12.18 | Subtotal: $12.18 | Eco-Friendly Discount (5%): - $0.61 | Total: $11.57
+  ✓   3 [chromium] › driver.live.spec.ts:164:1 › 3. eco case: a cart with only Wood Saw (2.2s)
+REPEAT-ADD settled=true: Combination Pliers x2 @ $14.15 = $28.30 | Total: $28.30
+  ✓   4 [chromium] › driver.live.spec.ts:180:1 › 4. adding the same product twice (3.5s)
+LOST-LOCATOR: LOCATOR: addProduct("No Such Product 7f3c", 1): getByTestId(/^product-[0-9A-Z]{26}$/).filter({ has: getByTestId('product-name').filter({ hasText: /^\s*No Such Product 7f3c\s*$/ }) }) (locator.click: Timeout 10000ms exceeded.)
+  ✓   5 [chromium] › driver.live.spec.ts:192:1 › 5. a product that does not exist fails with LOCATOR: (10.8s)
+SETTLE quantity={"min":4,"median":6,"max":113,"samples":[6,113,6,108,4]} removal={"min":114,"median":116,"max":123,"samples":[115,116,119,114,123]}
+  ✓   6 [chromium] › driver.live.spec.ts:199:1 › 6. settle time after quantity change and removal (10.6s)
+S1 (add Combination Pliers 1) settled=true 274ms: Combination Pliers x1 @ $14.15 = $14.15 | Total: $14.15
+S2 (add Pliers 1) settled=true 232ms: Combination Pliers x1 @ $14.15 = $14.15 | Pliers x1 @ $12.01 = $12.01 | Total: $26.16
+S3 (set Combination Pliers 3) settled=true 8ms: Combination Pliers x3 @ $14.15 = $42.45 | Pliers x1 @ $12.01 = $12.01 | Total: $54.46
+S4 (remove Pliers) settled=true 19ms: Combination Pliers x3 @ $14.15 = $42.45 | Total: $42.45
+  ✓   7 [chromium] › driver.live.spec.ts:109:1 › 1. reference sequence S1–S4 on the first two in-stock products (6.7s)
+H4 settled=true 149ms: EMPTY "The cart is empty. Nothing to display."
+  ✓   8 [chromium] › driver.live.spec.ts:148:1 › 2. removing the only line gives the empty variant (2.9s)
+ECO facts={"co2_rating":"B"} in stock: Wood Saw x1 @ $12.18 = $12.18 | Subtotal: $12.18 | Eco-Friendly Discount (5%): - $0.61 | Total: $11.57
+  ✓   9 [chromium] › driver.live.spec.ts:164:1 › 3. eco case: a cart with only Wood Saw (2.2s)
+REPEAT-ADD settled=true: Combination Pliers x2 @ $14.15 = $28.30 | Total: $28.30
+  ✓  10 [chromium] › driver.live.spec.ts:180:1 › 4. adding the same product twice (3.3s)
+LOST-LOCATOR: LOCATOR: addProduct("No Such Product 7f3c", 1): getByTestId(/^product-[0-9A-Z]{26}$/).filter({ has: getByTestId('product-name').filter({ hasText: /^\s*No Such Product 7f3c\s*$/ }) }) (locator.click: Timeout 10000ms exceeded.)
+  ✓  11 [chromium] › driver.live.spec.ts:192:1 › 5. a product that does not exist fails with LOCATOR: (10.8s)
+SETTLE quantity={"min":4,"median":5,"max":118,"samples":[4,115,5,118,5]} removal={"min":112,"median":113,"max":118,"samples":[118,113,112,112,114]}
+  ✓  12 [chromium] › driver.live.spec.ts:199:1 › 6. settle time after quantity change and removal (10.6s)
+S1 (add Combination Pliers 1) settled=true 264ms: Combination Pliers x1 @ $14.15 = $14.15 | Total: $14.15
+S2 (add Pliers 1) settled=true 234ms: Combination Pliers x1 @ $14.15 = $14.15 | Pliers x1 @ $12.01 = $12.01 | Total: $26.16
+S3 (set Combination Pliers 3) settled=true 39ms: Combination Pliers x3 @ $14.15 = $42.45 | Pliers x1 @ $12.01 = $12.01 | Total: $54.46
+S4 (remove Pliers) settled=true 36ms: Combination Pliers x3 @ $14.15 = $42.45 | Total: $42.45
+  ✓  13 [chromium] › driver.live.spec.ts:109:1 › 1. reference sequence S1–S4 on the first two in-stock products (5.6s)
+H4 settled=true 110ms: EMPTY "The cart is empty. Nothing to display."
+  ✓  14 [chromium] › driver.live.spec.ts:148:1 › 2. removing the only line gives the empty variant (2.6s)
+ECO facts={"co2_rating":"B"} in stock: Wood Saw x1 @ $12.18 = $12.18 | Subtotal: $12.18 | Eco-Friendly Discount (5%): - $0.61 | Total: $11.57
+  ✓  15 [chromium] › driver.live.spec.ts:164:1 › 3. eco case: a cart with only Wood Saw (2.1s)
+REPEAT-ADD settled=true: Combination Pliers x2 @ $14.15 = $28.30 | Total: $28.30
+  ✓  16 [chromium] › driver.live.spec.ts:180:1 › 4. adding the same product twice (3.4s)
+LOST-LOCATOR: LOCATOR: addProduct("No Such Product 7f3c", 1): getByTestId(/^product-[0-9A-Z]{26}$/).filter({ has: getByTestId('product-name').filter({ hasText: /^\s*No Such Product 7f3c\s*$/ }) }) (locator.click: Timeout 10000ms exceeded.)
+  ✓  17 [chromium] › driver.live.spec.ts:192:1 › 5. a product that does not exist fails with LOCATOR: (10.8s)
+SETTLE quantity={"min":4,"median":6,"max":117,"samples":[6,111,5,117,4]} removal={"min":112,"median":115,"max":137,"samples":[112,114,124,137,115]}
+  ✓  18 [chromium] › driver.live.spec.ts:199:1 › 6. settle time after quantity change and removal (11.2s)
+
+  18 passed (1.8m)

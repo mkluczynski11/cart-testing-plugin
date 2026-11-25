@@ -1,0 +1,84 @@
+[
+  {
+    "step": "S1",
+    "action": "add Combination Pliers 1",
+    "url": "/checkout",
+    "toastText": "Product added to shopping cart.",
+    "toastBox": {
+      "x": 1018,
+      "y": 27,
+      "width": 235,
+      "height": 24
+    },
+    "overlaps": [],
+    "afterSettle": {
+      "toastText": null,
+      "toastBox": null,
+      "overlaps": []
+    }
+  },
+  {
+    "step": "S2",
+    "action": "add Pliers 1",
+    "url": "/checkout",
+    "toastText": "Product added to shopping cart.",
+    "toastBox": {
+      "x": 1018,
+      "y": 27,
+      "width": 235,
+      "height": 24
+    },
+    "overlaps": [],
+    "afterSettle": {
+      "toastText": null,
+      "toastBox": null,
+      "overlaps": []
+    }
+  },
+  {
+    "step": "S3",
+    "action": "set Combination Pliers 3",
+    "url": "/checkout",
+    "toastText": "Product quantity updated.",
+    "toastBox": {
+      "x": 1018,
+      "y": 27,
+      "width": 235,
+      "height": 24
+    },
+    "overlaps": [],
+    "afterSettle": {
+      "toastText": "Product quantity updated.",
+      "toastBox": {
+        "x": 1018,
+        "y": 27,
+        "width": 235,
+        "height": 24
+      },
+      "overlaps": []
+    }
+  },
+  {
+    "step": "S4",
+    "action": "remove Pliers",
+    "url": "/checkout",
+    "toastText": "Product deleted.",
+    "toastBox": {
+      "x": 1018,
+      "y": 27,
+      "width": 235,
+      "height": 24
+    },
+    "overlaps": [],
+    "afterSettle": {
+      "toastText": "Product deleted.",
+      "toastBox": {
+        "x": 1018,
+        "y": 27,
+        "width": 235,
+        "height": 24
+      },
+      "overlaps": []
+    }
+  }
+]

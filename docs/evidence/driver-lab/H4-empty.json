@@ -1,0 +1,10 @@
+{
+  "view": {
+    "empty": true,
+    "emptyMessage": "The cart is empty. Nothing to display."
+  },
+  "dom": {
+    "tables": 0,
+    "cartTotalElements": 0
+  }
+}
