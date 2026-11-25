@@ -1,10 +1,10 @@
 // Unit tests of support/core/checkpoint.ts: every layer of design 9.1 judged both ways, and the message.
 // Each test names one layer, a green or a red case, and asserts one thing.
 import { expect, test } from '@playwright/test';
-import { checkpointVerdict, formatMismatch, judge, type CheckContext } from '../support/core/checkpoint';
+import { checkpointVerdict, displayedRecord, formatMismatch, judge, pollCart, type CheckContext } from '../support/core/checkpoint';
 import { Ledger } from '../support/core/ledger';
 import { fromDecimal } from '../support/core/money';
-import type { CartView, SummaryRow } from '../support/core/types';
+import type { CartDriver, CartView, SummaryRow } from '../support/core/types';
 import { GREEN, REFERENCE, USD } from './helpers';
 
 const ctx: CheckContext = { pricing: REFERENCE, fmt: USD, rulesFile: 'app/reference.pricing.ts' };
@@ -74,4 +74,21 @@ test('the mismatch message has the fixed format of design 9.1', () => {
     '  diff:      +$2.50',
     '  layer:     adjustments · rule green-discount applies, no row displayed',
   ]);
+});
+
+// The poll of design 9.1 (report V, survivor #10) and the raw text of 8.5 (survivor #19).
+test('poll: a first read that disagrees and a second that agrees is green after two reads', async () => {
+  let n = 0;
+  const driver = { readCart: async () => (n++ === 0 ? view({ total: row('Total', '$29.00') }) : view()) } as unknown as CartDriver;
+  const r = await pollCart(driver, snap(), ctx, 1000);
+  expect({ red: r.findings.length > 0, reads: r.reads }).toEqual({ red: false, reads: 2 });
+});
+test('poll: a cart that never agrees is red, and only after settleMs', async () => {
+  const driver = { readCart: async () => view({ total: row('Total', '$29.00') }) } as unknown as CartDriver;
+  const r = await pollCart(driver, snap(), ctx, 50);
+  expect({ red: r.findings.length > 0, waited: r.elapsedMs >= 50 }).toEqual({ red: true, waited: true });
+});
+test('the displayed record keeps the raw text byte for byte', () => {
+  const rec = displayedRecord(discounted({ adjustments: [row('Green discount (5%)', '- $2.50')], total: row('Total', 'USD 47.50') }), USD) as { adjustments: Array<{ rawText: string }>; total: { rawText: string } };
+  expect([rec.adjustments[0].rawText, rec.total.rawText]).toEqual(['- $2.50', 'USD 47.50']);
 });

@@ -21,5 +21,6 @@ test('page.request in a driver is forbidden', () => expect(driver('async functio
 test('an XPath locator in a driver is forbidden', () => expect(driver('function f(page: Page) { return page.locator("//div"); }').join()).toContain('XPath'));
 test('a CSS-class locator needs the exception marker', () => expect(driver('function f(page: Page) { return page.locator(".active"); }').join()).toContain('locator-exception'));
 test('a CSS-class locator with the marker is allowed', () => expect(driver('function f(page: Page) { return page.locator(".active"); } // locator-exception: only the class marks it')).toEqual([]));
-test('goto outside the application is forbidden', () => expect(driver('async function f(page: Page) { await page.goto("https://evil.example.org/"); }').length).toBeGreaterThan(0));
+test('goto outside the application is forbidden', () => expect(driver('async function f(page: Page) { await page.goto("https://evil.example.org/"); }').join()).toContain('goto outside the application'));
+test('goto to a relative address is reported by the goto rule', () => expect(driver('async function f(page: Page) { await page.goto("elsewhere.html"); }').join()).toContain('goto outside the application'));
 test('an import from outside support/core is forbidden', () => expect(driver("import { x } from '../../elsewhere';").join()).toContain('outside support/core'));

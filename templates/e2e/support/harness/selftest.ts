@@ -1,7 +1,7 @@
 // qa-harness selftest: the harness's own test, one row per area of design 10.8.
 // Every case works in its own workspace under reports/selftest/runs/<case>/, whose support/ is a symlink
 // to this package, so compiled tests keep their fixed import path. No live application is used.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { reservedNames } from '../core/compiler';
@@ -21,6 +21,9 @@ import { run } from './run';
 import { startControlApp } from './control-app/server';
 import { verify } from './verify';
 import { deriveDefects } from '../core/operators';
+import { fileHash } from '../core/scenario';
+import { doctor } from './doctor';
+import { report } from './report';
 
 export const FIXTURES = path.join(__dirname, 'fixtures');
 const REF = 'cart-total-add-change-remove';
@@ -222,12 +225,19 @@ const ROWS: Row[] = [
     run: async () => {
       const root = workspace('reference-cart', [REF, 'swapped-objects', 'green-threshold']);
       const notes: string[] = [];
-      for (const slug of [REF, 'swapped-objects', 'green-threshold']) {
+      // Applicable and detected default defects per fixture scenario (report V F10): a regression that makes
+      // defects not applicable keeps G2 green, so the numbers are asserted, not only printed.
+      const want: Record<string, { applicable: number; detected: number; total: number }> = {
+        [REF]: { applicable: 12, detected: 12, total: 13 }, 'swapped-objects': { applicable: 12, detected: 12, total: 13 }, 'green-threshold': { applicable: 10, detected: 10, total: 11 },
+      };
+      for (const slug of Object.keys(want)) {
         prepare(root, slug);
         const r = await run(root, slug, { dry: true });
         expectVerdict(r, 'PASS', `run ${slug} --dry`);
         const rows = r.data?.rows as Array<{ result: string }>;
-        notes.push(`${slug} ${rows.filter((x) => x.result === 'detected').length}/${rows.length}`);
+        const got = { applicable: rows.filter((x) => x.result !== 'not-applicable').length, detected: rows.filter((x) => x.result === 'detected').length, total: rows.length };
+        check(JSON.stringify(got) === JSON.stringify(want[slug]), `${slug}: ${got.detected} detected of ${got.applicable} applicable (${got.total} defects); expected ${want[slug].detected} of ${want[slug].applicable} (${want[slug].total})`);
+        notes.push(`${slug} ${got.detected}/${got.total}`);
       }
       return `healthy carts green; every applicable default defect red where expected (${notes.join(', ')})`;
     },
@@ -294,6 +304,68 @@ const ROWS: Row[] = [
         check(v.runId === id, `run directory ${id} holds the evidence of ${v.runId}`);
       }
       return `two runs at once: ${ids.join(' and ')}, each with its own evidence`;
+    },
+  },
+  {
+    area: 'guarantees',
+    run: async () => {
+      const root = workspace('guarantees', [REF]);
+      const compiled = prepare(root, REF);
+      const testFile = files.test(root, REF);
+      // R7: a verification record of the current files, then one byte more in the driver.
+      const driverFile = files.driver(root, 'reference');
+      fs.writeFileSync(driverFile, '// a stand-in driver: only its hash matters to this check\n');
+      fs.mkdirSync(files.reports(root, REF), { recursive: true });
+      const verified = { testSha256: fileHash(testFile), driverSha256: fileHash(driverFile), rulesSha256: fileHash(files.pricing(root, 'reference')) };
+      fs.writeFileSync(path.join(files.reports(root, REF), 'verification.json'), JSON.stringify(verified));
+      check(!doctor(root, false).lines.some((l) => l.startsWith('VERIFICATION_STALE')), 'doctor calls unchanged verified files stale');
+      fs.appendFileSync(driverFile, ' ');
+      const stale = doctor(root, false).lines.find((l) => l.startsWith('VERIFICATION_STALE'));
+      check(stale?.includes('the driver'), `a driver changed after verification: ${stale ?? 'no VERIFICATION_STALE line'}`);
+      // R6: the rules file changed after confirmation.
+      const rulesFile = files.pricing(root, 'reference');
+      const rules = fs.readFileSync(rulesFile, 'utf8');
+      fs.appendFileSync(rulesFile, '// changed after confirmation\n');
+      const changed = await run(root, REF, { dry: true });
+      check(changed.verdict === 'SCENARIO_CHANGED' && changed.lines.join(' ').includes('rules file'), `a run after the rules file changed: ${changed.verdict}: ${changed.lines[0]}`);
+      fs.writeFileSync(rulesFile, rules);
+      // G1: the approved example's total differs from the compiled test's.
+      const exFile = files.example(root, REF);
+      const exText = fs.readFileSync(exFile, 'utf8');
+      const ex = JSON.parse(exText) as { expected: Array<{ step: string; totalExact: string }> };
+      ex.expected[1].totalExact = `${ex.expected[1].totalExact}1`;
+      fs.writeFileSync(exFile, JSON.stringify(ex, null, 2));
+      expectVerdict(await run(root, REF, { dry: true }), 'CONFORMANCE_FAIL', 'an approved example whose S2 total differs from the test');
+      fs.writeFileSync(exFile, exText);
+      // 10.5 and R9: a test without its S3 checkpoint detects late; repairs need a changed file and stop at the limit.
+      fs.writeFileSync(testFile, compiled.replace("  await shopper.checkTotal('S3');\n", ''));
+      expectVerdict(await run(root, REF, { dry: true, repair: 'test' }), 'DEFECT_LATE', 'repair 1: a test without the S3 checkpoint');
+      expectVerdict(await run(root, REF, { dry: true, repair: 'test' }), 'RETRY_REFUSED', 'a repair with the test unchanged');
+      fs.appendFileSync(testFile, '// repair 2\n');
+      expectVerdict(await run(root, REF, { dry: true, repair: 'test' }), 'DEFECT_LATE', 'repair 2 with a changed test');
+      fs.appendFileSync(testFile, '// repair 3\n');
+      expectVerdict(await run(root, REF, { dry: true, repair: 'test' }), 'LIMIT_REACHED', 'a third repair');
+      fs.writeFileSync(testFile, compiled);
+      // The lock: a promotion of a verified run while another run holds the lock changes nothing.
+      const id = '20990101T000000Z-lock';
+      const runDir = path.join(files.runs(root, REF), id);
+      fs.mkdirSync(runDir, { recursive: true });
+      fs.writeFileSync(path.join(runDir, 'verification.json'), JSON.stringify({ runId: id, slug: REF, gates: { dry: 'PASS', G3: 'PASS', G4: 'PASS' }, defects: [], gaps: [], verdict: 'PASS' }));
+      fs.writeFileSync(path.join(files.reports(root, REF), '.lock'), '1\n');
+      const held = await report(root, REF, id).catch((e: Error & { verdict?: string }) => ({ verdict: e.verdict ?? 'error', lines: [e.message] }));
+      check(held.verdict === 'INFRA_FAIL' && !fs.existsSync(path.join(files.reports(root, REF), 'report.md')), `a promotion under a held lock: ${held.verdict}: ${held.lines[0]}`);
+      // R4: doctor of a scratch copy of this package with one changed line in support/core.
+      const pkg = path.join(packageRoot(), 'reports', 'selftest', 'runs', 'guarantees-pkg');
+      fs.rmSync(pkg, { recursive: true, force: true });
+      fs.cpSync(path.join(packageRoot(), 'support'), path.join(pkg, 'support'), { recursive: true });
+      fs.copyFileSync(path.join(packageRoot(), 'package.json'), path.join(pkg, 'package.json'));
+      fs.symlinkSync(path.join(packageRoot(), 'node_modules'), path.join(pkg, 'node_modules'), 'dir');
+      fs.appendFileSync(path.join(pkg, 'support', 'core', 'money.ts'), '// changed\n');
+      const env: NodeJS.ProcessEnv = { ...process.env };
+      delete env.QA_ROOT;
+      const out = spawnSync(process.execPath, [path.join(packageRoot(), 'node_modules', 'tsx', 'dist', 'cli.mjs'), path.join(pkg, 'support', 'harness', 'cli.ts'), '--root', root, 'doctor'], { encoding: 'utf8', env, timeout: 60_000 }).stdout ?? '';
+      check(/^HARNESS_MODIFIED: .*support\/core\/money\.ts/m.test(out), `doctor with a changed support/core file: ${out.split('\n').slice(0, 2).join(' | ')}`);
+      return 'VERIFICATION_STALE, SCENARIO_CHANGED, CONFORMANCE_FAIL, DEFECT_LATE, RETRY_REFUSED, LIMIT_REACHED, a held lock and HARNESS_MODIFIED each where expected';
     },
   },
   {

@@ -19,3 +19,7 @@ test('FLAKY carries the class of the failed repeats as evidence', () => expect(c
 test('zero executed tests is NO_TESTS_RUN', () => expect(classify({ repeats: [], errors: ['Error: No tests found'] }, expected).verdict).toBe('NO_TESTS_RUN'));
 test('a missing checkpoint without an error is NO_TESTS_RUN', () => expect(classify({ repeats: [rep({ checkpoints: [cp('S1', 'pass')] })], errors: [] }, expected).verdict).toBe('NO_TESTS_RUN'));
 test('a load error of the test file is INFRA_FAIL', () => expect(classify({ repeats: [], errors: ['SyntaxError: Unexpected token'] }, expected).verdict).toBe('INFRA_FAIL'));
+
+// Report V, survivor #18: the environment comes first in the classification order of design 6.1.
+const locator = rep({ result: 'fail', status: 'failed', error: { step: 'S1', kind: 'LOCATOR_FAIL', message: 'x', rawTotal: null }, checkpoints: [] });
+test('the environment outranks a locator failure in another repeat', () => expect(classify({ repeats: [locator, infra], errors: [] }, expected).verdict).toBe('INFRA_FAIL'));

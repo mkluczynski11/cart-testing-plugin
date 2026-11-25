@@ -50,6 +50,6 @@
   "support/harness/report.ts": "3633444996956129c633b9c2467bf9382625f3c5f3fb5fae561f73e5e7202b77",
   "support/harness/run-dir.ts": "3b8a8bb1226e59b9ad3295d803847101ffef2175b80ebe762592d583e4cbcedb",
   "support/harness/run.ts": "3b34d35b5d8b868c1f4b73cea5c1033ec52f307aa7c24b8b1f9faca101b7b779",
-  "support/harness/selftest.ts": "f181ec0d0d72f155d8fed6c912997355d2c49fa87e6a2ce22f32f27cbf5e11d0",
+  "support/harness/selftest.ts": "037be46c547fdf0c7ec045ee47c0303132013bce2c2196f5e0befaf9108a7f4e",
   "support/harness/verify.ts": "27cf57d6233e76a82987e1c7c1ff87b1054387e83950e3543b1a2154a1070b0a"
 }
