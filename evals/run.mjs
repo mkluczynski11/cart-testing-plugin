@@ -8,9 +8,21 @@ import { fileURLToPath } from 'node:url';
 import { CASES } from './cases.mjs';
 
 const pluginRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sandbox = path.join(pluginRoot, '.sandbox', 'evals');
-const base = path.join(pluginRoot, '.sandbox', 'eval-base');
 const qa = path.join(pluginRoot, 'bin', 'qa-harness');
+
+const argv = process.argv.slice(2);
+const flag = (name, fallback) => {
+  const i = argv.indexOf(name);
+  return i >= 0 ? argv.splice(i, 2)[1] : fallback;
+};
+/**
+ * Where the scratch repos live. Order D stage 3: inside this worktree the auto-mode check of a nested session gives
+ * no verdict on Write, so the sessions run in repos outside it (`--root <dir>`, e.g. the session's scratch directory).
+ */
+const scratch = path.resolve(flag('--root', path.join(pluginRoot, '.sandbox')));
+const jobs = Number(flag('--jobs', '1'));
+const sandbox = path.join(scratch, 'evals');
+const base = path.join(scratch, 'eval-base');
 
 const sh = (cmd, args, cwd) => {
   const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -101,16 +113,13 @@ async function runCase(c) {
   });
   const result = {
     case: c.id, title: c.title, ok: checks.every((x) => x.ok), exit: code, turns: json.num_turns, costUsd: json.total_cost_usd,
-    seconds, subagents: json.subagent_stats?.by_type ?? {}, terminal: json.terminal_reason, session: json.session_id, repo: path.relative(pluginRoot, ctx.repo),
+    seconds, subagents: json.subagent_stats?.by_type ?? {}, terminal: json.terminal_reason, session: json.session_id, repo: ctx.repo,
     checks, answer: facts.answer.slice(-1500),
   };
   fs.appendFileSync(path.join(sandbox, 'results.jsonl'), JSON.stringify(result) + '\n');
   return result;
 }
 
-const argv = process.argv.slice(2);
-const jobsAt = argv.indexOf('--jobs');
-const jobs = jobsAt >= 0 ? Number(argv.splice(jobsAt, 2)[1]) : 1;
 const wanted = argv.length ? CASES.filter((c) => argv.includes(c.id)) : CASES;
 if (!wanted.length) {
   console.log(`No such case; known: ${CASES.map((c) => c.id).join(', ')}.`);
@@ -124,7 +133,7 @@ await Promise.all(Array.from({ length: Math.max(1, jobs) }, async () => {
     const c = queue.shift();
     const r = await runCase(c);
     done.push(r);
-    console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.case} · turns ${r.turns} · $${r.costUsd?.toFixed(2)} · ${r.seconds}s · subagents ${JSON.stringify(r.subagents)} · ${r.repo}`);
+    console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.case} · turns ${r.turns} · $${r.costUsd?.toFixed(2)} · ${r.seconds}s · subagents ${JSON.stringify(r.subagents)} · ${path.basename(r.repo)}`);
     for (const x of r.checks) console.log(`   ${x.ok ? 'ok  ' : 'FAIL'} ${x.what}${x.note ? `: ${x.note}` : ''}`);
   }
 }));

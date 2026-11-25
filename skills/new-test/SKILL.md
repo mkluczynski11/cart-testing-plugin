@@ -37,8 +37,9 @@ premise has not changed.
    `/qa:setup <app> <base-url>` and stop. Read `e2e/qa.config.json` (`app`, `priceSource`, `defects`) and
    `e2e/app/<app>.pricing.ts` (labels, rules, constraints, provenance) for the confirmation.
 1. **Intake** (`intake.md`). Split the request into clauses; map each action to `add`, `setQty` or `remove`; refuse
-   an action outside the grammar or the scope, naming the missing feature, before writing anything; ask one question
-   when the request leaves open something that changes what the test proves, and write nothing. Pick products and
+   an action outside the grammar or the scope, naming the missing feature, before writing anything. When the request
+   leaves open something that changes what the test proves, write nothing and ask: your answer is at most three
+   lines and its last line is one question. Pick products and
    quantities by the pairs in `intake.md`. Choose a slug: short, lowercase, hyphens, unique in `e2e/specs/`.
 2. **Scenario.** Write `e2e/specs/<slug>.md` with `status: draft`, `request` verbatim, `cart_after` after every step,
    `check: each-step` unless the request names other checkpoints. Run `qa-harness example <slug>`. On `SPEC_INVALID`

@@ -61,7 +61,7 @@ const onlyScenario = (f) => {
   return { slug: s[0].replace(/\.md$/, ''), data: frontMatter(path.join(f.e2e, 'specs', s[0])) };
 };
 const harnessCalls = (f, re) => f.calls.filter((c) => c.name === 'Bash' && re.test(String(c.input?.command ?? '')));
-const verdictOf = (call) => /VERDICT: ([A-Z_]+)/.exec(call?.result ?? '')?.[1];
+const verdictOf = (call) => [...(call?.result ?? '').matchAll(/VERDICT: ([A-Z_]+)/g)].pop()?.[1];
 const skillUsed = (f, name) => f.calls.some((c) => c.name === 'Skill' && new RegExp(`^(qa:)?${name}$`).test(String(c.input?.skill ?? '')));
 const gitChanged = (f, prefix) => spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', prefix], { cwd: f.repo, encoding: 'utf8' }).stdout.trim();
 const endsWithQuestion = (text) => /\?\s*[*_`)"]*\s*$/.test(text.trim()) || /\?[^\n]*$/.test(text.trim().split('\n').filter(Boolean).pop() ?? '');

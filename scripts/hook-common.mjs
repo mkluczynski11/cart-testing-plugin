@@ -57,6 +57,6 @@ export async function readInput() {
 
 /** Refuse the tool call: exit code 2, and stderr is the reason the model reads (design 7.2). */
 export function refuse(sentence) {
-  process.stderr.write(`${sentence}\n`);
+  fs.writeSync(2, `${sentence}\n`); // synchronous: a pipe write on macOS may be lost at exit otherwise
   process.exit(2);
 }
