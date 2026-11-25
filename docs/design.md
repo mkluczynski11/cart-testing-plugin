@@ -1568,7 +1568,7 @@ Two elements of DEP-09 did not make it into the first draft of v0.3 and were not
 
 ## 18. Amendments after v0.3
 
-Places where the code now differs from sections 1–17 on purpose (orders D and F). Sections 1–17 are unchanged.
+Places where the code now differs from sections 1–17 on purpose (orders D, F and E). Sections 1–17 are unchanged.
 
 | Place | Sections | What the code does now |
 | --- | --- | --- |
@@ -1584,3 +1584,5 @@ Places where the code now differs from sections 1–17 on purpose (orders D and 
 | Repair episodes | R9 | `--repair driver` needs a live run; a repair run that ends `PASS` closes the episode, so the counter starts again. |
 | `run.json` | 8.5 | `meta.gitDirty` records uncommitted changes next to `meta.gitSha`. |
 | Agents' positive verdict | 4, 6.3 | `app-mapper` and `defect-designer` end with `PASS`. |
+| Defects in `report.md` | 10.2–10.5, 11.4 | `report.md` has a section "Defects": one row per defect of the run with id, origin, its `why`, and result and first red checkpoint for the pass on stub prices and for the pass on the prices of the live run, read from `verification.json`; G2 records each defect's `why` there. |
+| Defects line of the confirmation | 11.1 | `defects check <slug> [--extended]` prints first how many defects the test will be checked against, by origin (tester and generated ids named), and that the full list will be in `e2e/reports/<slug>/report.md`; with `--extended` or `defects: extended` it adds the generated defects still to come. `new-test` writes the `--risk` entry before the confirmation and quotes that line verbatim before "Confirm?", also with `--yes`. |
