@@ -7,6 +7,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { CheckpointRecord } from './checkpoint';
 import type { RepeatRecord, RunMeta, RunRecord } from './classification';
+import type { NetworkLog } from './live-controls';
 import { loadConfig, packageRoot } from './config';
 import { inspectTestFile } from './compiler';
 import { sha256 } from './scenario';
@@ -56,6 +57,7 @@ export default class RunReporter implements Reporter {
     const n = this.record.repeats.length + 1;
     const checkpoints = jsonAttachments<CheckpointRecord>(result, 'checkpoint').map((c) => this.screenshot(c, n));
     const failure = jsonAttachments<FailureRecord & { url?: string | null }>(result, 'qa-failure')[0];
+    const control = jsonAttachments<NetworkLog>(result, 'qa-control')[0];
     const last = checkpoints.at(-1)?.displayed;
     const rawTotal = last && 'total' in last && last.total ? last.total.rawText : null;
     const timedOut = result.status === 'timedOut' ? { step: checkpoints.at(-1)?.step ?? null, kind: 'INFRA_FAIL' as const, message: `The test exceeded its time limit of ${test.timeout} ms.`, url: null } : null;
@@ -63,6 +65,7 @@ export default class RunReporter implements Reporter {
     const repeat: RepeatRecord = {
       n, result: result.status === 'passed' && !checkpoints.some((c) => c.result === 'fail') ? 'pass' : 'fail', status: result.status,
       error: error ? { ...error, rawTotal } : null, checkpoints, durationMs: result.duration,
+      ...(control ? { control } : {}),
     };
     this.record.repeats.push(repeat);
     this.write();

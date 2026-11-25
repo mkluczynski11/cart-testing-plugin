@@ -1,6 +1,7 @@
 // The run record of design 8.5 and the classification of its repeats into one verdict, in the order of
 // design 6.1: environment, the first failed step, stability across repeats, completeness.
 import type { CheckpointRecord } from './checkpoint';
+import type { NetworkLog } from './live-controls';
 import type { FailureRecord } from './shopper';
 import type { Verdict } from './verdicts';
 
@@ -28,6 +29,7 @@ export type RepeatRecord = {
   status: string;
   error: (FailureRecord & { url?: string | null; rawTotal: string | null }) | null;
   checkpoints: CheckpointRecord[];
+  control?: NetworkLog;
   durationMs: number;
 };
 

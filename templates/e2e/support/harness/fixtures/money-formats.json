@@ -14,5 +14,5 @@
   { "locale": "de-DE", "currency": "EUR", "raw": "-5,00 €", "cents": -500 },
   { "locale": "de-DE", "currency": "EUR", "raw": "0,00 €", "cents": 0 },
   { "locale": "de-DE", "currency": "EUR", "raw": "$17.25", "cents": null },
-  { "locale": "de-DE", "currency": "EUR", "raw": "12.01 €", "cents": null }
+  { "locale": "de-DE", "currency": "EUR", "raw": "17.25 €", "cents": null }
 ]

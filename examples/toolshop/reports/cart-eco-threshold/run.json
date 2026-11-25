@@ -1,17 +1,17 @@
 {
   "meta": {
-    "runId": "20261125T010538Z-fccb",
+    "runId": "20261125T012124Z-9d5f",
     "slug": "cart-eco-threshold",
     "scenarioSha256": "f5ce2ce0910463f9fe94abdf243fee6651770f4d56c23a64e9ce12281feb5cf1",
     "testSha256": "e99e9ce77966d895c511d4ca595d17054e892398b8a28715862ec6361bca08b9",
     "testOrigin": "compiled",
-    "timestamp": "2026-11-25T01:05:42Z",
+    "timestamp": "2026-11-25T01:21:26Z",
     "baseURL": "https://practicesoftwaretesting.com",
     "browser": "chromium",
     "locale": "en-US",
     "priceSource": "ui",
     "pluginVersion": "0.1.0",
-    "gitSha": "c44aa6d",
+    "gitSha": "a1737a6",
     "mode": "live",
     "defect": null,
     "checkpoints": [
@@ -92,7 +92,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 379,
+          "elapsedMs": 273,
           "screenshot": "S1.png"
         },
         {
@@ -162,7 +162,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 258,
+          "elapsedMs": 238,
           "screenshot": "S2.png"
         },
         {
@@ -247,8 +247,8 @@
             }
           },
           "result": "pass",
-          "reads": 11,
-          "elapsedMs": 127,
+          "reads": 22,
+          "elapsedMs": 122,
           "screenshot": "S3.png"
         },
         {
@@ -313,12 +313,12 @@
             }
           },
           "result": "pass",
-          "reads": 6,
-          "elapsedMs": 114,
+          "reads": 27,
+          "elapsedMs": 119,
           "screenshot": "S4.png"
         }
       ],
-      "durationMs": 6297
+      "durationMs": 5078
     },
     {
       "n": 2,
@@ -389,7 +389,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 384,
+          "elapsedMs": 302,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S1.png"
         },
         {
@@ -459,7 +459,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 244,
+          "elapsedMs": 241,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S2.png"
         },
         {
@@ -544,8 +544,8 @@
             }
           },
           "result": "pass",
-          "reads": 35,
-          "elapsedMs": 194,
+          "reads": 23,
+          "elapsedMs": 122,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S3.png"
         },
         {
@@ -610,12 +610,12 @@
             }
           },
           "result": "pass",
-          "reads": 31,
-          "elapsedMs": 187,
+          "reads": 22,
+          "elapsedMs": 117,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S4.png"
         }
       ],
-      "durationMs": 6381
+      "durationMs": 5275
     },
     {
       "n": 3,
@@ -686,7 +686,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 903,
+          "elapsedMs": 395,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S1.png"
         },
         {
@@ -756,7 +756,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 395,
+          "elapsedMs": 240,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S2.png"
         },
         {
@@ -841,8 +841,8 @@
             }
           },
           "result": "pass",
-          "reads": 21,
-          "elapsedMs": 136,
+          "reads": 24,
+          "elapsedMs": 123,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S3.png"
         },
         {
@@ -907,12 +907,12 @@
             }
           },
           "result": "pass",
-          "reads": 25,
-          "elapsedMs": 131,
+          "reads": 23,
+          "elapsedMs": 116,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S4.png"
         }
       ],
-      "durationMs": 7151
+      "durationMs": 5238
     }
   ],
   "errors": []

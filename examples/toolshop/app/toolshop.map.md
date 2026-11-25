@@ -24,6 +24,13 @@ Live control bindings (`controls`, design 10.6):
 | --- | --- | --- |
 | `lost-update` | `PUT **/carts/*/product/quantity` | facts, acknowledgment signals |
 | `lost-remove` | `DELETE **/carts/*/product/*` | facts, acknowledgment signals |
-| `drift-price` | `GET **/carts/*`, `pricePath` `cart_items.0.product.price` | facts §10 (refetch); the body path is checked by the control's own result in stage 5 |
+| `drift-price` | `GET **/carts/*`, `pricePath` `cart_items.0.product.price` | facts §10 (refetch); the body seen in a retained trace of order N (below) |
+
+Response bodies, read from the trace of a failed repeat of order N (run `20261125T010833Z-2c2c`, 2026-11-25):
+`POST /carts` 201 `{"id":"…"}`; `POST /carts/{id}` 200 `{"result":"item added or updated"}`;
+`PUT /carts/{id}/product/quantity` 200 `{"result":"item added or updated"}`; `DELETE /carts/{id}/product/{productId}` 204 with
+no body; `GET /carts/{id}` 200 `{"id", "additional_discount_percentage", "lat", "lng", "cart_items": [{"id", "quantity",
+"discount_percentage", "cart_id", "product_id", "product": {"name", "price": 12.18 (a JSON number), "co2_rating",
+"is_eco_friendly", …}}]}`. The UI computes the displayed unit price from `cart_items[].product.price`.
 
 Attributes the driver reads (`provides.attrs`): `co2_rating`.

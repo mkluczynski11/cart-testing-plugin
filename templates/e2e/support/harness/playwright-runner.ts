@@ -12,6 +12,7 @@ export type RunRequest = {
   slug: string;
   runDir: string;              // receives run.json, the HTML report and the test artifacts
   repeat?: number;
+  testTimeoutMs?: number;      // overrides the configured test limit (control runs, design 8.6)
   env?: Record<string, string>;
   timeoutMs: number;
 };
@@ -24,7 +25,8 @@ export function runPlaywright(req: RunRequest): Promise<RunRecord> {
   const cli = require.resolve('@playwright/test/cli', { paths: [pkg] });
   fs.mkdirSync(req.runDir, { recursive: true });
   const args = [cli, 'test', '--config', path.join(pkg, 'playwright.config.ts'), '--project', req.project,
-    '--repeat-each', String(req.repeat ?? 1), '--workers', '1', `tests/${req.slug}\\.spec\\.ts$`];
+    '--repeat-each', String(req.repeat ?? 1), '--workers', '1', ...(req.testTimeoutMs ? ['--timeout', String(req.testTimeoutMs)] : []),
+    `tests/${req.slug}\\.spec\\.ts$`];
   const env = { ...process.env, ...req.env, QA_ROOT: req.root, QA_RUN_DIR: req.runDir, FORCE_COLOR: '0' };
   return new Promise((resolve) => {
     const child = spawn(process.execPath, args, { cwd: pkg, env });

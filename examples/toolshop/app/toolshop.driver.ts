@@ -136,8 +136,9 @@ export function createDriver(page: Page, options: DriverOptions): CartDriver {
           const button = page.getByRole('button', { name: `Page-${p}`, exact: true });
           if ((await button.count()) === 0) return; // no further page in the listing
           const firstCardBefore = await onLocator(action, productCards().first(), (l) => l.getAttribute('data-test', { timeout: actionMs }));
+          if (!firstCardBefore) throw new LocatorError(`${action}: the first product card has no data-test attribute.`);
           await onLocator(action, button, (l) => l.click({ timeout: actionMs }));
-          await onLocator(action, page.getByTestId(firstCardBefore!), (l) => l.waitFor({ state: 'detached', timeout: actionMs }));
+          await onLocator(action, page.getByTestId(firstCardBefore), (l) => l.waitFor({ state: 'detached', timeout: actionMs }));
           await onLocator(action, productCards().first(), (l) => l.waitFor({ timeout: actionMs }));
         }
         const names = await productCards().getByTestId('product-name').allInnerTexts();
@@ -288,7 +289,7 @@ function snapshotCart(emptyPattern: string): CartSnapshot {
   if (totalEl && !table) problems.push('[data-test="cart-total"] is not inside a table');
   const amounts = table ? Array.from(table.querySelectorAll('[data-test^="cart-"]')) : [];
   const summary = amounts.map((el) => {
-    const testId = el.getAttribute('data-test')!;
+    const testId = el.getAttribute('data-test') as string; // the selector matched on this attribute
     const row = el.closest('tr');
     const rawText = (el.textContent ?? '').trim();
     // The label is read from the same row as the amount: the row's other cells.
@@ -312,7 +313,7 @@ function snapshotCart(emptyPattern: string): CartSnapshot {
     .filter((tr) => tr.querySelector('[data-test="product-title"]'))
     .map((tr, i) => {
       // The title may hold badges; the name is its own text, without child elements.
-      const name = own(tr.querySelector('[data-test="product-title"]')!);
+      const name = own(tr.querySelector('[data-test="product-title"]') as Element); // the row was chosen for having it
       const input = tr.querySelector('[data-test="product-quantity"]') as HTMLInputElement | null;
       if (!input) problems.push(`[data-test="product-quantity"] missing in line ${i + 1}`);
       return {

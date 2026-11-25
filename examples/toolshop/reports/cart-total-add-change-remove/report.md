@@ -1,6 +1,6 @@
 # Cart total stays correct after add, quantity change and remove
 
-**PASS 3/3** · scenario `cart-total-add-change-remove` · run `20261125T010511Z-7186` · 2026-11-25T01:05:14Z · https://practicesoftwaretesting.com · Chromium, en-US
+**PASS 3/3** · scenario `cart-total-add-change-remove` · run `20261125T012028Z-8ed3` · 2026-11-25T01:20:31Z · https://practicesoftwaretesting.com · Chromium, en-US
 
 The tester asked: "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
 
@@ -25,7 +25,15 @@ The tester asked: "Add two different products to the cart. Change the quantity o
 - Static check G0, reference cart G1 and defects G2: PASS; defects 12/12 applicable, each detected at the expected checkpoint (on the example's stub prices).
 - G2 repeated on the products of this run (A = Combination Pliers 14.15, B = Pliers 12.01): 9/9 applicable defects detected where expected.
 - Live run G3: PASS, 3/3 repeats passed; the test is the untouched compilation of the confirmed scenario.
-- **Not available:** live controls G4 were not run (`qa-harness verify` runs them after a green G3).
+- Live controls G4: PASS.
+
+| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |
+| --- | --- | --- | --- | --- | --- | --- |
+| skew-total | caught | yes | row "Total": <tr _ngcontent-ng-c2879330868=""><td _ngcontent-ng-c2879330868="" class="col-md-5"></td><td _ngcontent-ng-c2879330868="" class="col-md-2"></td><td _ngcontent-ng-c2879330868="" class="col-md-2 text-end"><strong _ngcontent-ng-c2879330868="">Total</strong></td><td _ngcontent-ng-c2879330868="" data-test | "$42.46" (driver read "$14.16", "$26.17", "$54.47", "$42.46") | S1 | every checkpoint with a total red by exactly +$0.01 |
+| drift-price | caught | yes | GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7, first GET /carts/01m884ned9bzgkpz4vcmeawq5w | "$14.16" at S1 | S1 | first red at S1 |
+| lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted, first PUT /carts/01m884nqt32rj8nywyvn93229j/product/quantity | "$26.16" at S3 | S3 | first red at S3 |
+| lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted, first DELETE /carts/01m884nzddt7ft9aa0gxeanjb5/product/01M883FHGXWRBED9KWRWAGA10B | "$54.46" at S4 | S4 | first red at S4 |
+
 - **Not available:** the intent review and the report review are written by an agent, not by the harness; none is part of this run.
 
 ## Scope

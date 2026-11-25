@@ -119,11 +119,6 @@ export function decimalText(a: Money): string {
   return `${negative ? '-' : ''}${absC / 100n}.${(absC % 100n).toString().padStart(2, '0')}`;
 }
 
-/** The exact value as a fraction, for evidence: "5446/100" reduced to "2723/50". */
-export function exactText(a: Money): string {
-  return a.denominator === 1n ? `${a.numerator}` : `${a.numerator}/${a.denominator}`;
-}
-
 /** A displayed amount matches the exact value when |exact − displayed| ≤ half a cent (9.3). */
 export function withinHalfCent(exact: Money, displayed: Money): boolean {
   return compare(abs(sub(exact, displayed)), money(1n, 200n, exact.currency)) <= 0;
@@ -170,7 +165,7 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * Parse an amount as a page displays it, in the given format: "$1,234.50", "- $0.61", "-$0.61",
- * "1.234,50 €". With `symbol: 'optional'` a bare number such as "14.15" is accepted too.
+ * "1.234,50 €". With `symbol: 'optional'` a bare number such as "17.25" is accepted too.
  * Returns null for text that is not an amount in that currency.
  */
 export function parseAmount(raw: string, fmt: AmountFormat, opts: { symbol: 'required' | 'optional' } = { symbol: 'required' }): Money | null {

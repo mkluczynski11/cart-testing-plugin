@@ -1,6 +1,6 @@
 # Eco discount follows the share of A- or B-rated units through add, quantity change and remove
 
-**PASS 3/3** · scenario `cart-eco-threshold` · run `20261125T010538Z-fccb` · 2026-11-25T01:05:42Z · https://practicesoftwaretesting.com · Chromium, en-US
+**PASS 3/3** · scenario `cart-eco-threshold` · run `20261125T012124Z-9d5f` · 2026-11-25T01:21:26Z · https://practicesoftwaretesting.com · Chromium, en-US
 
 The tester asked: "Add a Wood Saw, then two units of the first available product. Raise the saw to three units, then remove the other product. Check after each change that the eco discount applies exactly when more than half of the units are rated A or B, and that the total is correct."
 
@@ -25,7 +25,15 @@ The tester asked: "Add a Wood Saw, then two units of the first available product
 - Static check G0, reference cart G1 and defects G2: PASS; defects 11/11 applicable, each detected at the expected checkpoint (on the example's stub prices).
 - G2 repeated on the products of this run (A = Wood Saw 12.18, B = Combination Pliers 14.15): 12/12 applicable defects detected where expected.
 - Live run G3: PASS, 3/3 repeats passed; the test is the untouched compilation of the confirmed scenario.
-- **Not available:** live controls G4 were not run (`qa-harness verify` runs them after a green G3).
+- Live controls G4: PASS.
+
+| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |
+| --- | --- | --- | --- | --- | --- | --- |
+| skew-total | caught | yes | row "Total": <tr _ngcontent-ng-c2879330868=""><td _ngcontent-ng-c2879330868="" class="col-md-5"></td><td _ngcontent-ng-c2879330868="" class="col-md-2"></td><td _ngcontent-ng-c2879330868="" class="col-md-2 text-end"><strong _ngcontent-ng-c2879330868="">Total</strong></td><td _ngcontent-ng-c2879330868="" data-test | "$34.72" (driver read "$11.58", "$40.49", "$61.61", "$34.72") | S1 | every checkpoint with a total red by exactly +$0.01 |
+| drift-price | caught | yes | GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7, first GET /carts/01m884q2j905gheyzap064y3e6 | "$11.58" at S1 | S1 | first red at S1 |
+| lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted, first PUT /carts/01m884qbft74r3xh1rrz9svm9s/product/quantity | "$40.48" at S3 | S3 | first red at S3 |
+| lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted, first DELETE /carts/01m884qjxs90bsk441wm14hqpm/product/01M883FHGRPMHEXQG54S0BY1AQ | "$61.60" at S4 | S4 | first red at S4 |
+
 - **Not available:** the intent review and the report review are written by an agent, not by the harness; none is part of this run.
 
 ## Scope

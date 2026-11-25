@@ -1,0 +1,70 @@
+<!doctype html>
+<!-- The control page of selftest (order N, 6.7): vanilla JavaScript, no framework, no build step. -->
+<html lang="de">
+<head><meta charset="utf-8"><title>Kontrollladen</title>
+<style>body{font-family:sans-serif;max-width:56rem;margin:2rem auto}li{margin:.4rem 0}dl div{display:flex;gap:1rem}dt{width:10rem}</style>
+</head>
+<body>
+<main>
+  <section><h2>Produkte</h2><ul data-qa="products"></ul></section>
+  <section><h2>Warenkorb</h2>
+    <p data-qa="cart-empty" hidden>Der Warenkorb ist leer.</p>
+    <ul data-qa="cart-lines"></ul>
+    <dl data-qa="summary"></dl>
+    <p role="status" data-qa="status"></p>
+  </section>
+</main>
+<script>
+const fmt = (d) => { const [w, c] = d.split('.'); return `${w.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${c} €`; };
+let actions = 0;
+const status = (text) => { actions += 1; document.querySelector('[data-qa="status"]').textContent = `${text} (Aktion ${actions})`; };
+const el = (tag, attrs = {}, text) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (text !== undefined) e.textContent = text; return e; };
+async function api(method, url, body) {
+  const res = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  return res;
+}
+async function renderCart() {
+  const cart = await (await api('GET', '/api/cart')).json();
+  const lines = document.querySelector('[data-qa="cart-lines"]');
+  lines.replaceChildren(...cart.items.map((i) => {
+    const li = el('li', { 'data-qa': 'cart-line' });
+    const qty = el('input', { 'data-qa': 'line-qty', type: 'number', min: '1', value: String(i.qty), 'aria-label': `Menge ${i.name}` });
+    qty.addEventListener('change', async () => {
+      const res = await api('PUT', `/api/cart/items/${i.id}`, { qty: Number(qty.value) });
+      if (res.ok) { status('Menge geändert.'); await renderCart(); } else status((await res.json()).message);
+    });
+    const remove = el('button', { 'data-qa': 'line-remove' }, 'Entfernen');
+    remove.addEventListener('click', async () => {
+      const res = await api('DELETE', `/api/cart/items/${i.id}`);
+      if (res.ok) { status('Entfernt.'); await renderCart(); } else status((await res.json()).message);
+    });
+    li.append(el('span', { 'data-qa': 'line-name' }, i.name), ' ', qty, ' ', el('span', { 'data-qa': 'line-price' }, fmt(i.price)), ' ', el('span', { 'data-qa': 'line-total' }, fmt(i.lineTotal)), ' ', remove);
+    return li;
+  }));
+  document.querySelector('[data-qa="cart-empty"]').hidden = cart.items.length > 0;
+  const row = (label, qa, value) => { const d = el('div', { 'data-qa': 'summary-row' }); d.append(el('dt', {}, label), el('dd', { 'data-qa': qa }, value)); return d; };
+  const rows = [row('Zwischensumme', 'subtotal', fmt(cart.subtotal))];
+  if (cart.discount) rows.push(row('Rabatt', 'adjustment', `-${fmt(cart.discount)}`));
+  rows.push(row('Summe', 'total', fmt(cart.total)));
+  document.querySelector('[data-qa="summary"]').replaceChildren(...rows);
+}
+async function renderProducts() {
+  const products = await (await api('GET', '/api/products')).json();
+  document.querySelector('[data-qa="products"]').replaceChildren(...products.map((p) => {
+    const li = el('li', { 'data-qa': 'product' });
+    const qty = el('input', { 'data-qa': 'product-qty', type: 'number', min: '1', value: '1', 'aria-label': `Menge ${p.name}` });
+    const add = el('button', { 'data-qa': 'product-add' }, 'In den Warenkorb');
+    if (!p.inStock) add.disabled = true;
+    add.addEventListener('click', async () => {
+      const res = await api('POST', '/api/cart/items', { productId: p.id, qty: Number(qty.value) });
+      if (res.ok) { status(`Hinzugefügt: ${p.name}.`); await renderCart(); } else status((await res.json()).message);
+    });
+    li.append(el('span', { 'data-qa': 'product-name' }, p.name), ' ', el('span', { 'data-qa': 'product-price' }, fmt(p.price)), ' ',
+      el('span', { 'data-qa': 'product-stock' }, p.inStock ? 'auf Lager' : 'nicht vorrätig'), ' ', qty, ' ', add);
+    return li;
+  }));
+}
+renderProducts().then(renderCart);
+</script>
+</body>
+</html>

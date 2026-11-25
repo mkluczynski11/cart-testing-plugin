@@ -10,6 +10,7 @@ import { files, formatOf, loadConfig, type QaConfig } from './config';
 import { stubCatalog, type ExampleFile } from './example';
 import type { Defect } from './operators';
 import type { PricingModule } from './pricing';
+import { CONTROLS, installControl, type ControlName, type NetworkLog } from './live-controls';
 import { ReferenceCart, type CatalogItem } from './reference-cart';
 import { readScenarioFile, scenarioHash, type Precondition, type PriceSource, type Scenario } from './scenario';
 import { Shopper, type FailureRecord } from './shopper';
@@ -93,6 +94,7 @@ export const test = base.extend<Options & Fixtures>({
     const setup = dry ? drySetup(root, slug, scenario) : undefined;
     let live: { browser: Browser; context: BrowserContext; page: Page } | undefined;
     let setupFailed = false;
+    let controlLog: NetworkLog | undefined;
     const attachJson = (name: string, value: unknown) => testInfo.attach(name, { body: JSON.stringify(value, null, 2), contentType: 'application/json' });
     const fail = async (f: FailureRecord) => { await attachJson('qa-failure', { ...f, url: live?.page.url() ?? null }); };
     await attachJson('qa-meta', { slug, scenarioSha256: sha, mode: dry ? 'dry' : 'live', checkpoints: scenario.checkpoints, defect: setup?.defect?.id ?? null });
@@ -105,6 +107,11 @@ export const test = base.extend<Options & Fixtures>({
         live = await openLive(playwright, config);
         const { createDriver } = loadModule<{ createDriver: DriverFactory }>(files.driver(root, config.app), 'The driver');
         driver = createDriver(live.page, { actionMs: config.timeouts.actionMs, baseURL: config.baseURL });
+        const control = process.env.QA_CONTROL as ControlName | undefined;
+        if (control) {
+          if (!CONTROLS.includes(control)) throw new InfraError(`QA_CONTROL=${control} is not a live control; use ${CONTROLS.join(', ')}.`);
+          controlLog = await installControl(live.page, control, { controls: driver.controls, totalLabel: pricing.summary.total.label, fmt });
+        }
       }
       try {
         await checkPreconditions(preconditions, driver, live?.context);
@@ -133,6 +140,7 @@ export const test = base.extend<Options & Fixtures>({
       await use(shopper);
       await shopper.finish();
     } finally {
+      if (controlLog) await attachJson('qa-control', controlLog);
       if (live) {
         const failed = setupFailed || testInfo.status !== testInfo.expectedStatus;
         await live.context.tracing.stop(failed ? { path: testInfo.outputPath('trace.zip') } : undefined).catch(() => undefined);

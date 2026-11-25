@@ -68,7 +68,7 @@ export function validateScenario(data: unknown, slug: string, constraints: Purch
       const extra = Object.keys(raw).filter((k) => !allowed.includes(k));
       if (extra.length) { v('V1', `Product ${alias} (${raw.pick}) does not take ${extra.join(', ')}; remove it.`); continue; }
       const where = raw.where === undefined ? undefined : readWhere(raw.where);
-      if (where === null) { v('V1', `Product ${alias} has a where filter that is not a mapping of attribute to a list of values, e.g. { co2_rating: [A, B] }.`); continue; }
+      if (where === null) { v('V1', `Product ${alias} has a where filter that is not a mapping of attribute to a list of values, e.g. { energy_class: [A, B] }.`); continue; }
       if (raw.pick === 'by-name') {
         if (!isText(raw.name)) { v('V1', `Product ${alias} with by-name needs name: "<product name>".`); continue; }
         products[alias] = { pick: 'by-name', name: raw.name };

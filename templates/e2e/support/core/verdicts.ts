@@ -13,10 +13,6 @@ export type Verdict = (typeof VERDICTS)[number];
 /** Positive verdicts: PASS from the harness; INTENT_OK and VERIFIED from agents. Only these exit 0. */
 export const POSITIVE: ReadonlySet<Verdict> = new Set<Verdict>(['PASS', 'INTENT_OK', 'VERIFIED']);
 
-export function isVerdict(x: string): x is Verdict {
-  return (VERDICTS as readonly string[]).includes(x);
-}
-
 /** Who reacts to a verdict that has several possible owners, by the evidence recorded (6.3). */
 export type Routing = { verdict: 'CONTROL_MISSED' | 'FLAKY'; evidence: string; route: string };
 

@@ -90,10 +90,6 @@ export class Ledger {
     this.state = applyAction(this.state, a);
   }
 
-  quantity(name: string): number | undefined {
-    return this.state.get(name);
-  }
-
   snapshot(): LedgerSnapshot {
     const lines = [...this.state].map(([name, qty]) => {
       const f = this.facts.get(name);

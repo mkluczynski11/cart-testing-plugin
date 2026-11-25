@@ -1,17 +1,17 @@
 {
   "meta": {
-    "runId": "20261125T010511Z-7186",
+    "runId": "20261125T012028Z-8ed3",
     "slug": "cart-total-add-change-remove",
     "scenarioSha256": "8be11fbd3da03858e77291ce6ead958b5e2314386b4d5da52cd278987d83e4be",
     "testSha256": "207ddd82b4c716a72603cd4ad4240e529a065728543eed551172ff20055ede56",
     "testOrigin": "compiled",
-    "timestamp": "2026-11-25T01:05:14Z",
+    "timestamp": "2026-11-25T01:20:31Z",
     "baseURL": "https://practicesoftwaretesting.com",
     "browser": "chromium",
     "locale": "en-US",
     "priceSource": "ui",
     "pluginVersion": "0.1.0",
-    "gitSha": "c44aa6d",
+    "gitSha": "a1737a6",
     "mode": "live",
     "defect": null,
     "checkpoints": [
@@ -76,7 +76,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 356,
+          "elapsedMs": 878,
           "screenshot": "S1.png"
         },
         {
@@ -146,7 +146,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 234,
+          "elapsedMs": 235,
           "screenshot": "S2.png"
         },
         {
@@ -215,8 +215,8 @@
             }
           },
           "result": "pass",
-          "reads": 28,
-          "elapsedMs": 138,
+          "reads": 26,
+          "elapsedMs": 119,
           "screenshot": "S3.png"
         },
         {
@@ -265,12 +265,12 @@
             }
           },
           "result": "pass",
-          "reads": 31,
-          "elapsedMs": 152,
+          "reads": 25,
+          "elapsedMs": 114,
           "screenshot": "S4.png"
         }
       ],
-      "durationMs": 7673
+      "durationMs": 5949
     },
     {
       "n": 2,
@@ -325,7 +325,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 375,
+          "elapsedMs": 372,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S1.png"
         },
         {
@@ -395,7 +395,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 908,
+          "elapsedMs": 237,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S2.png"
         },
         {
@@ -464,8 +464,8 @@
             }
           },
           "result": "pass",
-          "reads": 8,
-          "elapsedMs": 136,
+          "reads": 23,
+          "elapsedMs": 117,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S3.png"
         },
         {
@@ -514,12 +514,12 @@
             }
           },
           "result": "pass",
-          "reads": 12,
-          "elapsedMs": 184,
+          "reads": 28,
+          "elapsedMs": 125,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S4.png"
         }
       ],
-      "durationMs": 7043
+      "durationMs": 5406
     },
     {
       "n": 3,
@@ -574,7 +574,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 374,
+          "elapsedMs": 275,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S1.png"
         },
         {
@@ -644,7 +644,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 237,
+          "elapsedMs": 239,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S2.png"
         },
         {
@@ -713,8 +713,8 @@
             }
           },
           "result": "pass",
-          "reads": 24,
-          "elapsedMs": 134,
+          "reads": 21,
+          "elapsedMs": 115,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S3.png"
         },
         {
@@ -763,12 +763,12 @@
             }
           },
           "result": "pass",
-          "reads": 29,
-          "elapsedMs": 136,
+          "reads": 22,
+          "elapsedMs": 114,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S4.png"
         }
       ],
-      "durationMs": 6298
+      "durationMs": 5292
     }
   ],
   "errors": []

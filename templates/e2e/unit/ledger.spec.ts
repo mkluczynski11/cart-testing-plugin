@@ -17,9 +17,9 @@ test('remove of a product not in the cart breaks V4', () => expect(checkAction(s
 
 test('the ledger total applies the rules to the bound prices', () => {
   const ledger = new Ledger([GREEN], 'USD');
-  ledger.bind({ name: 'Green Lamp', unitPrice: fromDecimal('12.18', 'USD'), inStock: true, attrs: { energy_class: 'B' } });
+  ledger.bind({ name: 'Green Lamp', unitPrice: fromDecimal('13.98', 'USD'), inStock: true, attrs: { energy_class: 'B' } });
   ledger.apply({ do: 'add', key: 'Green Lamp', qty: 1 });
-  expect(decimalText(ledger.snapshot().total)).toBe('11.57');
+  expect(decimalText(ledger.snapshot().total)).toBe('13.28');
 });
 
 test('a unit price is fixed at the first add', () => {

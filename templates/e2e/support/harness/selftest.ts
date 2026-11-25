@@ -18,6 +18,8 @@ import { example } from './example';
 import { dryRun, exampleCatalog, exampleProducts, gateG1, gateG2 } from './gates';
 import { manifestChanges } from './manifest';
 import { run } from './run';
+import { startControlApp } from './control-app/server';
+import { verify } from './verify';
 import { deriveDefects } from '../core/operators';
 
 export const FIXTURES = path.join(__dirname, 'fixtures');
@@ -65,6 +67,65 @@ export function prepare(root: string, slug: string): string {
 }
 
 export type Row = { area: string; run: () => Promise<string> };
+
+const CONTROL_APP = path.join(__dirname, 'control-app');
+
+/** Copy a control-app source into a root's app/, pointing its core imports at <root>/support/core. */
+function installAppFile(root: string, source: string, target: string, transform: (s: string) => string = (s) => s): void {
+  const text = fs.readFileSync(path.join(CONTROL_APP, source), 'utf8').replace(/'\.\.\/\.\.\/core\//g, "'../support/core/");
+  fs.writeFileSync(path.join(root, 'app', target), transform(text));
+}
+
+/** The wrong driver as one file: the correct driver renamed, then the wrapper that reads the subtotal as the total. */
+function wrongDriver(correct: string): string {
+  const wrapper = fs.readFileSync(path.join(CONTROL_APP, 'control-wrong.driver.ts'), 'utf8')
+    .split('\n').filter((l) => !l.startsWith('import ')).join('\n')
+    .replace('createCorrect(', 'createCorrectDriver(');
+  return correct.replace('export function createDriver(', 'function createCorrectDriver(') + '\n' + wrapper;
+}
+
+/** A root for the control page at `url`, with the correct or the wrong driver and its own config. */
+function controlRoot(name: string, url: string, wrong: boolean): string {
+  const root = path.join(packageRoot(), 'reports', 'selftest', 'runs', name);
+  fs.rmSync(root, { recursive: true, force: true });
+  for (const d of ['specs', 'tests', 'app']) fs.mkdirSync(path.join(root, d), { recursive: true });
+  fs.symlinkSync(path.join(packageRoot(), 'support'), path.join(root, 'support'), 'dir');
+  installAppFile(root, 'control.pricing.ts', 'control.pricing.ts');
+  installAppFile(root, 'control.driver.ts', 'control.driver.ts', wrong ? wrongDriver : undefined);
+  for (const slug of ['control-equal', 'control-discount']) fs.copyFileSync(path.join(CONTROL_APP, `${slug}.md`), files.scenario(root, slug));
+  const config = { app: 'control', baseURL: url, testIdAttribute: 'data-qa', locale: 'de-DE', currency: 'EUR', repeat: 1, pickLimit: 10,
+    timeouts: { probeMs: 2000, actionMs: 5000, settleMs: 1000, testMs: 60000 } };
+  fs.writeFileSync(path.join(root, 'qa.config.json'), JSON.stringify(config, null, 2));
+  return root;
+}
+
+type Facts = Array<{ control: string; result: string; evidence?: string }>;
+
+export const CONTROL_PAGE: Row = {
+  area: 'control page',
+  run: async () => {
+    const app = await startControlApp();
+    try {
+      const good = controlRoot('control-correct', app.url, false);
+      prepare(good, 'control-equal');
+      const v = await verify(good, 'control-equal');
+      const facts = (v.data?.controls ?? []) as Facts;
+      check(v.verdict === 'PASS' && facts.every((c) => c.result === 'caught'), `the correct driver: ${v.verdict}; ${facts.map((c) => `${c.control} ${c.result}`).join(', ')} | ${v.lines.slice(1, 4).join(' | ')}`);
+      const bad = controlRoot('control-wrong', app.url, true);
+      prepare(bad, 'control-equal');
+      prepare(bad, 'control-discount');
+      const w = await verify(bad, 'control-equal');
+      const skew = ((w.data?.controls ?? []) as Facts).find((c) => c.control === 'skew-total');
+      check(w.verdict === 'CONTROL_MISSED' && skew?.evidence === 'active-shown-green', `the wrong driver with equal values: ${w.verdict}, skew-total ${skew?.result} (${skew?.evidence}) | ${w.lines.slice(1, 5).join(' | ')}`);
+      const d = await run(bad, 'control-discount', false);
+      const rec = JSON.parse(fs.readFileSync(path.join(files.runs(bad, 'control-discount'), d.data?.runId as string, 'run.json'), 'utf8')) as { repeats: Array<{ checkpoints: Array<{ layer?: string }> }> };
+      check(d.verdict === 'LOCATOR_FAIL' && rec.repeats[0]?.checkpoints[0]?.layer === 'labels', `the wrong driver with a discount: ${d.verdict}, layer ${rec.repeats[0]?.checkpoints[0]?.layer}`);
+      return 'correct driver passes G3 and G4 (4/4 controls); wrong driver passes G3 on equal values, G4 CONTROL_MISSED "control active, test green"; with a discount LOCATOR_FAIL at the label layer';
+    } finally {
+      await app.stop();
+    }
+  },
+};
 
 /** Load a workspace scenario or fail the row. */
 function loadedOf(root: string, slug: string): Loaded {
@@ -209,6 +270,7 @@ const ROWS: Row[] = [
       return 'unreachable address INFRA_FAIL; PreconditionError PRECONDITION_FAIL; zero tests NO_TESTS_RUN; action failure after a red checkpoint ORACLE_MISMATCH';
     },
   },
+  CONTROL_PAGE,
   {
     area: 'parallelism',
     run: async () => {

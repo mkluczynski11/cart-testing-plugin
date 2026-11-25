@@ -25,7 +25,7 @@ const fiveFixed: PricingRule = { ...tenOff, id: 'five', amount: { fixed: '5.00' 
 
 test('a percentage of the subtotal ignores earlier adjustments', () => expect(totalOf([fiveFixed, tenOff], '100')).toBe('85.00'));
 test('a percentage of the running value follows earlier adjustments', () => expect(totalOf([fiveFixed, tenRunning], '100')).toBe('85.50'));
-test('rules apply in file order on exact values', () => expect(applyRules([GREEN], usd('12.18'), [rated(1, 'B')]).total).toEqual(fromDecimal('11.571', 'USD')));
+test('rules apply in file order on exact values', () => expect(applyRules([GREEN], usd('13.98'), [rated(1, 'B')]).total).toEqual(fromDecimal('13.281', 'USD')));
 test('rule-never removes a rule in force', () => expect(totalOf([tenOff], '100', undefined, { rule: 'ten', kind: 'never' })).toBe('100.00'));
 test('rule-always applies a rule not in force', () => expect(totalOf([GREEN], '100', [rated(1, 'D')], { rule: 'green-discount', kind: 'always' })).toBe('95.00'));
 test('the doubled rate deducts twice the percentage', () => expect(totalOf([tenOff], '100', undefined, { rule: 'ten', kind: 'double-rate' })).toBe('80.00'));

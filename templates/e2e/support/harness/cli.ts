@@ -13,6 +13,7 @@ import { need } from './need';
 import { report } from './report';
 import { run } from './run';
 import { selftest } from './selftest';
+import { verify } from './verify';
 
 const HELP: Array<[string, string]> = [
   ['doctor [--write-manifest]', 'check the environment, file integrity and the driver'],
@@ -22,6 +23,7 @@ const HELP: Array<[string, string]> = [
   ['need <slug>', 'name the actions, attributes and bindings the driver is missing'],
   ['defects list|check <slug>', 'list the default defects; admit or reject specs/<slug>.defects.json'],
   ['run <slug> [--dry] [--repair driver|test]', 'gates G0–G2 on the reference cart, or G0–G3 live'],
+  ['verify <slug>', 'gates G0–G4: the live run and the live controls, in a new run directory'],
   ['report <slug> [--promote <runId>]', 'write report.md of the latest run; --promote puts a run in the repo'],
 ];
 
@@ -74,6 +76,7 @@ async function main(argv: string[]): Promise<CommandResult> {
       if (repair !== undefined && repair !== 'driver' && repair !== 'test') return usage('--repair takes driver or test.');
       return run(root, s, { dry, repair });
     }
+    case 'verify': { const s = needSlug(); return s ? verify(root, s) : usage('verify needs one scenario slug.'); }
     case 'report': { const s = needSlug(); return s ? report(root, s, promote) : usage('report needs one scenario slug.'); }
     default: return usage(`Unknown subcommand "${command}".`);
   }

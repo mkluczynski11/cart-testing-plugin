@@ -1,15 +1,16 @@
 {
-  "runId": "20261125T010538Z-fccb",
+  "runId": "20261125T012124Z-9d5f",
   "slug": "cart-eco-threshold",
   "scenarioSha256": "f5ce2ce0910463f9fe94abdf243fee6651770f4d56c23a64e9ce12281feb5cf1",
   "rulesSha256": "70f0378857ffcfb424e3ade87f132726d36f99ef12eed20d39a2eb933a132274",
   "testSha256": "e99e9ce77966d895c511d4ca595d17054e892398b8a28715862ec6361bca08b9",
-  "driverSha256": "56e9c54d500447a0bd13ac3b263bb3b8cfe630fe2c3b679c6577e37afe9d8d1b",
+  "driverSha256": "e923ddbf526d415666eaf9360675134f39fb1ad6b831ac099440e063fdbbfaa5",
   "testOrigin": "compiled",
   "gates": {
     "dry": "PASS",
     "G3": "PASS",
-    "G2live": "PASS"
+    "G2live": "PASS",
+    "G4": "PASS"
   },
   "defects": [
     {
@@ -232,5 +233,43 @@
       }
     ],
     "products": "A = Wood Saw 12.18, B = Combination Pliers 14.15"
-  }
+  },
+  "controls": [
+    {
+      "control": "skew-total",
+      "result": "caught",
+      "activated": true,
+      "target": "row \"Total\": <tr _ngcontent-ng-c2879330868=\"\"><td _ngcontent-ng-c2879330868=\"\" class=\"col-md-5\"></td><td _ngcontent-ng-c2879330868=\"\" class=\"col-md-2\"></td><td _ngcontent-ng-c2879330868=\"\" class=\"col-md-2 text-end\"><strong _ngcontent-ng-c2879330868=\"\">Total</strong></td><td _ngcontent-ng-c2879330868=\"\" data-test",
+      "shownAtRead": "\"$34.72\" (driver read \"$11.58\", \"$40.49\", \"$61.61\", \"$34.72\")",
+      "reactedAt": "S1",
+      "expected": "every checkpoint with a total red by exactly +$0.01"
+    },
+    {
+      "control": "drift-price",
+      "result": "caught",
+      "activated": true,
+      "target": "GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7, first GET /carts/01m884q2j905gheyzap064y3e6",
+      "shownAtRead": "\"$11.58\" at S1",
+      "reactedAt": "S1",
+      "expected": "first red at S1"
+    },
+    {
+      "control": "lost-update",
+      "result": "caught",
+      "activated": true,
+      "target": "PUT **/carts/*/product/quantity: 1 request(s) intercepted, first PUT /carts/01m884qbft74r3xh1rrz9svm9s/product/quantity",
+      "shownAtRead": "\"$40.48\" at S3",
+      "reactedAt": "S3",
+      "expected": "first red at S3"
+    },
+    {
+      "control": "lost-remove",
+      "result": "caught",
+      "activated": true,
+      "target": "DELETE **/carts/*/product/*: 1 request(s) intercepted, first DELETE /carts/01m884qjxs90bsk441wm14hqpm/product/01M883FHGRPMHEXQG54S0BY1AQ",
+      "shownAtRead": "\"$61.60\" at S4",
+      "reactedAt": "S4",
+      "expected": "first red at S4"
+    }
+  ]
 }

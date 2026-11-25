@@ -253,3 +253,111 @@ Choices:
 - `doctor` checks the driver's interface at run time (methods, `controls`, `provides.attrs`) on a driver created
   with a page that throws on any access; the static type check is `npm run typecheck:toolshop` (tsc), not part of
   `doctor`, to keep it fast and independent of a root's tsconfig.
+
+## Stage 4 — runs and evidence (6.1, 8.5)
+
+Started `Wed Nov 25 01:02:20 UTC 2026`, committed `a1737a6` at 01:11 UTC.
+
+Built:
+- `support/core/reporter.ts`: a Playwright reporter that writes `run.json` (8.5: `meta`, `verdict`, `repeats` with
+  every checkpoint, the failure record `error: { step, kind, message, url, rawTotal }`, raw text of every amount) on
+  `onBegin`, every `onTestEnd`, `onError` and `onEnd`; a timed-out repeat gets an `INFRA_FAIL` record with the last
+  step. The first repeat's full-page screenshots are copied next to it as `<step>.png`. `classification.ts` (core)
+  holds the run record types and the 6.1 classification shared by the reporter and the harness.
+- Run directories `reports/<slug>/runs/<YYYYMMDDTHHMMSSZ-xxxx>/` created with an exclusive `mkdir`; the lock
+  `reports/<slug>/.lock` (exclusive create, stale after 10 minutes) guards `attempts.json` and promotion. The
+  Playwright HTML report goes to `runs/<runId>/html/` with `open: 'never'`; a trace only for a failed repeat.
+- `run <slug>`: G0–G2 dry, the address probe (`INFRA_FAIL` before any browser), G3 with `repeat` repeats and the
+  6.1 classification (`INFRA_FAIL`, first failed step, `FLAKY`, `NO_TESTS_RUN`), then G2 again on the products the
+  live run read (order 6.6, last bullet); `verification.json`, the final verdict in `run.json`, and `report.md` in
+  the run directory. `run <slug> --repair driver|test` with `attempts.json` (R9).
+- `report <slug>` writes `report.md` for the latest run and prints the 11.2 readback; `report <slug> --promote
+  <runId>` builds the complete set in `reports/<slug>/.promote-<runId>/`, moves the previous set aside, renames
+  the new files into place and removes the old ones, under the lock.
+- `report.md`: verdict line, products with alias, price and attributes, the step table (expected, its composition,
+  the displayed raw text, the row read, the result, the screenshot), what failed, the evidence that exists and the
+  evidence that does not, scope (did the total differ from the subtotal and every line), scenario gaps with hints,
+  rules with provenance and where they were in force, the rerun command from the repo root, how to read a failure.
+- `examples/toolshop/specs/cart-eco-threshold.md` as ordered (A by-name "Wood Saw", B first-available).
+
+Live checks (invocations 6 and 7):
+
+```text
+Run 20261125T010511Z-7186 of cart-total-add-change-remove
+G0 ok: no forbidden pattern; the test is the untouched compilation of the confirmed scenario
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+G2 13 defects: 12 detected where expected, 0 late, 0 missed, 1 not applicable
+G3 live, 3 repeat(s) on https://practicesoftwaretesting.com: 3/3 pass; 3/3 repeats ended PASS
+   products: Combination Pliers ($14.15, co2_rating D) · Pliers ($12.01, co2_rating D)
+   S1   add Combination Pliers, 1 unit         expected $14.15    displayed "$14.15" in row "Total"  pass
+   S2   add Pliers, 1 unit                     expected $26.16    displayed "$26.16" in row "Total"  pass
+   S3   set quantity of Combination Pliers to 3 expected $54.46    displayed "$54.46" in row "Total"  pass
+   S4   remove Pliers                          expected $42.45    displayed "$42.45" in row "Total"  pass
+G2 again on the products of this run: 13 defects: 9 detected where expected, 0 late, 0 missed, 4 not applicable
+Evidence: reports/cart-total-add-change-remove/runs/20261125T010511Z-7186/
+VERDICT: PASS
+Run 20261125T010538Z-fccb of cart-eco-threshold
+G0 ok: no forbidden pattern; the test is the untouched compilation of the confirmed scenario
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+G2 13 defects: 11 detected where expected, 0 late, 0 missed, 2 not applicable
+G3 live, 3 repeat(s) on https://practicesoftwaretesting.com: 3/3 pass; 3/3 repeats ended PASS
+   products: Wood Saw ($12.18, co2_rating B) · Combination Pliers ($14.15, co2_rating D)
+   S1   add Wood Saw, 1 unit                   expected $11.57    displayed "$11.57" in row "Total"  pass
+   S2   add Combination Pliers, 2 units        expected $40.48    displayed "$40.48" in row "Total"  pass
+   S3   set quantity of Wood Saw to 3          expected $61.60    displayed "$61.60" in row "Total"  pass
+   S4   remove Combination Pliers              expected $34.71    displayed "$34.71" in row "Total"  pass
+G2 again on the products of this run: 13 defects: 12 detected where expected, 0 late, 0 missed, 1 not applicable
+Evidence: reports/cart-eco-threshold/runs/20261125T010538Z-fccb/
+VERDICT: PASS
+```
+
+Promotion (shortened to the last lines; both before and after a fix of the rerun line, see deviations):
+
+```text
+$ npm run qa:toolshop -- report cart-total-add-change-remove --promote 20261125T010511Z-7186
+PASS 3/3 · run 20261125T010511Z-7186
+S1   add Combination Pliers, 1 unit         $14.15    "$14.15"   match
+S2   add Pliers, 1 unit                     $26.16    "$26.16"   match
+S3   set quantity of Combination Pliers to 3 $54.46    "$54.46"   match
+S4   remove Pliers                          $42.45    "$42.45"   match
+Scenario gaps: 4 (see report.md)
+Rerun: cd templates/e2e && npm run qa -- run cart-total-add-change-remove --root ../../examples/toolshop
+Promoted run 20261125T010511Z-7186 to reports/cart-total-add-change-remove/: report.md, run.json, verification.json, screens/ (4).
+VERDICT: PASS
+$ npm run qa:toolshop -- report cart-eco-threshold --promote 20261125T010538Z-fccb
+PASS 3/3 · run 20261125T010538Z-fccb
+S1   add Wood Saw, 1 unit                   $11.57    "$11.57"   match
+S2   add Combination Pliers, 2 units        $40.48    "$40.48"   match
+S3   set quantity of Wood Saw to 3          $61.60    "$61.60"   match
+S4   remove Combination Pliers              $34.71    "$34.71"   match
+Scenario gaps: 1 (see report.md)
+Rerun: cd templates/e2e && npm run qa -- run cart-eco-threshold --root ../../examples/toolshop
+Promoted run 20261125T010538Z-fccb to reports/cart-eco-threshold/: report.md, run.json, verification.json, screens/ (4).
+VERDICT: PASS
+```
+
+The eco scenario shows the discount on, off, on, on as ordered: 1 of 1, 1 of 3, 3 of 5, 3 of 3 units rated A or B.
+On the live prices `round-down` becomes applicable and is detected (12/12); in the first scenario the two products
+are rated D, so the eco rule is never in force live and four rule defects are scenario gaps there.
+R15: a search of the promoted files for cookie, authorization, set-cookie, bearer and token finds nothing.
+
+Repair attempts (dry, temporary root):
+
+```text
+Run 20261125T011033Z-b37e of cart-total-add-change-remove (dry: …), repair attempt 1
+VERDICT: DEFECT_LATE
+The test is unchanged since repair attempt 1 (sha256 084927a82c7c…); change the premise before another run.
+VERDICT: RETRY_REFUSED
+Run 20261125T011036Z-9e5c of cart-total-add-change-remove (dry: …), repair attempt 2
+VERDICT: DEFECT_LATE
+2 repair attempts of cart-total-add-change-remove are recorded, the limit; the last ended DEFECT_LATE (run 20261125T011036Z-9e5c). Hand the matter to the tester.
+VERDICT: LIMIT_REACHED
+```
+
+Deviations and choices:
+- `report.md` is written by `run` into every run directory and regenerated at promotion with links into
+  `screens/`; `report <slug>` without `--promote` rewrites it for the latest run.
+- Promotion moves the previous tracked set into `.previous-<runId>/` and renames the new files in one by one under
+  the lock, rather than one directory rename: the tracked files sit directly in `reports/<slug>/` next to the
+  untracked `runs/`, so a single rename of the set is not possible without changing the layout of 8.5.
+- `attempts.json` limit: two repair runs per scenario; the third request is `LIMIT_REACHED` (order 6.5).

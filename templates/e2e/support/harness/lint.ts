@@ -79,7 +79,13 @@ export function lintTest(file: string, text: string): LintViolation[] {
     v(st, `a top-level statement other than test.use(…) and one test(…) (${callee ? 'call' : st.type})`);
   }
   if (tests !== 1) v(1, `exactly one test(…) is allowed, found ${tests}`);
+  // The test title is the scenario's title, a description and never an expected value.
+  const titles = new Set<Node>();
   walk(ast, (n) => {
+    if (n.type === 'CallExpression' && name(child(n, 'callee')) === 'test') titles.add((n.arguments as Node[])[0]);
+  });
+  walk(ast, (n) => {
+    if (titles.has(n)) return;
     const id = name(n);
     if (id && ['expect', 'page', 'process', 'require', 'eval'].includes(id)) v(n, `forbidden identifier ${id}`);
     if (n.type === 'CallExpression') {
