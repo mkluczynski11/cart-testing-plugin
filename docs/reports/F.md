@@ -269,7 +269,9 @@ Fix:
   finding; a text that is not an amount is reported in the layer of the field read (total, subtotal, adjustments,
   unit price, line total), the layer names of design 9.1.
 - N2: `examples/toolshop/lab/driver.live.spec.ts` `?? ''` instead of `!`. N3: `run.json` `meta.gitDirty` (uncommitted
-  changes to tracked files when the run started) next to `gitSha`.
+  changes or new files when the run started) next to `gitSha`. (First cut ignored untracked files; stage 6 showed
+  `gitDirty: false` for a run whose test was not yet committed. Test "an uncommitted new file (a test not yet added)
+  also makes the tree dirty" red — `Expected: true Received: false` — then fixed by dropping `--untracked-files=no`.)
 
 After the fix: `181 passed`.
 
@@ -356,3 +358,68 @@ After the fix: unit tests `187 passed`; checks green (selftest 13/13, 77.6 s).
 | R1 a tester concern through --risk (not in design 14.1) | PASS | 18 | $0.31 | 66 s |
 
 14 of 14 pass, $2.99 in all. A4 now checks the intent review through the harness subcommand (`qa-harness intent` PASS). No case needed a second run.
+
+## Stage 6 — live regression and the examples
+
+`date -u`: `Wed Nov 25 10:03:45 UTC 2026` (minute 25; started while the stage 5 evals ran, the earliest point at
+which the plugin was final; no live call overlapped another).
+
+One fresh scratch repo `shop` under the session's scratch directory (outside the worktree), `git init`; sessions as
+order D ran them (`claude -p "<prompt>" --plugin-dir <worktree> --permission-mode auto --max-turns <n> --output-format
+json`), default model. Commits in the scratch repo: `28b2b96` (after setup), `d2d7ccc` (both verified tests).
+
+| # | Step | Session / command | Outcome |
+| --- | --- | --- | --- |
+| 1 | setup | L1 `/qa:setup toolshop https://practicesoftwaretesting.com` | `VERDICT: PASS`; `e2e/` 83 template files, starter pack 3 files, `qa.config.json` with `browserAllowedOrigins: ["https://api.practicesoftwaretesting.com"]`, selftest passed |
+| 2 | first request | L2 `/qa:new-test "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change." --yes` | **`INFRA_FAIL`**: scenario `two-products-qty-remove` confirmed, intent `INTENT_OK`, compiled, dry `PASS` (12/13), live run `20261125T100655Z-d54e` 0/3: repeat 1 `LOCATOR_FAIL` at S2 (no `POST /carts/…` answer within 10 s), repeats 2 and 3 the driver's own `InfraError` "candidates: the application's API did not answer the product listing within 10000 ms". The flow stopped, no promotion. |
+| 2b | resumed once | L2b `/qa:new-test two-products-qty-remove --yes` | **`VERIFIED`**: run `20261125T101701Z-14e0` `PASS` 3/3, `verify` `20261125T101730Z-29d4` G4 4/4 caught, `review.md` `VERIFIED`, promoted. Readback: `PASS 3/3 · test verified`; S1 $14.15, S2 $26.16, S3 $54.46, S4 $42.45; defects 9/9 applicable (live pass); gaps from the live pass (4). |
+| 3 | eco request | L3 `/qa:new-test "Add a Wood Saw, then two units of the first available product. Raise the saw to three units, then remove the other product. Check the total after each change." --yes` | **`VERIFIED`**: `wood-saw-qty-remove-other`, Wood Saw $12.18 (co2 B) · Combination Pliers $14.15 (co2 D); S1 $11.57, S2 $40.48, S3 $61.60, S4 $34.71; "eco-discount … in force at S1, S3, S4"; at S2 the total equals the subtotal (share of eco units 1/3); "At S1, S3, S4 it differed from the subtotal and from every line total"; defects 12/12, controls 4/4. |
+| 4 | refused promotion | `qa-harness report two-products-qty-remove --promote 20261125T100647Z-9190` (the dry run of 2), from the scratch repo root | "Run 20261125T100647Z-9190 of two-products-qty-remove was not promoted: it is a dry run (gates G0–G2 on the reference cart); only a live run verified through G4 is promoted." / "The tracked files in reports/two-products-qty-remove/ are unchanged." `VERDICT: NO_TESTS_RUN`, exit 1; set hash `d7c197330069` before and after |
+| 5 | clone, no Claude Code | `git clone`, `npm ci` in `e2e/` (0 vulnerabilities); from the clone root `cd e2e && npm run qa -- run two-products-qty-remove` and `… run wood-saw-qty-remove-other` (the readbacks' rerun lines verbatim); in `e2e/` `npm run qa -- verify <slug>` for both | all four `VERDICT: PASS`, exit 0: G3 3/3 each; G2 again 9/0/0/4 and 12/0/0/1; G4 "4 caught, 0 missed, 0 not applicable, 0 not bound" for both (skew-total S1, drift-price S1, lost-update S3, lost-remove S4) |
+| 6 | broken locator | `getByTestId('product-quantity')` → `'product-qty'` in `setQuantity` of the scratch driver (wrapped by `onLocator`, not committed), then L4 `/qa:triage two-products-qty-remove` | **as expected**: `run` `20261125T102537Z-1334` `LOCATOR_FAIL` 3/3 at S3 `setQuantity("Combination Pliers", 3)`; `app-mapper` (sonnet) read the live cart page through `mcp__plugin_qa_browser__*` (navigate, evaluate, click, find), found `INPUT[data-test="product-quantity"]`, restored the line and added a dated note to the map; `qa-harness run two-products-qty-remove --repair driver` → `20261125T102716Z-76ac` `PASS` 3/3; `attempts.json` moved into that run directory (episode closed, stage 4). `git status`: only `e2e/app/toolshop.map.md`; the driver is back to its committed bytes; scenario and test untouched. |
+
+Step 2 ended `INFRA_FAIL` and was resumed once, with the resumption form of the same command that the session's own
+answer named (`/qa:new-test <slug> --yes`; the skill's resuming table starts at step 4 for a confirmed scenario with a
+current intent review). Before the resume the API answered a plain request in 0.19 s. Not retried otherwise.
+
+Live invocations against https://practicesoftwaretesting.com: **12 of 12**, headless, one at a time.
+
+| # | UTC | Invocation | Result |
+| --- | --- | --- | --- |
+| 1 | 10:06:55 | L2 `run` | `INFRA_FAIL` (API listing unanswered in 2 of 3 repeats) |
+| 2 | 10:17:01 | L2b `run` | `PASS` 3/3 |
+| 3 | 10:17:30 | L2b `verify` | `PASS`, G4 4/4 |
+| 4 | 10:20:12 | L3 `run` | `PASS` 3/3 |
+| 5 | 10:20:38 | L3 `verify` | `PASS`, G4 4/4 |
+| 6 | 10:22:36 | clone `run two-products-qty-remove` | `PASS` 3/3 |
+| 7 | 10:22:56 | clone `run wood-saw-qty-remove-other` | `PASS` 3/3 |
+| 8 | 10:23:23 | clone `verify two-products-qty-remove` | `PASS`, G4 4/4 |
+| 9 | 10:24:19 | clone `verify wood-saw-qty-remove-other` | `PASS`, G4 4/4 |
+| 10 | 10:25:37 | L4 `run` (broken locator) | `LOCATOR_FAIL` 3/3 at S3 |
+| 11 | 10:26:40–10:27:14 | L4 `app-mapper` browser session (Playwright MCP) | locator found |
+| 12 | 10:27:16 | L4 `run --repair driver` | `PASS` 3/3 |
+
+(The dry runs inside the flow use no browser and no live site.)
+
+### The examples
+
+`examples/toolshop/` rebuilt from the scratch repo at `d2d7ccc` (before the locator was broken):
+
+- removed: `specs/`, `tests/` and `reports/` of order N's `cart-total-add-change-remove` and `cart-eco-threshold`;
+  `docs/evidence/d-flow/` (replaced by this);
+- `specs/`: `two-products-qty-remove.{md,example.json,intent.md}`, `wood-saw-qty-remove-other.{md,example.json,intent.md}`;
+- `tests/`: the two compiled tests;
+- `reports/<slug>/`: the promoted set (`report.md`, `run.json`, `verification.json`, `review.md`, `screens/S1–S4.png`)
+  and `readback.txt`, the final answer of L2b and L3;
+- `app/`: as installed, byte-identical to the starter pack (so nothing changed there); kept `qa.config.json` (now with
+  `browserAllowedOrigins`), `tsconfig.json`, the `support` link and `lab/`.
+- The Playwright HTML report of the promoted run of 2 (532 KB, no trace — the run passed, so tracing kept nothing — no
+  cookie or header value) was **not** copied: its embedded data holds 12 absolute local paths (the checkpoint
+  attachments' `screenshot` field points into the machine's scratch directory, which carries the home folder name), so it
+  would put a local path into the repo, against R15's intent. It stays in `runs/<runId>/html/`.
+
+Checks: `npm run typecheck:toolshop` exit 0; `npm run qa:toolshop -- doctor` `VERDICT: PASS` (with the note that no
+TypeScript compiler is installed for that root); `run two-products-qty-remove --dry` `PASS` (12/0/0/1) and `run
+wood-saw-qty-remove-other --dry` `PASS` (11/0/0/2) from the plugin repo; R15 search (`/Users/`, cookie,
+authorization, bearer, set-cookie, x-api-key, token, the user name, `private/tmp`) over `examples/` and `docs/`: hits only
+in the prose of the design, the orders and earlier reports, none in `examples/`.

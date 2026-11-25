@@ -18,7 +18,7 @@ export type RunMeta = {
   priceSource: string;
   pluginVersion: string;
   gitSha: string | null;
-  gitDirty: boolean | null;  // uncommitted changes in the tree when the run started: gitSha alone does not name the code
+  gitDirty: boolean | null;  // uncommitted changes or new files when the run started: gitSha alone does not name the code
   mode: 'dry' | 'live';
   defect: string | null;
 };

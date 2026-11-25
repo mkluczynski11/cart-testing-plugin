@@ -18,3 +18,16 @@ test('the git state of a run records a dirty tree next to the commit', () => {
   fs.writeFileSync(path.join(dir, 'driver.ts'), 'two\n');
   expect(gitState(dir).dirty).toBe(true);
 });
+
+test('an uncommitted new file (a test not yet added) also makes the tree dirty', () => {
+  const dir = path.join(packageRoot(), 'reports', 'selftest', 'runs', 'unit-git-untracked');
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.email=unit@example.invalid', '-c', 'user.name=unit', ...args], { cwd: dir });
+  git('init', '-q');
+  fs.writeFileSync(path.join(dir, 'driver.ts'), 'one\n');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'one');
+  fs.writeFileSync(path.join(dir, 'new.spec.ts'), 'test\n');
+  expect(gitState(dir).dirty).toBe(true);
+});

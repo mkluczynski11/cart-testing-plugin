@@ -19,11 +19,11 @@ function jsonAttachments<T>(result: TestResult, name: string): T[] {
   return result.attachments.filter((a) => a.name === name && a.body).map((a) => JSON.parse((a.body as Buffer).toString('utf8')) as T);
 }
 
-/** The commit the root is on and whether its tree had uncommitted changes when the run started (report V N3). */
+/** The commit the root is on and whether its tree had uncommitted changes, new files included, when the run started (report V N3). */
 export function gitState(cwd: string): { sha: string | null; dirty: boolean | null } {
   const r = spawnSync('git', ['rev-parse', '--short', 'HEAD'], { cwd, encoding: 'utf8' });
   if (r.status !== 0) return { sha: null, dirty: null };
-  const s = spawnSync('git', ['status', '--porcelain', '--untracked-files=no'], { cwd, encoding: 'utf8' });
+  const s = spawnSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' });
   return { sha: r.stdout.trim(), dirty: s.status === 0 ? s.stdout.trim() !== '' : null };
 }
 

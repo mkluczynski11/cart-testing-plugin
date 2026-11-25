@@ -1,0 +1,776 @@
+{
+  "meta": {
+    "runId": "20261125T101730Z-29d4",
+    "slug": "two-products-qty-remove",
+    "scenarioSha256": "4ffc3a5fde6fab989fda5a809fd4e5021d38bda9d031930f38d85bdc5d43dcce",
+    "testSha256": "4699182a3be3b2eb97528a98c96a94c2c3871cd96da7b24a2637dc68f5ebda02",
+    "testOrigin": "compiled",
+    "timestamp": "2026-11-25T10:17:32Z",
+    "baseURL": "https://practicesoftwaretesting.com",
+    "browser": "chromium",
+    "locale": "en-US",
+    "priceSource": "ui",
+    "pluginVersion": "0.1.0",
+    "gitSha": "28b2b96",
+    "gitDirty": false,
+    "mode": "live",
+    "defect": null,
+    "checkpoints": [
+      "S1",
+      "S2",
+      "S3",
+      "S4"
+    ]
+  },
+  "verdict": "PASS",
+  "repeats": [
+    {
+      "n": 1,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Combination Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "14.15",
+            "adjustments": [],
+            "total": "14.15",
+            "totalExact": "283/20",
+            "currency": "USD",
+            "composition": "$14.15 = subtotal $14.15"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "14.15",
+              "rawText": "$14.15"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 286,
+          "screenshot": "S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "26.16",
+            "adjustments": [],
+            "total": "26.16",
+            "totalExact": "654/25",
+            "currency": "USD",
+            "composition": "$26.16 = subtotal $26.16"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "26.16",
+              "rawText": "$26.16"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 338,
+          "screenshot": "S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "set quantity of Combination Pliers to 3",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 3,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "54.46",
+            "adjustments": [],
+            "total": "54.46",
+            "totalExact": "2723/50",
+            "currency": "USD",
+            "composition": "$54.46 = subtotal $54.46"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "42.45",
+                  "rawText": "$42.45"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "54.46",
+              "rawText": "$54.46"
+            }
+          },
+          "result": "pass",
+          "reads": 24,
+          "elapsedMs": 118,
+          "screenshot": "S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "remove Pliers",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 3,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "42.45",
+            "adjustments": [],
+            "total": "42.45",
+            "totalExact": "849/20",
+            "currency": "USD",
+            "composition": "$42.45 = subtotal $42.45"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "42.45",
+                  "rawText": "$42.45"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "42.45",
+              "rawText": "$42.45"
+            }
+          },
+          "result": "pass",
+          "reads": 19,
+          "elapsedMs": 118,
+          "screenshot": "S4.png"
+        }
+      ],
+      "durationMs": 5575
+    },
+    {
+      "n": 2,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Combination Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "14.15",
+            "adjustments": [],
+            "total": "14.15",
+            "totalExact": "283/20",
+            "currency": "USD",
+            "composition": "$14.15 = subtotal $14.15"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "14.15",
+              "rawText": "$14.15"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 287,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat1/S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "26.16",
+            "adjustments": [],
+            "total": "26.16",
+            "totalExact": "654/25",
+            "currency": "USD",
+            "composition": "$26.16 = subtotal $26.16"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "26.16",
+              "rawText": "$26.16"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 334,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat1/S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "set quantity of Combination Pliers to 3",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 3,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "54.46",
+            "adjustments": [],
+            "total": "54.46",
+            "totalExact": "2723/50",
+            "currency": "USD",
+            "composition": "$54.46 = subtotal $54.46"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "42.45",
+                  "rawText": "$42.45"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "54.46",
+              "rawText": "$54.46"
+            }
+          },
+          "result": "pass",
+          "reads": 23,
+          "elapsedMs": 118,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat1/S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "remove Pliers",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 3,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "42.45",
+            "adjustments": [],
+            "total": "42.45",
+            "totalExact": "849/20",
+            "currency": "USD",
+            "composition": "$42.45 = subtotal $42.45"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "42.45",
+                  "rawText": "$42.45"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "42.45",
+              "rawText": "$42.45"
+            }
+          },
+          "result": "pass",
+          "reads": 26,
+          "elapsedMs": 115,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat1/S4.png"
+        }
+      ],
+      "durationMs": 5163
+    },
+    {
+      "n": 3,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Combination Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "14.15",
+            "adjustments": [],
+            "total": "14.15",
+            "totalExact": "283/20",
+            "currency": "USD",
+            "composition": "$14.15 = subtotal $14.15"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "14.15",
+              "rawText": "$14.15"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 274,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat2/S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "26.16",
+            "adjustments": [],
+            "total": "26.16",
+            "totalExact": "654/25",
+            "currency": "USD",
+            "composition": "$26.16 = subtotal $26.16"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "26.16",
+              "rawText": "$26.16"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 238,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat2/S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "set quantity of Combination Pliers to 3",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 3,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "54.46",
+            "adjustments": [],
+            "total": "54.46",
+            "totalExact": "2723/50",
+            "currency": "USD",
+            "composition": "$54.46 = subtotal $54.46"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "42.45",
+                  "rawText": "$42.45"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "54.46",
+              "rawText": "$54.46"
+            }
+          },
+          "result": "pass",
+          "reads": 25,
+          "elapsedMs": 120,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat2/S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "remove Pliers",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 3,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "42.45",
+            "adjustments": [],
+            "total": "42.45",
+            "totalExact": "849/20",
+            "currency": "USD",
+            "composition": "$42.45 = subtotal $42.45"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "42.45",
+                  "rawText": "$42.45"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "42.45",
+              "rawText": "$42.45"
+            }
+          },
+          "result": "pass",
+          "reads": 26,
+          "elapsedMs": 117,
+          "screenshot": "artifacts/two-products-qty-remove-Tw-61739-tal-checked-after-each-step-live-repeat2/S4.png"
+        }
+      ],
+      "durationMs": 5061
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,18 @@
+```text
+PASS 3/3 · test verified
+Products: Wood Saw ($12.18, co2_rating B) · Combination Pliers ($14.15, co2_rating D)
+
+Step  Shopper's action                       Expected  Displayed  Result
+S1   add Wood Saw, 1 unit                   $11.57    "$11.57"   match
+S2   add Combination Pliers, 2 units        $40.48    "$40.48"   match
+S3   set quantity of Wood Saw to 3          $61.60    "$61.60"   match
+S4   remove Combination Pliers              $34.71    "$34.71"   match
+
+Evidence: intent review without remarks; defects 12/12 applicable, each in the right place; live controls 4/4;
+report review without remarks.
+Scope: The total was read from the row "Total". At S1, S3, S4 it differed from the subtotal and from every line total, so a driver reading another field would have failed there.
+Scenario gap: rule-boundary: Add a step at which the cart sits exactly at the threshold of rule eco-discount.
+Rules used: eco-discount · observed · live: confirmed (in force at S1, S3, S4 in this run)
+Rerun: cd e2e && npm run qa -- run wood-saw-qty-remove-other
+Files: e2e/specs/wood-saw-qty-remove-other.md, e2e/specs/wood-saw-qty-remove-other.intent.md, e2e/tests/wood-saw-qty-remove-other.spec.ts, e2e/reports/wood-saw-qty-remove-other/
+```

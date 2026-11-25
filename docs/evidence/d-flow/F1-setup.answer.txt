@@ -1,8 +1,0 @@
-Setup finished: `qa-harness init` ended with **`VERDICT: PASS`**.
-
-- **Created:** `e2e/`, with 75 files from the plugin's template. None of your files were there to keep.
-- **App:** `toolshop` at `https://practicesoftwaretesting.com`. The settings are in `e2e/qa.config.json`: test id attribute `data-test`, en-US, USD, standard defect set.
-- **Starter pack:** installed, 3 files in `e2e/app/`. Your first scenario will use this driver instead of building one from the page.
-- **Dependencies and Chromium:** installed, and the self-check passed (12/12).
-- **Next:** `/qa:new-test "<what the shopper does and what to check>"`
-- **Commit `e2e/`:** it runs without the plugin through `cd e2e && npm run qa -- <subcommand>`. Its `.gitignore` keeps run folders out.

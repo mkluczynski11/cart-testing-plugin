@@ -1,0 +1,920 @@
+{
+  "meta": {
+    "runId": "20261125T102038Z-c54b",
+    "slug": "wood-saw-qty-remove-other",
+    "scenarioSha256": "9b537caaa7c2df6d45a9e97ab31612cfca02c12c945cb389ad9b2e094a4c3cfb",
+    "testSha256": "68193cf5544cba825287010f2361ba349272510ee59da83f48fb9d4c45d1403e",
+    "testOrigin": "compiled",
+    "timestamp": "2026-11-25T10:20:40Z",
+    "baseURL": "https://practicesoftwaretesting.com",
+    "browser": "chromium",
+    "locale": "en-US",
+    "priceSource": "ui",
+    "pluginVersion": "0.1.0",
+    "gitSha": "28b2b96",
+    "gitDirty": false,
+    "mode": "live",
+    "defect": null,
+    "checkpoints": [
+      "S1",
+      "S2",
+      "S3",
+      "S4"
+    ]
+  },
+  "verdict": "PASS",
+  "repeats": [
+    {
+      "n": 1,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Wood Saw, 1 unit",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 1,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "12.18",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "0.61"
+              }
+            ],
+            "total": "11.57",
+            "totalExact": "11571/1000",
+            "currency": "USD",
+            "composition": "$11.57 = subtotal $12.18 − eco-discount $0.61"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "12.18",
+              "rawText": "$12.18"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-0.61",
+                "rawText": "- $0.61"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "11.57",
+              "rawText": "$11.57"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 283,
+          "screenshot": "S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Combination Pliers, 2 units",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 1,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            },
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "40.48",
+            "adjustments": [],
+            "total": "40.48",
+            "totalExact": "1012/25",
+            "currency": "USD",
+            "composition": "$40.48 = subtotal $40.48"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                }
+              },
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "40.48",
+              "rawText": "$40.48"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 341,
+          "screenshot": "S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "set quantity of Wood Saw to 3",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 3,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            },
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "64.84",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "3.24"
+              }
+            ],
+            "total": "61.60",
+            "totalExact": "30799/500",
+            "currency": "USD",
+            "composition": "$61.60 = subtotal $64.84 − eco-discount $3.24"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "36.54",
+                  "rawText": "$36.54"
+                }
+              },
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "64.84",
+              "rawText": "$64.84"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-3.24",
+                "rawText": "- $3.24"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "61.60",
+              "rawText": "$61.60"
+            }
+          },
+          "result": "pass",
+          "reads": 19,
+          "elapsedMs": 118,
+          "screenshot": "S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "remove Combination Pliers",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 3,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "36.54",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "1.83"
+              }
+            ],
+            "total": "34.71",
+            "totalExact": "34713/1000",
+            "currency": "USD",
+            "composition": "$34.71 = subtotal $36.54 − eco-discount $1.83"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "36.54",
+                  "rawText": "$36.54"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "36.54",
+              "rawText": "$36.54"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-1.83",
+                "rawText": "- $1.83"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "34.71",
+              "rawText": "$34.71"
+            }
+          },
+          "result": "pass",
+          "reads": 23,
+          "elapsedMs": 119,
+          "screenshot": "S4.png"
+        }
+      ],
+      "durationMs": 4922
+    },
+    {
+      "n": 2,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Wood Saw, 1 unit",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 1,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "12.18",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "0.61"
+              }
+            ],
+            "total": "11.57",
+            "totalExact": "11571/1000",
+            "currency": "USD",
+            "composition": "$11.57 = subtotal $12.18 − eco-discount $0.61"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "12.18",
+              "rawText": "$12.18"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-0.61",
+                "rawText": "- $0.61"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "11.57",
+              "rawText": "$11.57"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 279,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Combination Pliers, 2 units",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 1,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            },
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "40.48",
+            "adjustments": [],
+            "total": "40.48",
+            "totalExact": "1012/25",
+            "currency": "USD",
+            "composition": "$40.48 = subtotal $40.48"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                }
+              },
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "40.48",
+              "rawText": "$40.48"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 240,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "set quantity of Wood Saw to 3",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 3,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            },
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "64.84",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "3.24"
+              }
+            ],
+            "total": "61.60",
+            "totalExact": "30799/500",
+            "currency": "USD",
+            "composition": "$61.60 = subtotal $64.84 − eco-discount $3.24"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "36.54",
+                  "rawText": "$36.54"
+                }
+              },
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "64.84",
+              "rawText": "$64.84"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-3.24",
+                "rawText": "- $3.24"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "61.60",
+              "rawText": "$61.60"
+            }
+          },
+          "result": "pass",
+          "reads": 23,
+          "elapsedMs": 124,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "remove Combination Pliers",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 3,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "36.54",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "1.83"
+              }
+            ],
+            "total": "34.71",
+            "totalExact": "34713/1000",
+            "currency": "USD",
+            "composition": "$34.71 = subtotal $36.54 − eco-discount $1.83"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "36.54",
+                  "rawText": "$36.54"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "36.54",
+              "rawText": "$36.54"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-1.83",
+                "rawText": "- $1.83"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "34.71",
+              "rawText": "$34.71"
+            }
+          },
+          "result": "pass",
+          "reads": 22,
+          "elapsedMs": 126,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S4.png"
+        }
+      ],
+      "durationMs": 4868
+    },
+    {
+      "n": 3,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Wood Saw, 1 unit",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 1,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "12.18",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "0.61"
+              }
+            ],
+            "total": "11.57",
+            "totalExact": "11571/1000",
+            "currency": "USD",
+            "composition": "$11.57 = subtotal $12.18 − eco-discount $0.61"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "12.18",
+              "rawText": "$12.18"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-0.61",
+                "rawText": "- $0.61"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "11.57",
+              "rawText": "$11.57"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 267,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Combination Pliers, 2 units",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 1,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            },
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "40.48",
+            "adjustments": [],
+            "total": "40.48",
+            "totalExact": "1012/25",
+            "currency": "USD",
+            "composition": "$40.48 = subtotal $40.48"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                }
+              },
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "40.48",
+              "rawText": "$40.48"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 240,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "set quantity of Wood Saw to 3",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 3,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            },
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "64.84",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "3.24"
+              }
+            ],
+            "total": "61.60",
+            "totalExact": "30799/500",
+            "currency": "USD",
+            "composition": "$61.60 = subtotal $64.84 − eco-discount $3.24"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "36.54",
+                  "rawText": "$36.54"
+                }
+              },
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "64.84",
+              "rawText": "$64.84"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-3.24",
+                "rawText": "- $3.24"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "61.60",
+              "rawText": "$61.60"
+            }
+          },
+          "result": "pass",
+          "reads": 20,
+          "elapsedMs": 124,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "remove Combination Pliers",
+          "ledger": [
+            {
+              "name": "Wood Saw",
+              "qty": 3,
+              "unitPrice": "$12.18",
+              "attrs": {
+                "co2_rating": "B"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "36.54",
+            "adjustments": [
+              {
+                "rule": "eco-discount",
+                "amount": "1.83"
+              }
+            ],
+            "total": "34.71",
+            "totalExact": "34713/1000",
+            "currency": "USD",
+            "composition": "$34.71 = subtotal $36.54 − eco-discount $1.83"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Wood Saw",
+                "qty": 3,
+                "unitPrice": {
+                  "value": "12.18",
+                  "rawText": "$12.18"
+                },
+                "lineTotal": {
+                  "value": "36.54",
+                  "rawText": "$36.54"
+                }
+              }
+            ],
+            "subtotal": {
+              "label": "Subtotal",
+              "value": "36.54",
+              "rawText": "$36.54"
+            },
+            "adjustments": [
+              {
+                "label": "Eco-Friendly Discount (5%)",
+                "value": "-1.83",
+                "rawText": "- $1.83"
+              }
+            ],
+            "total": {
+              "label": "Total",
+              "value": "34.71",
+              "rawText": "$34.71"
+            }
+          },
+          "result": "pass",
+          "reads": 21,
+          "elapsedMs": 115,
+          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S4.png"
+        }
+      ],
+      "durationMs": 4867
+    }
+  ],
+  "errors": []
+}

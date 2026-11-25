@@ -1,0 +1,32 @@
+PASS 3/3 · test verified
+Products: Combination Pliers ($14.15, co2_rating D) · Pliers ($12.01, co2_rating D)
+
+```text
+Step  Shopper's action                            Expected  Displayed  Result
+S1    add Combination Pliers, 1 unit              $14.15    "$14.15"   match
+S2    add Pliers, 1 unit                          $26.16    "$26.16"   match
+S3    set quantity of Combination Pliers to 3     $54.46    "$54.46"   match
+S4    remove Pliers                               $42.45    "$42.45"   match
+```
+
+**Evidence:**
+- **Intent review:** no remarks.
+- **Defects:** 9 of 9 applicable were detected, each at the right step.
+- **Live controls:** all 4 caught.
+- **Report review:** no defects found, with one caveat. On these products the total always equalled the subtotal, so only the `skew-total` control proves the driver reads the "Total" row.
+
+**Scope:** The total was read from the row "Total". In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart. Only the label-based control `skew-total` shows that the driver reads the total.
+
+**Scenario gaps:**
+- `rule-never`: add a step at which rule `eco-discount` is in force.
+- `rule-rate`: add a step at which rule `eco-discount` is in force.
+- `rule-boundary`: add a step at which the cart sits exactly at the threshold of rule `eco-discount`.
+- `round-mode`: no amount at a checkpoint has a fraction of a cent above one half. Other products or quantities would expose truncation.
+
+**Rules used:**
+- `eco-discount` · observed (docs/toolshop-facts.md#h1, 2026-11-25; cart.component.ts @ae7caec) · live: confirmed, but not in force in this run.
+- Total and subtotal row labels · observed (docs/toolshop-facts.md#h6, 2026-11-25).
+
+**Rerun:** `cd e2e && npm run qa -- run two-products-qty-remove`
+
+**Files:** `e2e/specs/two-products-qty-remove.md`, `e2e/specs/two-products-qty-remove.intent.md`, `e2e/tests/two-products-qty-remove.spec.ts`, `e2e/reports/two-products-qty-remove/`
