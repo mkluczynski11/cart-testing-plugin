@@ -1,173 +1,76 @@
+// Unit tests of support/core/checkpoint.ts: every layer of design 9.1 judged both ways, and the message.
 import { expect, test } from '@playwright/test';
-import * as reference from '../app/reference.pricing';
-import type { CheckpointRecord } from '../support/core/checkpoint';
-import type { DefectId } from '../support/core/defects';
-import { cents } from '../support/core/money';
-import { ReferenceCart, REFERENCE_CATALOG } from '../support/core/reference-cart';
-import { parseScenarioText, type Scenario } from '../support/core/scenario';
-import { selectProduct, Shopper } from '../support/core/shopper';
-import type { CartDriver, CartView } from '../support/core/types';
-import { validateScenario } from '../support/core/validator';
-import { PreconditionError, QaError } from '../support/core/verdicts';
+import { checkpointVerdict, formatMismatch, judge, type CheckContext } from '../support/core/checkpoint';
+import { Ledger } from '../support/core/ledger';
+import { fromDecimal } from '../support/core/money';
+import type { CartView, SummaryRow } from '../support/core/types';
+import { GREEN, REFERENCE, USD } from './helpers';
 
-function scenario(yaml: string): Scenario {
-  const r = validateScenario(parseScenarioText(`---\n${yaml}\n---\n`).data);
-  if (!r.ok) throw new Error(JSON.stringify(r.violations));
-  return r.scenario;
+const ctx: CheckContext = { pricing: REFERENCE, fmt: USD, rulesFile: 'app/reference.pricing.ts' };
+const usd = (d: string) => fromDecimal(d, 'USD');
+const row = (label: string, rawText: string): SummaryRow => ({ label, rawText, value: usd('0') });
+const amount = (rawText: string) => ({ rawText, value: usd('0') });
+
+/** Ledger: Lamp (class A) ×1 at $10.00 and Kettle (class C) ×1 at $20.00 — no discount; or Lamp ×3 with it. */
+function snap(lampQty = 1, kettle = true) {
+  const l = new Ledger([GREEN], 'USD');
+  l.bind({ name: 'Lamp', unitPrice: usd('10.00'), inStock: true, attrs: { energy_class: 'A' } });
+  l.bind({ name: 'Kettle', unitPrice: usd('20.00'), inStock: true, attrs: { energy_class: 'C' } });
+  l.apply({ do: 'add', key: 'Lamp', qty: lampQty });
+  if (kettle) l.apply({ do: 'add', key: 'Kettle', qty: 1 });
+  return l.snapshot();
 }
 
-const REF = scenario(`
-id: ref
-title: T
-app: toolshop
-status: draft
-request: r
-products:
-  A: { pick: first-available }
-  B: { pick: next-available, distinct_from: [A] }
-steps:
-  - { id: S1, do: add,    product: A, qty: 1, cart_after: { A: 1 } }
-  - { id: S2, do: add,    product: B, qty: 1, cart_after: { A: 1, B: 1 } }
-  - { id: S3, do: setQty, product: A, qty: 3, cart_after: { A: 3, B: 1 } }
-  - { id: S4, do: remove, product: B,         cart_after: { A: 3 } }
-check: each-step`);
+const KETTLE = { name: 'Kettle', qty: 1, unitPrice: amount('$20.00'), lineTotal: amount('$20.00') };
+const lamp = (qty: number, unit: string, line: string) => ({ name: 'Lamp', qty, unitPrice: amount(unit), lineTotal: amount(line) });
 
-/** A driver that delegates to a cart, with some methods overridden. */
-function wrap(cart: CartDriver, overrides: Partial<CartDriver>): CartDriver {
+function view(over: Partial<Extract<CartView, { empty: false }>> = {}): CartView {
   return {
-    candidates: () => cart.candidates(),
-    productFacts: (n) => cart.productFacts(n),
-    addProduct: (n, q) => cart.addProduct(n, q),
-    setQuantity: (n, q) => cart.setQuantity(n, q),
-    remove: (n) => cart.remove(n),
-    readCart: () => cart.readCart(),
-    ...overrides,
+    empty: false,
+    lines: [lamp(1, '$10.00', '$10.00'), KETTLE],
+    adjustments: [],
+    total: row('Total', '$30.00'),
+    ...over,
   };
 }
+const discounted = (over: Partial<Extract<CartView, { empty: false }>> = {}) => view({
+  lines: [lamp(3, '$10.00', '$30.00'), KETTLE],
+  adjustments: [row('Green discount (5%)', '- $2.50')], subtotal: row('Subtotal', '$50.00'), total: row('Total', '$47.50'), ...over,
+});
+const layers = (v: CartView, s = snap()) => judge(v, s, ctx).map((f) => f.layer);
 
-/** Run the reference scenario the way the compiled test does; return the records and the error, if any. */
-async function runRef(driver: CartDriver, settleMs = 0) {
-  const records: CheckpointRecord[] = [];
-  const s = new Shopper({ driver, pricing: reference, scenario: REF, reserved: [], pickLimit: 30, settleMs, attach: async (r) => { records.push(r); } });
-  try {
-    const a = await s.add({ pick: 'first-available', needQty: 3 }, 1);
-    await s.checkTotal('S1');
-    const b = await s.add({ pick: 'next-available', distinctFrom: [a] }, 1);
-    await s.checkTotal('S2');
-    await s.setQuantity(a, 3);
-    await s.checkTotal('S3');
-    await s.remove(b);
-    await s.checkTotal('S4');
-    return { records, error: undefined as QaError | undefined };
-  } catch (e) {
-    return { records, error: e as QaError };
-  }
-}
+test('a cart that agrees with the ledger is green', () => expect(judge(view(), snap(), ctx)).toEqual([]));
+test('a cart with a rule in force that agrees is green', () => expect(judge(discounted(), snap(3), ctx)).toEqual([]));
 
-test('healthy reference cart: every checkpoint green and attached', async () => {
-  const { records, error } = await runRef(new ReferenceCart({ pricing: reference }));
-  expect(error).toBeUndefined();
-  expect(records.map((r) => [r.step, r.result.status])).toEqual([['S1', 'green'], ['S2', 'green'], ['S3', 'green'], ['S4', 'green']]);
-  expect(records[2].action).toBe('setQty A=3');
-  expect(records[2].expected.total).toBe('$54.46');
+test('state: an empty cart when the ledger holds lines is red', () => expect(layers({ empty: true, emptyMessage: 'empty' })).toEqual(['state']));
+test('state: an empty cart with an empty ledger is green', () => expect(judge({ empty: true, emptyMessage: 'empty' }, new Ledger([], 'USD').snapshot(), ctx)).toEqual([]));
+test('state: a non-zero total in an empty cart is red', () => expect(judge({ empty: true, emptyMessage: 'empty', total: row('Total', '$1.00') }, new Ledger([], 'USD').snapshot(), ctx).map((f) => f.layer)).toEqual(['state']));
+test('labels: a total read from the subtotal row is a read error', () => expect(judge(view({ total: row('Subtotal', '$30.00') }), snap(), ctx)[0].verdict).toBe('LOCATOR_FAIL'));
+test('labels: a total that is not an amount is a read error', () => expect(judge(view({ total: row('Total', 'n/a') }), snap(), ctx)[0].verdict).toBe('LOCATOR_FAIL'));
+test('lines: a wrong quantity is red', () => expect(layers(view({ lines: [lamp(2, '$10.00', '$20.00'), KETTLE] }))).toContain('lines'));
+test('lines: an extra line is red', () => expect(layers(view({ lines: [lamp(1, '$10.00', '$10.00'), KETTLE, { name: 'Cup', qty: 1, unitPrice: amount('$1.00'), lineTotal: amount('$1.00') }] }))).toContain('lines'));
+test('unit price: a price other than the one read at the add is red', () => expect(layers(view({ lines: [lamp(1, '$11.00', '$10.00'), KETTLE] }))).toEqual(['unit price']));
+test('line total: price times quantity is compared exactly', () => expect(layers(view({ lines: [lamp(1, '$10.00', '$10.01'), KETTLE] }))).toEqual(['line total']));
+test('adjustments: a row with no rule is an unmodeled adjustment', () => expect(judge(view({ adjustments: [row('Loyalty bonus', '- $1.00')] }), snap(), ctx)[0].verdict).toBe('UNMODELED_ADJUSTMENT'));
+test('adjustments: a rule in force without its row is red', () => expect(layers(discounted({ adjustments: [] }), snap(3))).toContain('adjustments'));
+test('adjustments: an amount is compared by absolute value', () => expect(judge(discounted({ adjustments: [row('Green discount', '$2.50')] }), snap(3), ctx)).toEqual([]));
+test('adjustments: a wrong amount is red', () => expect(layers(discounted({ adjustments: [row('Green discount', '- $2.60')], total: row('Total', '$47.50') }), snap(3))).toEqual(['adjustments']));
+test('subtotal: a subtotal other than the sum of lines is red', () => expect(layers(discounted({ subtotal: row('Subtotal', '$49.00') }), snap(3))).toEqual(['subtotal']));
+test('total: a total one cent off is red', () => expect(layers(view({ total: row('Total', '$30.01') }))).toEqual(['total']));
+test('total: the total checks the direction of a discount', () => expect(layers(discounted({ total: row('Total', '$52.50') }), snap(3))).toEqual(['total']));
+
+test('an unmodeled adjustment outranks the total mismatch it causes', () => {
+  expect(checkpointVerdict(judge(view({ adjustments: [row('Loyalty bonus', '- $1.00')], total: row('Total', '$29.00') }), snap(), ctx))).toBe('UNMODELED_ADJUSTMENT');
 });
 
-test('mismatch message has the fixed format', async () => {
-  const { error, records } = await runRef(new ReferenceCart({ pricing: reference, defect: 'total-stale-after-setqty' }));
-  expect(error?.verdict).toBe('ORACLE_MISMATCH');
-  expect(error?.message).toBe([
-    'ORACLE_MISMATCH at S3 (setQty A=3)',
-    '  field: total (row "Total")',
-    '  expected: $54.46 = 3 × $14.15 + 1 × $12.01',
-    '  displayed: $26.16 (raw "$26.16")',
-  ].join('\n'));
-  expect(records.at(-1)?.result.status).toBe('red');
-});
-
-const expectations: Array<[DefectId, string | null, string]> = [
-  ['total-ignores-quantity', 'S3', 'ORACLE_MISMATCH'],
-  ['total-stale-after-setqty', 'S3', 'ORACLE_MISMATCH'],
-  ['total-stale-after-remove', 'S4', 'ORACLE_MISMATCH'],
-  ['setqty-ignored', 'S3', 'ORACLE_MISMATCH'],
-  ['remove-ignored', 'S4', 'ORACLE_MISMATCH'],
-  ['remove-wrong-line', 'S4', 'ORACLE_MISMATCH'],
-  ['add-replaces-quantity', null, 'PASS'],
-  ['line-total-wrong', 'S3', 'ORACLE_MISMATCH'],
-  ['discount-not-applied', null, 'PASS'],
-  ['total-truncated', null, 'PASS'],
-  ['driver-reads-subtotal', 'S1', 'LOCATOR_FAIL'],
-];
-for (const [defect, step, verdict] of expectations) {
-  test(`defect ${defect} on the reference scenario: ${verdict}${step ? ' at ' + step : ''}`, async () => {
-    const { error } = await runRef(new ReferenceCart({ pricing: reference, defect }));
-    if (!step) expect(error).toBeUndefined();
-    else {
-      expect(error?.verdict).toBe(verdict);
-      expect(error?.message).toContain(` at ${step} `);
-    }
-  });
-}
-
-test('an adjustment with no rule is UNMODELED_ADJUSTMENT', async () => {
-  const cart = new ReferenceCart({ pricing: reference });
-  const driver = wrap(cart, {
-    readCart: async (): Promise<CartView> => {
-      const v = await cart.readCart();
-      return v.empty ? v : { ...v, adjustments: [...v.adjustments, { label: 'Coupon SAVE1', value: cents(-100), rawText: '-$1.00' }] };
-    },
-  });
-  const { error } = await runRef(driver);
-  expect(error?.verdict).toBe('UNMODELED_ADJUSTMENT');
-  expect(error?.message).toMatch(/^UNMODELED_ADJUSTMENT at S1 /);
-});
-
-test('the read is retried until it settles', async () => {
-  const laggy = () => {
-    const cart = new ReferenceCart({ pricing: reference });
-    let lagUntil = 0;
-    return wrap(cart, {
-      addProduct: async (n: string, q: number) => { lagUntil = Date.now() + 250; await cart.addProduct(n, q); },
-      readCart: async (): Promise<CartView> => (Date.now() < lagUntil ? { empty: true, emptyMessage: 'loading' } : cart.readCart()),
-    });
-  };
-  const fast = await runRef(laggy(), 0);
-  expect(fast.error?.verdict).toBe('ORACLE_MISMATCH');
-  const settled = await runRef(laggy(), 1000);
-  expect(settled.error).toBeUndefined();
-  expect(settled.records[0].reads).toBeGreaterThan(1);
-});
-
-test('selection skips out-of-stock, reserved, distinctFrom and too-tight constraints; respects pickLimit', async () => {
-  const cart = new ReferenceCart({ pricing: reference });
-  const opts = { reserved: [], pickLimit: 30, constraints: reference.constraints };
-  expect(REFERENCE_CATALOG[0].inStock).toBe(false);
-  expect((await selectProduct(cart, { pick: 'first-available' }, opts)).name).toBe('Claw Hammer');
-  expect((await selectProduct(cart, { pick: 'first-available' }, { ...opts, reserved: ['Claw Hammer'] })).name).toBe('Combination Pliers');
-  expect((await selectProduct(cart, { pick: 'next-available', distinctFrom: [{ name: 'Claw Hammer' }, { name: 'Combination Pliers' }] }, opts)).name).toBe('Wood Saw');
-  const tight = [{ id: 'one', maxQty: 1, match: { name: 'Claw Hammer' } }];
-  expect((await selectProduct(cart, { pick: 'first-available', needQty: 2 }, { ...opts, constraints: tight })).name).toBe('Combination Pliers');
-  await expect(selectProduct(cart, { pick: 'first-available' }, { ...opts, pickLimit: 1 })).rejects.toBeInstanceOf(PreconditionError);
-  await expect(selectProduct(cart, { pick: 'by-name', name: 'Bolt Cutters' }, opts)).rejects.toBeInstanceOf(PreconditionError);
-});
-
-test('empty cart after removing the only line is a green checkpoint', async () => {
-  const s1 = scenario(`
-id: e
-title: T
-app: toolshop
-status: draft
-request: r
-products: { A: { pick: first-available } }
-steps:
-  - { id: S1, do: add,    product: A, qty: 1, cart_after: { A: 1 } }
-  - { id: S2, do: remove, product: A,         cart_after: {} }
-check: each-step`);
-  const records: CheckpointRecord[] = [];
-  const s = new Shopper({ driver: new ReferenceCart({ pricing: reference }), pricing: reference, scenario: s1, reserved: [], pickLimit: 30, settleMs: 0, attach: async (r) => { records.push(r); } });
-  const a = await s.add({ pick: 'first-available' }, 1);
-  await s.checkTotal('S1');
-  await s.remove(a);
-  await s.checkTotal('S2');
-  expect(records[1].displayed).toMatchObject({ empty: true });
-  expect(records[1].result.status).toBe('green');
+test('the mismatch message has the fixed format of design 9.1', () => {
+  const findings = judge(discounted({ adjustments: [], subtotal: undefined, total: row('Total', '$50.00') }), snap(3), ctx);
+  expect(formatMismatch('S3', 'set quantity of Lamp to 3', findings).split('\n').slice(0, 6)).toEqual([
+    'S3 · total mismatch',
+    '  action:    set quantity of Lamp to 3',
+    '  expected:  $47.50 = subtotal $50.00 − green-discount $2.50',
+    '  displayed: "$50.00" in row "Total"',
+    '  diff:      +$2.50',
+    '  layer:     adjustments · rule green-discount applies, no row displayed',
+  ]);
 });

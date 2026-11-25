@@ -1,64 +1,28 @@
+// Unit tests of support/core/money.ts: exact amounts, the locale parser and the tolerance (design 9.3).
 import { expect, test } from '@playwright/test';
-import {
-  add, cents, compare, floorToCents, formatMoney, fromDecimal, matchesDisplayed, money, parseDisplayed, parseRatio,
-  roundToCents, times,
-} from '../support/core/money';
+import { add, cents, formatCents, fromDecimal, money, parseAmount, roundToCents, truncToCents, withinHalfCent } from '../support/core/money';
+import { EUR, USD } from './helpers';
 
-const c = (m: ReturnType<typeof parseDisplayed>) => (m ? roundToCents(m) : null);
+const c = (raw: string, fmt = USD, symbol: 'required' | 'optional' = 'required') => {
+  const m = parseAmount(raw, fmt, { symbol });
+  return m ? roundToCents(m) : null;
+};
 
-test.describe('money parser', () => {
-  const cases: Array<[string, bigint]> = [
-    ['$14.15', 1415n],
-    ['$1,234.50', 123450n],
-    ['- $0.71', -71n],
-    ['-$0.71', -71n],
-    ['- $0.71', -71n],
-    ['$ 14.15', 1415n],
-    [' $1,234.50 ', 123450n],
-    ['$-0.71', -71n],
-    ['−$0.71', -71n],
-    ['$0.00', 0n],
-    ['$7', 700n],
-    ['$1,000,000.10', 100000010n],
-  ];
-  for (const [raw, want] of cases) {
-    test(`parses ${JSON.stringify(raw)}`, () => {
-      expect(c(parseDisplayed(raw))).toBe(want);
-    });
-  }
-  for (const raw of ['14.15', '$1,23.45', '$', 'Total', '$14.155', '€14.15', '--$1.00', '-$-1.00']) {
-    test(`rejects ${JSON.stringify(raw)}`, () => {
-      expect(parseDisplayed(raw)).toBeNull();
-    });
-  }
-});
-
-test('formats for messages', () => {
-  expect(formatMoney(cents(5446))).toBe('$54.46');
-  expect(formatMoney(cents(-71))).toBe('-$0.71');
-  expect(formatMoney(cents(123450))).toBe('$1,234.50');
-  expect(formatMoney(money(399855n, 10000n))).toBe('$39.99'); // 39.9855 rounds up
-});
-
-test('arithmetic is exact rationals', () => {
-  const a = fromDecimal('14.15');
-  expect(compare(times(a, 3), cents(4245))).toBe(0);
-  expect(compare(add(fromDecimal('0.1'), fromDecimal('0.2')), fromDecimal('0.3'))).toBe(0);
-  expect(parseRatio('0.5')).toEqual({ p: 1n, q: 2n });
-  expect(parseRatio('5')).toEqual({ p: 5n, q: 1n });
-});
-
-test('rounding: half away from zero; floor for truncation', () => {
-  expect(roundToCents(money(3998_55n, 10000n))).toBe(3999n);
-  expect(roundToCents(money(10050n, 10000n))).toBe(101n);
-  expect(roundToCents(money(-10050n, 10000n))).toBe(-101n);
-  expect(floorToCents(money(399855n, 10000n))).toBe(3998n);
-});
-
-test('comparison with a displayed amount tolerates at most half a cent', () => {
-  const exact = money(399855n, 10000n); // $39.9855
-  expect(matchesDisplayed(exact, cents(3999))).toBe(true); // 0.45 cent
-  expect(matchesDisplayed(exact, cents(3998))).toBe(false); // 0.55 cent
-  expect(matchesDisplayed(money(1005n, 1000n), cents(100))).toBe(true); // exactly 0.5 cent
-  expect(matchesDisplayed(money(1005n, 1000n), cents(101))).toBe(true);
-});
+test('a dollar amount with cents parses to whole cents', () => expect(c('$14.15')).toBe(1415n));
+test('a grouped dollar amount parses', () => expect(c('$1,234.50')).toBe(123450n));
+test('a discount written "- $0.61" parses as negative', () => expect(c('- $0.61')).toBe(-61n));
+test('a minus after the symbol parses as negative', () => expect(c('$-0.61')).toBe(-61n));
+test('non-breaking spaces are ignored', () => expect(c('$ 14.15')).toBe(1415n));
+test('a bare number is rejected when the symbol is required', () => expect(c('14.15')).toBeNull());
+test('a bare number is accepted when the symbol is optional', () => expect(c('14.15', USD, 'optional')).toBe(1415n));
+test('a foreign currency is not an amount in USD', () => expect(c('€5.00')).toBeNull());
+test('a label is not an amount', () => expect(c('Total')).toBeNull());
+test('a German euro amount parses with its own separators', () => expect(c('1.234,50 €', EUR)).toBe(123450n));
+test('a dot-decimal amount is rejected in the German format', () => expect(c('12.01 €', EUR)).toBeNull());
+test('a German euro amount is formatted with the symbol after the number', () => expect(formatCents(123450n, EUR)).toBe('1.234,50 €'));
+test('a negative dollar amount is formatted with a leading minus', () => expect(formatCents(-61n, USD)).toBe('-$0.61'));
+test('the exact half-cent tie is within tolerance', () => expect(withinHalfCent(money(1n, 200n, 'USD'), cents(0n, 'USD'))).toBe(true));
+test('more than half a cent is outside tolerance', () => expect(withinHalfCent(money(51n, 10000n, 'USD'), cents(0n, 'USD'))).toBe(false));
+test('rounding goes half away from zero', () => expect(roundToCents(money(-1n, 200n, 'USD'))).toBe(-1n));
+test('truncation goes toward zero', () => expect(truncToCents(fromDecimal('11.579', 'USD'))).toBe(1157n));
+test('an operation on two currencies is an error', () => expect(() => add(cents(1n, 'USD'), cents(1n, 'EUR'))).toThrow(/two currencies/));

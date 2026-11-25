@@ -1,127 +1,184 @@
-// The shopper fixture: performs scenario steps through a CartDriver and keeps the ledger.
-// Product selection is done here, never by the driver.
-import { runCheckpoint, type Attach } from './checkpoint';
+// The shopper: performs the compiled test's actions through a driver and keeps the ledger in step.
+// Implements design 8.4 (allowed calls), 9.1 (soft checkpoints) and 6.8 of order N (price source).
+// After a red checkpoint the shopper continues from the expected state; the test fails at its end
+// with the first mismatch as its error, so every checkpoint is judged.
+import { checkpointVerdict, displayedRecord, expectedRecord, formatMismatch, pollCart, type CheckContext, type CheckpointRecord, type Finding } from './checkpoint';
 import { Ledger } from './ledger';
-import { maxQtyFor, type PricingModule, type PurchaseConstraint } from './pricing';
-import type { Scenario, Step, StepKind } from './scenario';
-import type { CartDriver, ProductFacts, ProductPick, ProductRef } from './types';
-import { describeStep } from './validator';
-import { InfraError, PreconditionError } from './verdicts';
+import { compare, formatMoney, type AmountFormat } from './money';
+import type { PricingModule } from './pricing';
+import type { PriceSource } from './scenario';
+import { selectProduct } from './selection';
+import type { CartDriver, Money, ProductPick, ProductRef } from './types';
+import { CheckpointError, InfraError, PreconditionError, QaError, verdictOf, type Verdict } from './verdicts';
 
-export type SelectOptions = { reserved: string[]; pickLimit: number; constraints: PurchaseConstraint[] };
-
-/** Walk candidates in listing order; skip reserved and distinctFrom; require stock and a constraint >= needQty. */
-export async function selectProduct(driver: CartDriver, pick: ProductPick, opts: SelectOptions): Promise<ProductFacts> {
-  if (pick.pick === 'by-name') {
-    const facts = await driver.productFacts(pick.name);
-    if (!facts.inStock) throw new PreconditionError(`"${pick.name}" is named by the scenario but is out of stock`);
-    return facts;
-  }
-  const needQty = pick.needQty ?? 1;
-  const excluded = new Set([...opts.reserved, ...(pick.pick === 'next-available' ? pick.distinctFrom.map((r) => r.name) : [])]);
-  let seen = 0;
-  for await (const name of driver.candidates()) {
-    if (seen >= opts.pickLimit) break;
-    seen++;
-    if (excluded.has(name)) continue;
-    const facts = await driver.productFacts(name);
-    if (!facts.inStock) continue;
-    const max = maxQtyFor(opts.constraints, name);
-    if (max !== undefined && max < needQty) continue;
-    return facts;
-  }
-  throw new PreconditionError(
-    `no product among the first ${opts.pickLimit} candidates is in stock, allows ${needQty} unit(s) and is not excluded (${pick.pick})`,
-  );
-}
+/** A failure that ended the test, as the fixture records it for the reporter. */
+export type FailureRecord = { step: string | null; kind: Verdict; message: string; rawText?: string };
 
 export type ShopperOptions = {
   driver: CartDriver;
   pricing: PricingModule;
-  scenario: Scenario;
+  fmt: AmountFormat;
+  rulesFile: string;
   reserved: string[];
   pickLimit: number;
   settleMs: number;
-  attach: Attach;
+  priceSource: PriceSource;
+  checkpoints: string[];                                             // expected checkpoint ids, in order
+  step: (title: string, body: () => Promise<void>) => Promise<void>; // test.step
+  record: (r: CheckpointRecord) => Promise<void>;                    // checkpoint attachment
+  fail: (f: FailureRecord) => Promise<void>;                         // failure attachment
+  afterRead?: (stepId: string) => Promise<{ screenshot?: string; control?: unknown }>;
 };
+
+export function actionText(kind: 'add' | 'setQty' | 'remove', name: string, qty?: number): string {
+  if (kind === 'add') return `add ${name}, ${qty} unit${qty === 1 ? '' : 's'}`;
+  if (kind === 'setQty') return `set quantity of ${name} to ${qty}`;
+  return `remove ${name}`;
+}
 
 export class Shopper {
   private readonly ledger: Ledger;
-  private cursor = 0;
-  private last: { step: Step; qty?: number } | undefined;
+  private readonly ctx: CheckContext;
+  private lastAction: string | undefined;
+  private lastStep: string | null = null;
+  private firstRed: CheckpointError | undefined;
+  private finished = false;
+  private readonly apiChecks: Array<{ name: string; page: Money; api: Money }> = [];
+  private readonly judged: string[] = [];
 
   constructor(private readonly o: ShopperOptions) {
-    this.ledger = new Ledger(o.pricing);
+    this.ledger = new Ledger(o.pricing.rules, o.fmt.currency);
+    this.ctx = { pricing: o.pricing, fmt: o.fmt, rulesFile: o.rulesFile };
   }
 
-  /** The scenario step the next action performs; the compiled test follows the scenario's order. */
-  private nextStep(kind: StepKind): Step {
-    const step = this.o.scenario.steps[this.cursor];
-    if (!step || step.do !== kind) {
-      throw new InfraError(`the test calls ${kind} as action #${this.cursor + 1}, but the scenario has ${step ? `${step.id} ${step.do}` : 'no more steps'}; recompile the test`);
+  /** Run an action. Before a red checkpoint its error ends the test; after one, the first mismatch does. */
+  private async act<T>(action: string, body: () => Promise<T>): Promise<T> {
+    this.lastAction = action;
+    try {
+      return await body();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (this.firstRed) {
+        this.finished = true;
+        await this.o.fail({ step: this.firstRed.step, kind: this.firstRed.verdict, message: `${this.firstRed.message}\n  then:      ${action} failed: ${message.split('\n')[0]}` });
+        throw this.firstRed;
+      }
+      await this.o.fail({ step: this.lastStep, kind: verdictOf(e), message, rawText: e instanceof PreconditionError ? e.rawText : undefined });
+      throw e instanceof QaError ? e : new InfraError(`${action} failed outside the driver's contract: ${message}`);
     }
-    this.cursor++;
-    return step;
-  }
-
-  private aliasFor(step: Step, ref: ProductRef): string {
-    const alias = this.ledger.aliasOfName(ref.name);
-    if (alias !== step.product) {
-      throw new InfraError(`step ${step.id} acts on ${step.product}, but the test passed "${ref.name}"; recompile the test`);
-    }
-    return alias;
   }
 
   async add(target: ProductPick | ProductRef, qty: number): Promise<ProductRef> {
-    const step = this.nextStep('add');
-    let name: string;
-    if ('pick' in target) {
-      const facts = await selectProduct(this.o.driver, target, {
-        reserved: target.pick === 'by-name' ? [] : this.o.reserved,
-        pickLimit: this.o.pickLimit,
-        constraints: this.o.pricing.constraints,
-      });
-      this.ledger.bind(step.product, facts);
-      name = facts.name;
-    } else {
-      this.aliasFor(step, target);
-      name = target.name;
+    const known = !('pick' in target);
+    const label = known ? target.name : target.pick === 'by-name' ? target.name : `the ${target.pick} product`;
+    return this.act(actionText('add', label, qty), async () => {
+      let name: string;
+      if ('pick' in target) {
+        const facts = await selectProduct(this.o.driver, target, {
+          reserved: target.pick === 'by-name' ? [] : this.o.reserved,
+          pickLimit: this.o.pickLimit,
+          constraints: this.o.pricing.constraints,
+        });
+        name = facts.name;
+        this.lastAction = actionText('add', name, qty);
+        this.ledger.bind(this.o.priceSource === 'api' ? { ...facts, unitPrice: await this.apiPrice(facts.name, facts.unitPrice) } : facts);
+      } else {
+        name = target.name;
+        if (!this.ledger.isBound(name)) throw new InfraError(`the test adds "${name}" again before it was picked; recompile the test.`);
+      }
+      await this.o.driver.addProduct(name, qty);
+      this.ledger.apply({ do: 'add', key: name, qty });
+      return { name };
+    });
+  }
+
+  private async apiPrice(name: string, page: Money): Promise<Money> {
+    if (!this.o.driver.apiPrice) {
+      throw new PreconditionError(`The scenario takes prices from the API (price_source: api), but the driver has no apiPrice; run qa-harness need to see what the driver is missing.`);
     }
-    await this.o.driver.addProduct(name, qty);
-    this.ledger.apply({ do: 'add', key: step.product, qty });
-    this.last = { step, qty };
-    return { name };
+    const api = await this.o.driver.apiPrice(name);
+    this.apiChecks.push({ name, page, api });
+    return api;
   }
 
   async setQuantity(ref: ProductRef, qty: number): Promise<void> {
-    const step = this.nextStep('setQty');
-    const alias = this.aliasFor(step, ref);
-    await this.o.driver.setQuantity(ref.name, qty);
-    this.ledger.apply({ do: 'setQty', key: alias, qty });
-    this.last = { step, qty };
+    await this.act(actionText('setQty', ref.name, qty), async () => {
+      await this.o.driver.setQuantity(ref.name, qty);
+      this.ledger.apply({ do: 'setQty', key: ref.name, qty });
+    });
   }
 
   async remove(ref: ProductRef): Promise<void> {
-    const step = this.nextStep('remove');
-    const alias = this.aliasFor(step, ref);
-    await this.o.driver.remove(ref.name);
-    this.ledger.apply({ do: 'remove', key: alias });
-    this.last = { step };
+    await this.act(actionText('remove', ref.name), async () => {
+      await this.o.driver.remove(ref.name);
+      this.ledger.apply({ do: 'remove', key: ref.name });
+    });
   }
 
   async checkTotal(stepId: string): Promise<void> {
-    if (!this.last || this.last.step.id !== stepId) {
-      throw new InfraError(`checkTotal('${stepId}') does not follow step ${stepId}; recompile the test`);
+    const action = this.lastAction ?? 'no action';
+    this.lastStep = stepId;
+    const snap = this.ledger.snapshot();
+    const title = `${stepId} · ${action} · expected ${formatMoney(snap.total, this.o.fmt)}`;
+    let error: CheckpointError | undefined;
+    try {
+      await this.o.step(title, async () => {
+        const read = await pollCart(this.o.driver, snap, this.ctx, this.o.settleMs);
+        if (read.readError) {
+          const e = read.readError;
+          await this.o.fail({ step: stepId, kind: verdictOf(e), message: e instanceof Error ? e.message : String(e) });
+          throw e instanceof QaError ? e : new InfraError(`reading the cart at ${stepId} failed: ${String(e)}`);
+        }
+        const findings: Finding[] = [...this.apiFindings(), ...read.findings];
+        const extra = this.o.afterRead ? await this.o.afterRead(stepId) : {};
+        const red = findings.length > 0;
+        const message = red ? formatMismatch(stepId, action, findings) : undefined;
+        await this.o.record({
+          step: stepId,
+          action,
+          ledger: snap.lines.map((l) => ({ name: l.name, qty: l.qty, unitPrice: formatMoney(l.unitPrice, this.o.fmt), attrs: l.attrs })),
+          expected: expectedRecord(snap, this.o.fmt),
+          displayed: read.view ? displayedRecord(read.view, this.o.fmt) : null,
+          result: red ? 'fail' : 'pass',
+          ...(red ? { verdict: checkpointVerdict(findings), layer: findings[0].layer, message } : {}),
+          reads: read.reads,
+          elapsedMs: read.elapsedMs,
+          ...extra,
+        });
+        this.judged.push(stepId);
+        if (red) {
+          error = new CheckpointError(message as string, checkpointVerdict(findings), stepId);
+          throw error;
+        }
+      });
+    } catch (e) {
+      if (!error) throw e;
+      this.firstRed ??= error;
     }
-    const { step, qty } = this.last;
-    await runCheckpoint({
-      driver: this.o.driver,
-      pricing: this.o.pricing,
-      snapshot: this.ledger.snapshot(),
-      stepId,
-      action: describeStep({ do: step.do, product: step.product, qty }),
-      settleMs: this.o.settleMs,
-      attach: this.o.attach,
-    });
+    if (this.firstRed && stepId === this.o.checkpoints[this.o.checkpoints.length - 1]) await this.finish();
+  }
+
+  /** The price on the product page is a checked value when prices come from the API (9.4). */
+  private apiFindings(): Finding[] {
+    const out = this.apiChecks.filter((c) => compare(c.page, c.api) !== 0).map((c): Finding => ({
+      layer: 'unit price', verdict: 'ORACLE_MISMATCH', subject: `product page price of "${c.name}"`,
+      expected: `${formatMoney(c.api, this.o.fmt)} (product API)`, displayed: `${formatMoney(c.page, this.o.fmt)} on the product page`,
+      detail: `the product page and the product API disagree on the price of "${c.name}"`,
+    }));
+    this.apiChecks.length = 0;
+    return out;
+  }
+
+  /** End of the test: the first red checkpoint becomes the test's error. */
+  async finish(): Promise<void> {
+    if (!this.firstRed || this.finished) return;
+    this.finished = true;
+    const red = this.firstRed;
+    await this.o.fail({ step: red.step, kind: red.verdict, message: red.message });
+    throw red;
+  }
+
+  judgedCheckpoints(): string[] {
+    return [...this.judged];
   }
 }

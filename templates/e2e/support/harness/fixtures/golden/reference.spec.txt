@@ -1,0 +1,17 @@
+import { test } from '../support/core/fixtures';
+
+test.use({ preconditions: ['empty-cart', 'guest', 'no-geolocation'], priceSource: 'ui' });
+
+test('reference', async ({ shopper }) => {
+  const a = await shopper.add({ pick: 'first-available', filters: { needQty: 3 } }, 1);
+  await shopper.checkTotal('S1');
+
+  const b = await shopper.add({ pick: 'next-available', distinctFrom: [a] }, 1);
+  await shopper.checkTotal('S2');
+
+  await shopper.setQuantity(a, 3);
+  await shopper.checkTotal('S3');
+
+  await shopper.remove(b);
+  await shopper.checkTotal('S4');
+});

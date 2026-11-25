@@ -1,218 +1,251 @@
-// One checkpoint: read the cart, compare it with the ledger in layers, retry until settled.
-import type { LedgerSnapshot } from './ledger';
-import { abs, exactText, formatMoney, isZero, matchesDisplayed } from './money';
+// One checkpoint: poll the cart until it agrees with the ledger or settleMs elapses, judge the last
+// read layer by layer, and describe a mismatch in the fixed message format.
+// Implements design 9.1 (layers, polling, message), 9.3 (parsing, tolerance, sign) and 8.5 (raw text).
+import { composition, type LedgerSnapshot } from './ledger';
+import { abs, compare, decimalText, formatMoney, isZero, parseAmount, sub, withinHalfCent, type AmountFormat } from './money';
 import type { PricingModule } from './pricing';
-import type { CartDriver, CartView, Displayed, Money } from './types';
-import { InfraError, LocatorError, OracleMismatch, QaError, UnmodeledAdjustment } from './verdicts';
+import type { CartDriver, CartView, Money, SummaryRow } from './types';
 
-export type FailureKind = 'ORACLE_MISMATCH' | 'UNMODELED_ADJUSTMENT' | 'LOCATOR_FAIL';
+export type Layer = 'state' | 'labels' | 'lines' | 'unit price' | 'line total' | 'adjustments' | 'subtotal' | 'total';
+export type FindingVerdict = 'ORACLE_MISMATCH' | 'UNMODELED_ADJUSTMENT' | 'LOCATOR_FAIL';
 
-export type CheckFailure = {
-  kind: FailureKind;
-  layer: 'lines' | 'line-prices' | 'labels' | 'adjustments' | 'total' | 'empty-cart';
-  field: string;
+/** One failed assertion: `subject` names the field, `displayed` quotes the page. */
+export type Finding = {
+  layer: Layer;
+  verdict: FindingVerdict;
+  subject: string;
   expected: string;
   displayed: string;
+  diff?: string;
+  detail: string;
 };
 
-const shown = (d: Displayed) => `${formatMoney(d.value)} (raw "${d.rawText}")`;
+export type CheckContext = { pricing: PricingModule; fmt: AmountFormat; rulesFile: string };
 
-/** Compare a cart view with the ledger. Returns the first failing layer, or null when everything matches. */
-export function compareView(view: CartView, snap: LedgerSnapshot, pricing: PricingModule): CheckFailure | null {
-  const fail = (kind: FailureKind, layer: CheckFailure['layer'], field: string, expected: string, displayed: string): CheckFailure =>
-    ({ kind, layer, field, expected, displayed });
+const quoted = (r: { rawText: string; label?: string }) => `"${r.rawText}"${r.label !== undefined ? ` in row "${r.label}"` : ''}`;
 
-  // 6. Empty cart (judged first when the ledger is empty).
-  if (snap.lines.length === 0) {
+function signedDiff(displayed: Money, expected: Money, fmt: AmountFormat): string {
+  const d = sub(displayed, expected);
+  return `${d.numerator < 0n ? '−' : '+'}${formatMoney(abs(d), fmt)}`;
+}
+
+/** Judge a cart view against the ledger. An empty list means the checkpoint is green. */
+export function judge(view: CartView, snap: LedgerSnapshot, ctx: CheckContext): Finding[] {
+  const { pricing, fmt } = ctx;
+  const out: Finding[] = [];
+  const parse = (raw: string) => parseAmount(raw, fmt);
+  const notAmount = (subject: string, r: { rawText: string; label?: string }): Finding => ({
+    layer: 'labels', verdict: 'LOCATOR_FAIL', subject, expected: `an amount in ${fmt.currency}`, displayed: quoted(r),
+    detail: `the text read for the ${subject} is not an amount in ${fmt.currency}`,
+  });
+  const labelFinding = (subject: 'total' | 'subtotal', row: SummaryRow): Finding => ({
+    layer: 'labels', verdict: 'LOCATOR_FAIL', subject: `${subject} label`,
+    expected: `a row labelled ${pricing.summary[subject].label}`, displayed: quoted(row),
+    detail: `the ${subject} was read from a row whose label does not match ${ctx.rulesFile}`,
+  });
+
+  // State: the cart is empty if and only if the ledger is empty; a total in an empty cart is zero.
+  if (snap.lines.length === 0 || view.empty) {
+    if (snap.lines.length > 0 && view.empty) {
+      return [{ layer: 'state', verdict: 'ORACLE_MISMATCH', subject: 'cart', expected: snap.lines.map((l) => `${l.name} × ${l.qty}`).join(', '),
+        displayed: `an empty cart ("${view.emptyMessage}")`, detail: 'the cart is empty, the ledger is not' }];
+    }
     if (!view.empty) {
-      return fail('ORACLE_MISMATCH', 'empty-cart', 'cart', 'empty cart',
-        `${view.lines.length} line(s): ${view.lines.map((l) => `${l.name} × ${l.qty}`).join(', ')}`);
+      return [{ layer: 'state', verdict: 'ORACLE_MISMATCH', subject: 'cart', expected: 'an empty cart',
+        displayed: view.lines.map((l) => `${l.name} × ${l.qty}`).join(', '), detail: 'the ledger is empty, the cart is not' }];
     }
-    if (view.total) {
-      if (!pricing.summary.total.label.test(view.total.label)) {
-        return fail('LOCATOR_FAIL', 'labels', `total (row "${view.total.label}")`, `a row labelled ${pricing.summary.total.label}`, shown(view.total));
-      }
-      if (!isZero(view.total.value)) {
-        return fail('ORACLE_MISMATCH', 'empty-cart', `total (row "${view.total.label}")`, '$0.00 = empty cart', shown(view.total));
-      }
-    }
-    return null;
+    if (!view.total) return [];
+    if (!pricing.summary.total.label.test(view.total.label)) return [labelFinding('total', view.total)];
+    const total = parse(view.total.rawText);
+    if (!total) return [notAmount('total', view.total)];
+    return isZero(total) ? [] : [{ layer: 'state', verdict: 'ORACLE_MISMATCH', subject: 'total', expected: `${formatMoney(snap.total, fmt)} = empty cart`,
+      displayed: quoted(view.total), diff: signedDiff(total, snap.total, fmt), detail: 'a total shown in an empty cart must be zero' }];
   }
 
-  // 1. Lines: names and quantities.
-  if (view.empty) {
-    return fail('ORACLE_MISMATCH', 'lines', 'lines',
-      snap.lines.map((l) => `${l.name} × ${l.qty}`).join(', '), `empty cart ("${view.emptyMessage}")`);
-  }
+  // Field labels, and every text read must be an amount: a read error comes before any amount.
+  if (!pricing.summary.total.label.test(view.total.label)) return [labelFinding('total', view.total)];
+  if (view.subtotal && !pricing.summary.subtotal.label.test(view.subtotal.label)) return [labelFinding('subtotal', view.subtotal)];
+  const reads: Array<[string, { rawText: string; label?: string }]> = [
+    ...view.lines.flatMap((l): Array<[string, { rawText: string }]> => [[`unit price of "${l.name}"`, l.unitPrice], [`line total of "${l.name}"`, l.lineTotal]]),
+    ...view.adjustments.map((a): [string, SummaryRow] => [`adjustment "${a.label}"`, a]),
+    ...(view.subtotal ? [['subtotal', view.subtotal] as [string, SummaryRow]] : []),
+    ['total', view.total],
+  ];
+  for (const [subject, r] of reads) if (!parse(r.rawText)) return [notAmount(subject, r)];
+  const value = (raw: string) => parse(raw) as Money;
+
+  // Lines: names and quantities agree with the ledger.
   for (const exp of snap.lines) {
     const got = view.lines.filter((l) => l.name === exp.name);
-    if (got.length === 0) return fail('ORACLE_MISMATCH', 'lines', `line "${exp.name}"`, `quantity ${exp.qty}`, 'no such line');
-    if (got.length > 1) return fail('ORACLE_MISMATCH', 'lines', `line "${exp.name}"`, 'one line', `${got.length} lines`);
-    if (got[0].qty !== exp.qty) return fail('ORACLE_MISMATCH', 'lines', `line "${exp.name}" quantity`, `${exp.qty}`, `${got[0].qty}`);
+    if (got.length !== 1 || got[0].qty !== exp.qty) {
+      out.push({ layer: 'lines', verdict: 'ORACLE_MISMATCH', subject: `line "${exp.name}"`, expected: `quantity ${exp.qty}`,
+        displayed: got.length === 0 ? 'no such line' : got.length > 1 ? `${got.length} lines` : `quantity ${got[0].qty}`,
+        detail: `the line of "${exp.name}" does not show quantity ${exp.qty}` });
+    }
   }
   for (const l of view.lines) {
-    if (!snap.lines.some((e) => e.name === l.name)) return fail('ORACLE_MISMATCH', 'lines', `line "${l.name}"`, 'no such line', `quantity ${l.qty}`);
+    if (!snap.lines.some((e) => e.name === l.name)) {
+      out.push({ layer: 'lines', verdict: 'ORACLE_MISMATCH', subject: `line "${l.name}"`, expected: 'no such line',
+        displayed: `quantity ${l.qty}`, detail: `the cart shows "${l.name}", which the ledger does not hold` });
+    }
   }
 
-  // 2. Each line: unit price equals the product facts; line total = quantity × unit price.
+  // Unit price and line total of every line the cart shows once.
   for (const exp of snap.lines) {
-    const got = view.lines.find((l) => l.name === exp.name)!;
-    if (!matchesDisplayed(exp.unitPrice, got.unitPrice.value)) {
-      return fail('ORACLE_MISMATCH', 'line-prices', `line "${exp.name}" unit price`, `${formatMoney(exp.unitPrice)} (product page)`, shown(got.unitPrice));
+    const got = view.lines.filter((l) => l.name === exp.name);
+    if (got.length !== 1) continue;
+    const unit = value(got[0].unitPrice.rawText);
+    if (compare(unit, exp.unitPrice) !== 0) {
+      out.push({ layer: 'unit price', verdict: 'ORACLE_MISMATCH', subject: `unit price of "${exp.name}"`,
+        expected: `${formatMoney(exp.unitPrice, fmt)} (read at the add)`, displayed: quoted(got[0].unitPrice),
+        diff: signedDiff(unit, exp.unitPrice, fmt), detail: `the cart's unit price differs from the price read when "${exp.name}" was added` });
     }
-    if (!matchesDisplayed(exp.lineTotal, got.lineTotal.value)) {
-      return fail('ORACLE_MISMATCH', 'line-prices', `line "${exp.name}" line total`,
-        `${formatMoney(exp.lineTotal)} = ${exp.qty} × ${formatMoney(exp.unitPrice)}`, shown(got.lineTotal));
+    const line = value(got[0].lineTotal.rawText);
+    if (compare(line, exp.lineTotal) !== 0) {
+      out.push({ layer: 'line total', verdict: 'ORACLE_MISMATCH', subject: `line total of "${exp.name}"`,
+        expected: `${formatMoney(exp.lineTotal, fmt)} = ${exp.qty} × ${formatMoney(exp.unitPrice, fmt)}`, displayed: quoted(got[0].lineTotal),
+        diff: signedDiff(line, exp.lineTotal, fmt), detail: `the line total of "${exp.name}" is not price × quantity` });
     }
   }
 
-  // 3. Labels: a wrong label means the driver read the wrong row.
-  if (!pricing.summary.total.label.test(view.total.label)) {
-    return fail('LOCATOR_FAIL', 'labels', `total (row "${view.total.label}")`, `a row labelled ${pricing.summary.total.label}`, shown(view.total));
-  }
-  if (view.subtotal && !pricing.summary.subtotal.label.test(view.subtotal.label)) {
-    return fail('LOCATOR_FAIL', 'labels', `subtotal (row "${view.subtotal.label}")`, `a row labelled ${pricing.summary.subtotal.label}`, shown(view.subtotal));
-  }
-
-  // 4. Adjustments: every displayed one has a rule and agrees with it; every expected one is displayed.
-  const matched = new Set<string>();
-  for (const adj of view.adjustments) {
-    const rule = pricing.rules.find((r) => r.label.test(adj.label));
+  // Adjustments: every row has a rule and agrees with it; every rule in force has a row.
+  const shown = new Set<string>();
+  for (const row of view.adjustments) {
+    const rule = pricing.rules.find((r) => r.label.test(row.label));
     if (!rule) {
-      return fail('UNMODELED_ADJUSTMENT', 'adjustments', `adjustment (row "${adj.label}")`, 'no adjustment (no rule matches this label)', shown(adj));
+      out.push({ layer: 'adjustments', verdict: 'UNMODELED_ADJUSTMENT', subject: `adjustment "${row.label}"`,
+        expected: 'no adjustment row: no rule matches this label', displayed: quoted(row),
+        detail: `row "${row.label}" has no rule in ${ctx.rulesFile}` });
+      continue;
     }
+    shown.add(rule.id);
     const exp = snap.adjustments.find((a) => a.id === rule.id);
+    const got = value(row.rawText);
     if (!exp) {
-      return fail('ORACLE_MISMATCH', 'adjustments', `adjustment ${rule.id} (row "${adj.label}")`, `no adjustment (rule ${rule.id} is not in force)`, shown(adj));
+      out.push({ layer: 'adjustments', verdict: 'ORACLE_MISMATCH', subject: `adjustment ${rule.id}`, expected: `no row: rule ${rule.id} is not in force`,
+        displayed: quoted(row), detail: `rule ${rule.id} is not in force, but row "${row.label}" is displayed` });
+    } else if (!withinHalfCent(exp.amount, abs(got))) {
+      out.push({ layer: 'adjustments', verdict: 'ORACLE_MISMATCH', subject: `adjustment ${rule.id}`, expected: `${formatMoney(exp.amount, fmt)} (rule ${rule.id})`,
+        displayed: quoted(row), diff: signedDiff(abs(got), exp.amount, fmt), detail: `row "${row.label}" does not agree with rule ${rule.id}` });
     }
-    // Apps write the sign of a discount differently: compare absolute values; the total checks the direction.
-    if (!matchesDisplayed(abs(exp.amount), abs(adj.value))) {
-      return fail('ORACLE_MISMATCH', 'adjustments', `adjustment ${rule.id} (row "${adj.label}")`, `${formatMoney(exp.amount)} (rule ${rule.id})`, shown(adj));
-    }
-    matched.add(rule.id);
   }
   for (const exp of snap.adjustments) {
-    if (!matched.has(exp.id)) {
-      return fail('ORACLE_MISMATCH', 'adjustments', `adjustment ${exp.id}`, `${formatMoney(exp.amount)} (rule ${exp.id} is in force)`, 'no such row');
+    if (!shown.has(exp.id)) {
+      out.push({ layer: 'adjustments', verdict: 'ORACLE_MISMATCH', subject: `adjustment ${exp.id}`, expected: `${formatMoney(exp.amount, fmt)} (rule ${exp.id})`,
+        displayed: 'no row', detail: `rule ${exp.id} applies, no row displayed` });
     }
   }
 
-  // 5. Total.
-  if (!matchesDisplayed(snap.total, view.total.value)) {
-    return fail('ORACLE_MISMATCH', 'total', `total (row "${view.total.label}")`, `${formatMoney(snap.total)} = ${snap.composition}`, shown(view.total));
+  // Subtotal, if displayed: the sum of the line totals.
+  if (view.subtotal) {
+    const got = value(view.subtotal.rawText);
+    if (compare(got, snap.subtotal) !== 0) {
+      out.push({ layer: 'subtotal', verdict: 'ORACLE_MISMATCH', subject: 'subtotal', expected: `${formatMoney(snap.subtotal, fmt)} = the sum of the line totals`,
+        displayed: quoted(view.subtotal), diff: signedDiff(got, snap.subtotal, fmt), detail: 'the subtotal is not the sum of the line totals' });
+    }
   }
-  return null;
-}
 
-export function formatFailure(f: CheckFailure, stepId: string, action: string): string {
-  return [
-    `${f.kind} at ${stepId} (${action})`,
-    `  field: ${f.field}`,
-    `  expected: ${f.expected}`,
-    `  displayed: ${f.displayed}`,
-  ].join('\n');
-}
-
-export function failureError(f: CheckFailure, stepId: string, action: string): QaError {
-  const msg = formatFailure(f, stepId, action);
-  switch (f.kind) {
-    case 'ORACLE_MISMATCH': return new OracleMismatch(msg);
-    case 'UNMODELED_ADJUSTMENT': return new UnmodeledAdjustment(msg);
-    case 'LOCATOR_FAIL': return new LocatorError(msg);
+  // Total: subtotal minus adjustments, within half a cent of the exact value.
+  const total = value(view.total.rawText);
+  if (!withinHalfCent(snap.total, total)) {
+    out.push({ layer: 'total', verdict: 'ORACLE_MISMATCH', subject: 'total', expected: `${formatMoney(snap.total, fmt)} = ${composition(snap, fmt)}`,
+      displayed: quoted(view.total), diff: signedDiff(total, snap.total, fmt), detail: 'the total is not the subtotal minus the adjustments' });
   }
+  return out;
 }
 
-// ---- evidence ----------------------------------------------------------------------------------
+const RANK: Record<FindingVerdict, number> = { LOCATOR_FAIL: 0, UNMODELED_ADJUSTMENT: 1, ORACLE_MISMATCH: 2 };
 
-function moneyJson(m: Money) {
-  return { text: formatMoney(m), exact: exactText(m) };
+/** The verdict of a red checkpoint: a read error first, then an unmodeled adjustment, then a mismatch. */
+export function checkpointVerdict(findings: Finding[]): FindingVerdict {
+  return [...findings].sort((a, b) => RANK[a.verdict] - RANK[b.verdict])[0].verdict;
 }
 
-/** JSON replacer: Money -> { text, exact }; RegExp -> source text; bigint -> string. */
-export function evidenceReplacer(_key: string, value: unknown): unknown {
-  if (typeof value === 'bigint') return value.toString();
-  if (value instanceof RegExp) return value.toString();
-  if (value && typeof value === 'object' && typeof (value as Money).numerator === 'bigint' && typeof (value as Money).denominator === 'bigint') {
-    return moneyJson(value as Money);
-  }
-  return value;
+/** The fixed mismatch message of design 9.1. */
+export function formatMismatch(stepId: string, action: string, findings: Finding[]): string {
+  const verdict = checkpointVerdict(findings);
+  const ofVerdict = findings.filter((f) => f.verdict === verdict);
+  const head = verdict === 'ORACLE_MISMATCH' ? (ofVerdict.find((f) => f.layer === 'total') ?? ofVerdict[0]) : ofVerdict[0];
+  const cause = findings[0];
+  const title = verdict === 'UNMODELED_ADJUSTMENT' ? 'unmodeled adjustment' : verdict === 'LOCATOR_FAIL' ? `${head.subject} read error` : `${head.subject} mismatch`;
+  const lines = [
+    `${stepId} · ${title}`,
+    `  action:    ${action}`,
+    `  expected:  ${head.expected}`,
+    `  displayed: ${head.displayed}`,
+    ...(head.diff ? [`  diff:      ${head.diff}`] : []),
+    `  layer:     ${cause.layer} · ${cause.detail}`,
+  ];
+  if (findings.length > 1) lines.push(`  also:      ${findings.filter((f) => f !== head && f !== cause).map((f) => `${f.layer}: ${f.detail}`).join('; ') || 'nothing else'}`);
+  return lines.join('\n');
 }
 
-export function expectedView(snap: LedgerSnapshot) {
+// ---- evidence ------------------------------------------------------------------------------------
+
+/** The expected side of a checkpoint record (8.5): plain decimals rounded to cents. */
+export function expectedRecord(snap: LedgerSnapshot, fmt: AmountFormat) {
   return {
     empty: snap.lines.length === 0,
-    lines: snap.lines.map((l) => ({ name: l.name, qty: l.qty, unitPrice: formatMoney(l.unitPrice), lineTotal: formatMoney(l.lineTotal) })),
-    subtotal: formatMoney(snap.subtotal),
-    adjustments: snap.adjustments.map((a) => ({ id: a.id, amount: formatMoney(a.amount) })),
-    total: formatMoney(snap.total),
-    totalComposition: snap.composition,
+    subtotal: decimalText(snap.subtotal),
+    adjustments: snap.adjustments.map((a) => ({ rule: a.id, amount: decimalText(a.amount) })),
+    total: decimalText(snap.total),
+    totalExact: `${snap.total.numerator}/${snap.total.denominator}`,
+    currency: fmt.currency,
+    composition: `${formatMoney(snap.total, fmt)} = ${composition(snap, fmt)}`,
+  };
+}
+
+/** The displayed side of a checkpoint record: every amount with its raw text, unnormalized. */
+export function displayedRecord(view: CartView, fmt: AmountFormat) {
+  const amount = (r: { rawText: string; label?: string }) => {
+    const v = parseAmount(r.rawText, fmt);
+    return { ...(r.label !== undefined ? { label: r.label } : {}), value: v ? decimalText(v) : null, rawText: r.rawText };
+  };
+  if (view.empty) return { empty: true, emptyMessage: view.emptyMessage, ...(view.total ? { total: amount(view.total) } : {}) };
+  return {
+    empty: false,
+    lines: view.lines.map((l) => ({ name: l.name, qty: l.qty, unitPrice: amount(l.unitPrice), lineTotal: amount(l.lineTotal) })),
+    ...(view.subtotal ? { subtotal: amount(view.subtotal) } : {}),
+    adjustments: view.adjustments.map(amount),
+    total: amount(view.total),
   };
 }
 
 export type CheckpointRecord = {
   step: string;
   action: string;
-  ledger: LedgerSnapshot;
-  expected: ReturnType<typeof expectedView>;
-  displayed: CartView | null;
-  result: { status: 'green' } | { status: 'red'; verdict: string; layer?: string; field?: string; message: string };
+  ledger: Array<{ name: string; qty: number; unitPrice: string; attrs: Record<string, string> }>;
+  expected: ReturnType<typeof expectedRecord>;
+  displayed: ReturnType<typeof displayedRecord> | null;
+  result: 'pass' | 'fail';
+  verdict?: string;
+  layer?: Layer;
+  message?: string;
   reads: number;
+  elapsedMs: number;
+  screenshot?: string;
+  control?: unknown;
 };
 
-export type Attach = (record: CheckpointRecord) => Promise<void>;
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+export type ReadOutcome = { view: CartView | null; findings: Finding[]; readError?: unknown; reads: number; elapsedMs: number };
 
 /**
- * Read the cart until it matches the ledger or `settleMs` elapses (every 100 ms), then judge the last read.
- * Every checkpoint, green or red, is attached as evidence.
+ * Read the cart until it agrees with the ledger or settleMs elapses, then return the last read.
+ * Reads follow each other directly: there is no fixed wait, the driver's read is the pace.
  */
-export async function runCheckpoint(opts: {
-  driver: CartDriver;
-  pricing: PricingModule;
-  snapshot: LedgerSnapshot;
-  stepId: string;
-  action: string;
-  settleMs: number;
-  attach: Attach;
-}): Promise<void> {
-  const { driver, pricing, snapshot, stepId, action, settleMs, attach } = opts;
+export async function pollCart(driver: CartDriver, snap: LedgerSnapshot, ctx: CheckContext, settleMs: number): Promise<ReadOutcome> {
   const started = Date.now();
   let reads = 0;
-  let view: CartView | null = null;
-  let failure: CheckFailure | null = null;
-  let readError: unknown;
   for (;;) {
     reads++;
+    let outcome: ReadOutcome;
     try {
-      view = await driver.readCart();
-      readError = undefined;
-      failure = compareView(view, snapshot, pricing);
+      const view = await driver.readCart();
+      outcome = { view, findings: judge(view, snap, ctx), reads, elapsedMs: 0 };
     } catch (e) {
-      readError = e;
+      outcome = { view: null, findings: [], readError: e, reads, elapsedMs: 0 };
     }
-    if (!readError && !failure) break;
-    if (Date.now() - started >= settleMs) break;
-    await sleep(100);
+    const elapsedMs = Date.now() - started;
+    if ((!outcome.readError && outcome.findings.length === 0) || elapsedMs >= settleMs) return { ...outcome, elapsedMs };
   }
-
-  let error: QaError | undefined;
-  if (readError) {
-    error = readError instanceof QaError ? readError : new InfraError(`reading the cart at ${stepId} failed: ${String((readError as Error)?.message ?? readError)}`);
-  } else if (failure) {
-    error = failureError(failure, stepId, action);
-  }
-
-  await attach({
-    step: stepId,
-    action,
-    ledger: snapshot,
-    expected: expectedView(snapshot),
-    displayed: view,
-    result: error
-      ? { status: 'red', verdict: error.verdict, layer: failure?.layer, field: failure?.field, message: error.message }
-      : { status: 'green' },
-    reads,
-  });
-  if (error) throw error;
 }

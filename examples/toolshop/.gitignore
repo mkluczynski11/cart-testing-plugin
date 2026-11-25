@@ -1,0 +1,5 @@
+reports/*/runs/
+reports/*/.lock
+reports/*/attempts.json
+reports/*/.promote-*/
+test-results/

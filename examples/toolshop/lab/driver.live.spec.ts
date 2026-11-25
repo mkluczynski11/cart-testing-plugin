@@ -3,11 +3,12 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { createDriver } from '../../templates/e2e/app/toolshop.driver';
-import { rules, summary } from '../../templates/e2e/app/toolshop.pricing';
-import type { CartDriver, CartView, Displayed } from '../../templates/e2e/support/core/types';
+import { createDriver } from '../app/toolshop.driver';
+import { rules, summary } from '../app/toolshop.pricing';
+import type { CartDriver, CartView, Displayed } from '../support/core/types';
 
-const EVIDENCE = path.resolve(__dirname, '../../docs/evidence/driver-lab');
+const EVIDENCE = path.resolve(__dirname, '../../../docs/evidence/driver-lab');
+const DRIVER_OPTIONS = { actionMs: 10_000, baseURL: 'https://practicesoftwaretesting.com' };
 const POLL_MS = 5_000;
 
 // ---------- helpers (lab only: the driver itself computes nothing) ----------
@@ -107,7 +108,7 @@ const dataTestInventory = (page: Page) =>
 // ---------- tests ----------
 
 test('1. reference sequence S1–S4 on the first two in-stock products', async ({ page }, info) => {
-  const d = createDriver(page);
+  const d = createDriver(page, DRIVER_OPTIONS);
   const [A, B] = await firstInStock(d, 2);
 
   // H3 evidence: the product page of A.
@@ -146,7 +147,7 @@ test('1. reference sequence S1–S4 on the first two in-stock products', async (
 });
 
 test('2. removing the only line gives the empty variant', async ({ page }, info) => {
-  const d = createDriver(page);
+  const d = createDriver(page, DRIVER_OPTIONS);
   const [A] = await firstInStock(d, 1);
   await d.addProduct(A, 1);
   expect(sameLines((await poll(d, (v) => sameLines(v, [[A, 1]]))).view, [[A, 1]])).toBe(true);
@@ -162,7 +163,7 @@ test('2. removing the only line gives the empty variant', async ({ page }, info)
 });
 
 test('3. eco case: a cart with only Wood Saw', async ({ page }, info) => {
-  const d = createDriver(page);
+  const d = createDriver(page, DRIVER_OPTIONS);
   const facts = await d.productFacts('Wood Saw');
   await d.addProduct('Wood Saw', 1);
   const r = await poll(d, (v) => sameLines(v, [['Wood Saw', 1]]));
@@ -178,7 +179,7 @@ test('3. eco case: a cart with only Wood Saw', async ({ page }, info) => {
 });
 
 test('4. adding the same product twice', async ({ page }, info) => {
-  const d = createDriver(page);
+  const d = createDriver(page, DRIVER_OPTIONS);
   const [A] = await firstInStock(d, 1);
   await d.addProduct(A, 1);
   await poll(d, (v) => sameLines(v, [[A, 1]]));
@@ -190,14 +191,14 @@ test('4. adding the same product twice', async ({ page }, info) => {
 });
 
 test('5. a product that does not exist fails with LOCATOR:', async ({ page }) => {
-  const d = createDriver(page);
+  const d = createDriver(page, DRIVER_OPTIONS);
   const err = await d.addProduct('No Such Product 7f3c', 1).then(() => null, (e: Error) => e);
   console.log(`LOST-LOCATOR: ${err?.message.split('\n')[0]}`);
   expect(err?.message).toMatch(/^LOCATOR:/);
 });
 
 test('6. settle time after quantity change and removal', async ({ page }, info) => {
-  const d = createDriver(page);
+  const d = createDriver(page, DRIVER_OPTIONS);
   const [A, B] = await firstInStock(d, 2);
   await d.addProduct(A, 1);
   await poll(d, (v) => sameLines(v, [[A, 1]]));

@@ -1,93 +1,147 @@
-// Pricing rules are data, not functions. The vocabulary is closed:
-//   condition: shareOfUnits   amount: percentOf 'running'
-// A percentOf amount is a deduction (discount) of `rate` percent of the running value.
-import { add, neg, parseRatio, scale } from './money';
+// Business rules as data and their evaluation on exact values.
+// Implements design 9.2 (vocabulary, provenance, constraints) and the rule order of 9.3.
+// Rules only reduce the total in v1: every amount is a deduction. A surcharge cannot be written in this
+// vocabulary; such a rule is a candidate for extending the plugin, not for a negative rate.
+import { compare, fromDecimal, parseRatio, scale, sub, type Ratio } from './money';
 import type { Money } from './types';
 
 export type AttrFilter = Record<string, string[]>;
 
-export type RuleCondition = {
-  shareOfUnits: { where: AttrFilter; above: string };
+export type Provenance = {
+  source: 'code' | 'tester' | 'observed';
+  ref: string;
+  live: 'confirmed' | 'unconfirmed';
 };
 
-export type RuleAmount = { percentOf: 'running'; rate: string };
+/**
+ * When a rule is in force:
+ * - always: in every non-empty cart;
+ * - shareOfUnits: units matching `where` divided by all units is strictly above `above` (a decimal ratio);
+ * - hasUnits: at least `atLeast` units match `where`;
+ * - subtotalAtLeast: the subtotal is at least the amount.
+ */
+export type RuleCondition =
+  | { always: true }
+  | { shareOfUnits: { where: AttrFilter; above: string } }
+  | { hasUnits: { where: AttrFilter; atLeast: number } }
+  | { subtotalAtLeast: string };
+
+/** How much a rule deducts: a percentage of the subtotal, of the running value, or a fixed amount. */
+export type RuleAmount = { percentOf: 'subtotal' | 'running'; rate: string } | { fixed: string };
 
 export type PricingRule = {
   id: string;
-  label: RegExp;
+  label: RegExp;          // label of the adjustment row in the cart
   when: RuleCondition;
   amount: RuleAmount;
+  provenance: Provenance;
 };
 
-export type PurchaseConstraint = { id: string; maxQty: number; match?: { name: string } };
+export type PurchaseConstraint = { id: string; maxQty: number; match?: { name: string }; provenance: Provenance };
 
 export type SummaryLabels = {
   total: { label: RegExp };
   subtotal: { label: RegExp };
+  provenance: Provenance;
 };
 
-export type PricingModule = {
-  summary: SummaryLabels;
-  rules: PricingRule[];
-  constraints: PurchaseConstraint[];
-};
+/** The shape of app/<app>.pricing.ts. */
+export type PricingModule = { summary: SummaryLabels; rules: PricingRule[]; constraints: PurchaseConstraint[] };
 
-/** One priced line as the rules see it. */
-export type PricedUnitGroup = { qty: number; attrs: Record<string, string> };
+/** A change to one rule, used by the rule operators of design 10.3. */
+export type RuleTweak = { rule: string; kind: 'never' | 'always' | 'double-rate' | 'boundary' };
 
-export type AppliedAdjustment = { id: string; amount: Money }; // amount is signed: a discount is negative
+/** The units of one cart line as the rules see them. */
+export type PricedGroup = { qty: number; attrs: Record<string, string> };
 
-function matchesFilter(attrs: Record<string, string>, where: AttrFilter): boolean {
+/** An adjustment in force: `amount` is the positive deduction. */
+export type AppliedAdjustment = { id: string; amount: Money };
+
+export function matchesFilter(attrs: Record<string, string>, where: AttrFilter): boolean {
   return Object.entries(where).every(([key, values]) => values.includes(attrs[key] ?? ''));
 }
 
-/** shareOfUnits: units (not lines) matching `where` divided by all units is strictly above `above`. */
-export function conditionHolds(cond: RuleCondition, groups: PricedUnitGroup[]): boolean {
-  const { where, above } = cond.shareOfUnits;
-  const total = groups.reduce((n, g) => n + g.qty, 0);
-  if (total === 0) return false;
-  const matching = groups.filter((g) => matchesFilter(g.attrs, where)).reduce((n, g) => n + g.qty, 0);
-  const t = parseRatio(above);
-  // matching / total > p / q  <=>  matching * q > p * total
-  return BigInt(matching) * t.q > t.p * BigInt(total);
+function units(groups: PricedGroup[], where?: AttrFilter): number {
+  return groups.filter((g) => !where || matchesFilter(g.attrs, where)).reduce((n, g) => n + g.qty, 0);
 }
 
-/** Apply rules in file order on exact values. Returns the adjustments in force and the final value. */
+/** Is the condition met? `boundary` moves the threshold: "above" becomes "at or above" and the reverse. */
+export function conditionHolds(cond: RuleCondition, groups: PricedGroup[], subtotal: Money, boundary = false): boolean {
+  const all = units(groups);
+  if (all === 0) return false;
+  if ('always' in cond) return true;
+  if ('shareOfUnits' in cond) {
+    const t: Ratio = parseRatio(cond.shareOfUnits.above);
+    const left = BigInt(units(groups, cond.shareOfUnits.where)) * t.q;
+    const right = t.p * BigInt(all);
+    return boundary ? left >= right : left > right;
+  }
+  if ('hasUnits' in cond) {
+    const n = units(groups, cond.hasUnits.where);
+    return boundary ? n > cond.hasUnits.atLeast : n >= cond.hasUnits.atLeast;
+  }
+  const c = compare(subtotal, fromDecimal(cond.subtotalAtLeast, subtotal.currency));
+  return boundary ? c > 0 : c >= 0;
+}
+
+function deduction(rule: PricingRule, subtotal: Money, running: Money, doubleRate: boolean): Money {
+  if ('fixed' in rule.amount) return fromDecimal(rule.amount.fixed, subtotal.currency);
+  const r = parseRatio(rule.amount.rate);
+  const rate = { p: doubleRate ? r.p * 2n : r.p, q: r.q * 100n };
+  return scale(rule.amount.percentOf === 'subtotal' ? subtotal : running, rate);
+}
+
+/** Apply the rules in file order on exact values (9.3). Returns the adjustments in force and the total. */
 export function applyRules(
   rules: PricingRule[],
   subtotal: Money,
-  groups: PricedUnitGroup[],
+  groups: PricedGroup[],
+  tweak?: RuleTweak,
 ): { adjustments: AppliedAdjustment[]; total: Money } {
   let running = subtotal;
   const adjustments: AppliedAdjustment[] = [];
   for (const rule of rules) {
-    if (!conditionHolds(rule.when, groups)) continue;
-    const r = parseRatio(rule.amount.rate);
-    const amount = neg(scale(running, { p: r.p, q: r.q * 100n }));
+    const t = tweak?.rule === rule.id ? tweak.kind : undefined;
+    const inForce = t === 'never' ? false
+      : t === 'always' ? units(groups) > 0
+      : conditionHolds(rule.when, groups, subtotal, t === 'boundary');
+    if (!inForce) continue;
+    const amount = deduction(rule, subtotal, running, t === 'double-rate');
     adjustments.push({ id: rule.id, amount });
-    running = add(running, amount);
+    running = sub(running, amount);
   }
   return { adjustments, total: running };
 }
 
-/** The tightest purchase constraint for a product, or undefined. */
+export function hasRate(rule: PricingRule): boolean {
+  return 'percentOf' in rule.amount;
+}
+
+export function hasThreshold(rule: PricingRule): boolean {
+  return !('always' in rule.when);
+}
+
+/** Attributes a rule's condition reads. */
+export function ruleAttrs(rule: PricingRule): string[] {
+  if ('shareOfUnits' in rule.when) return Object.keys(rule.when.shareOfUnits.where);
+  if ('hasUnits' in rule.when) return Object.keys(rule.when.hasUnits.where);
+  return [];
+}
+
+/** The tightest purchase constraint for a product name, or undefined. */
 export function maxQtyFor(constraints: PurchaseConstraint[], name: string): number | undefined {
-  let max: number | undefined;
-  for (const c of constraints) {
-    if (c.match && c.match.name !== name) continue;
-    max = max === undefined ? c.maxQty : Math.min(max, c.maxQty);
-  }
-  return max;
+  const limits = constraints.filter((c) => !c.match || c.match.name === name).map((c) => c.maxQty);
+  return limits.length ? Math.min(...limits) : undefined;
 }
 
-/** The global limit (constraints without `match`), used by the validator. */
-export function globalMaxQty(constraints: PurchaseConstraint[]): number | undefined {
-  const global = constraints.filter((c) => !c.match);
-  return global.length ? Math.min(...global.map((c) => c.maxQty)) : undefined;
+/** The rule text a person reads in the example and the report. */
+export function describeRule(rule: PricingRule): string {
+  const amount = 'fixed' in rule.amount ? `${rule.amount.fixed} off`
+    : `${rule.amount.rate}% of the ${rule.amount.percentOf === 'subtotal' ? 'subtotal' : 'running value'} off`;
+  const where = (f: AttrFilter) => Object.entries(f).map(([k, v]) => `${k} ${v.join(' or ')}`).join(' and ');
+  const when = 'always' in rule.when ? 'always'
+    : 'shareOfUnits' in rule.when ? `when more than ${rule.when.shareOfUnits.above} of the units have ${where(rule.when.shareOfUnits.where)}`
+    : 'hasUnits' in rule.when ? `when at least ${rule.when.hasUnits.atLeast} unit(s) have ${where(rule.when.hasUnits.where)}`
+    : `when the subtotal is at least ${rule.when.subtotalAtLeast}`;
+  return `${rule.id}: ${amount} ${when}`;
 }
-
-export const NO_RULES: PricingModule = {
-  summary: { total: { label: /^total\b/i }, subtotal: { label: /^subtotal\b/i } },
-  rules: [],
-  constraints: [{ id: 'line-max', maxQty: 99 }],
-};

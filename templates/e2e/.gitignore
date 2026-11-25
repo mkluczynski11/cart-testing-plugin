@@ -1,4 +1,7 @@
-node_modules/
 reports/*/runs/
+reports/*/.lock
+reports/*/attempts.json
+reports/*/.promote-*/
 test-results/
+node_modules/
 playwright-report/

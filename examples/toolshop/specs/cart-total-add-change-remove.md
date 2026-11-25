@@ -13,6 +13,8 @@ steps:
   - { id: S3, do: setQty, product: A, qty: 3, cart_after: { A: 3, B: 1 } }
   - { id: S4, do: remove, product: B,         cart_after: { A: 3 } }
 check: each-step         # each-step | last-step | [S2, S4]
+preconditions: [empty-cart, guest, no-geolocation]
+price_source: ui         # ui | api
 ---
 
 Two different products go into the cart. The quantity of the first changes to 3, then the second

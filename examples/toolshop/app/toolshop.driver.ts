@@ -1,18 +1,10 @@
-// CartDriver for Toolshop (https://practicesoftwaretesting.com).
-//
-// UI only: every action and read goes through the page as a shopper would. The driver makes no
-// decisions and computes nothing; it performs an action, waits for the application's
-// acknowledgment, and returns what the page displays. Evidence: docs/toolshop-facts.md.
-//
-// Requires the Playwright option `testIdAttribute: 'data-test'`.
+// CartDriver for Toolshop (https://practicesoftwaretesting.com), driven only through the UI.
+// Implements design 8.3 (driver contract and rules) for the app `toolshop`; evidence in toolshop.map.md
+// and docs/toolshop-facts.md. It performs actions, waits for the acknowledgment and reports what the page shows.
 import type { Locator, Page, Response } from '@playwright/test';
-import type { CartDriver, CartLine, CartView, Displayed, ProductFacts, SummaryRow } from '../support/core/types';
-import { parseMoney } from './toolshop.money-temp'; // TEMPORARY until support/core/money.ts
-
-export type ToolshopDriverConfig = {
-  /** Timeout for one action's acknowledgment and for each locator. Default 10000. */
-  actionMs?: number;
-};
+import { amountFormat, parseAmount } from '../support/core/money';
+import type { CartDriver, CartLine, CartView, Displayed, DriverOptions, ProductFacts, SummaryRow } from '../support/core/types';
+import { InfraError, LocatorError, PreconditionError } from '../support/core/verdicts';
 
 const TOAST = {
   added: 'Product added to shopping cart.',
@@ -20,9 +12,13 @@ const TOAST = {
   deleted: 'Product deleted.',
 };
 const EMPTY_CART_TEXT = /the cart is empty/i;
+/** The empty message reported when the session never had a cart: the header shows no cart counter. */
+const NO_CART = '(no cart: the header shows no cart counter)';
 
-export function createDriver(page: Page, config: ToolshopDriverConfig = {}): CartDriver {
-  const actionMs = config.actionMs ?? 10_000;
+const USD = amountFormat('en-US', 'USD');
+
+export function createDriver(page: Page, options: DriverOptions): CartDriver {
+  const { actionMs } = options;
 
   // ---------- error classification ----------
 
@@ -31,12 +27,12 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
     isTimeout(e) || (e instanceof Error && /strict mode violation/i.test(e.message));
   const firstLine = (e: unknown) => (e instanceof Error ? e.message : String(e)).split('\n')[0];
 
-  /** Runs one locator interaction; a locator that finds nothing becomes a `LOCATOR:` error. */
+  /** Runs one locator interaction; a locator that finds nothing becomes a LocatorError. */
   async function onLocator<T>(action: string, locator: Locator, fn: (l: Locator) => Promise<T>): Promise<T> {
     try {
       return await fn(locator);
     } catch (e) {
-      if (isLocatorError(e)) throw new Error(`LOCATOR: ${action}: ${locator} (${firstLine(e)})`, { cause: e });
+      if (isLocatorError(e)) throw new LocatorError(`${action}: ${locator} did not respond (${firstLine(e)}).`);
       throw e;
     }
   }
@@ -46,10 +42,10 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
     try {
       response = await page.goto(path, { timeout: actionMs });
     } catch (e) {
-      throw new Error(`INFRA: ${action}: navigation to ${path} failed (${firstLine(e)})`, { cause: e });
+      throw new InfraError(`${action}: navigation to ${path} failed (${firstLine(e)}).`);
     }
     if (response && !response.ok()) {
-      throw new Error(`INFRA: ${action}: navigation to ${path} returned HTTP ${response.status()}`);
+      throw new InfraError(`${action}: navigation to ${path} returned HTTP ${response.status()}.`);
     }
   }
 
@@ -74,11 +70,14 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
     try {
       response = await responsePromise;
     } catch (e) {
-      throw new Error(`INFRA: ${action}: no ${request.method} ${request.path} response within ${actionMs} ms (${firstLine(e)})`, { cause: e });
+      throw new LocatorError(`${action}: no ${request.method} ${request.path} response within ${actionMs} ms, so the application did not acknowledge the action (${firstLine(e)}).`);
+    }
+    if (response.status() >= 500) {
+      throw new InfraError(`${action}: ${request.method} ${new URL(response.url()).pathname} returned HTTP ${response.status()}.`);
     }
     if (!response.ok()) {
-      const alertText = await page.getByRole('alert').allInnerTexts().catch(() => []);
-      throw new Error(`REFUSED: ${action}: ${request.method} ${new URL(response.url()).pathname} returned HTTP ${response.status()}; alerts: ${JSON.stringify(alertText)}`);
+      const alertText = (await page.getByRole('alert').allInnerTexts().catch(() => [])).join(' ');
+      throw new PreconditionError(`${action} was refused by the application: ${request.method} ${new URL(response.url()).pathname} returned HTTP ${response.status()}.`, alertText);
     }
     const toast = page.getByRole('alert').filter({ hasText: toastText });
     await onLocator(`${action} acknowledgment`, toast, (l) => l.first().waitFor({ state: 'visible', timeout: actionMs }));
@@ -100,7 +99,7 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
     searched.catch(() => undefined);
     await onLocator(action, page.getByTestId('search-submit'), (l) => l.click({ timeout: actionMs }));
     await searched.catch((e) => {
-      throw new Error(`INFRA: ${action}: no /products/search response within ${actionMs} ms (${firstLine(e)})`, { cause: e });
+      throw new LocatorError(`${action}: no /products/search response within ${actionMs} ms (${firstLine(e)}).`);
     });
     await onLocator(action, cardByName(name), (l) => l.click({ timeout: actionMs }));
     const heading = page.getByRole('heading', { level: 1 }).and(page.getByTestId('product-name'));
@@ -117,6 +116,13 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
   // ---------- driver ----------
 
   return {
+    provides: { attrs: ['co2_rating'] },
+    controls: {
+      setQuantity: { method: 'PUT', urlPattern: '**/carts/*/product/quantity' },
+      remove: { method: 'DELETE', urlPattern: '**/carts/*/product/*' },
+      cart: { method: 'GET', urlPattern: '**/carts/*', pricePath: 'cart_items.0.product.price' },
+    },
+
     async *candidates() {
       const action = 'candidates';
       for (let pageNo = 1; ; pageNo++) {
@@ -148,11 +154,13 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
       const attrs: Record<string, string> = {};
       const badge = page.getByTestId('co2-rating-badge');
       if ((await badge.count()) > 0) {
-        // DEVIATION: the badge shows all letters A–E; only the CSS class `active` marks the rating.
-        const active = badge.locator('.active');
+        const active = badge.locator('.active'); // locator-exception: the badge shows all letters A–E and only the class `active` marks the rating (order N, decision 4)
         attrs.co2_rating = (await onLocator(action, active, (l) => l.innerText({ timeout: actionMs }))).trim();
       }
-      const facts: ProductFacts = { name: shownName, unitPrice: parseMoney(priceText), inStock, attrs };
+      // The product page shows the price without the currency symbol, which stands outside the element.
+      const unitPrice = parseAmount(priceText, USD, { symbol: 'optional' });
+      if (!unitPrice) throw new LocatorError(`${action}: the unit price "${priceText}" is not an amount in USD.`);
+      const facts: ProductFacts = { name: shownName, unitPrice, inStock, attrs };
       return facts;
     },
 
@@ -186,7 +194,14 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
 
     async readCart() {
       const action = 'readCart';
-      await onCartPage(action);
+      // A session that never had a cart: /checkout then throws in the application ("cart_items" of null)
+      // and may render nothing, so the header is read instead. No cart counter there means no cart.
+      if (new URL(page.url(), 'http://x').pathname !== '/checkout') {
+        if (page.url() === 'about:blank') await navigate(action, '/');
+        await onLocator(action, page.getByTestId('nav-home'), (l) => l.waitFor({ timeout: actionMs }));
+        if (await page.getByTestId('nav-cart').count() === 0) return { empty: true, emptyMessage: NO_CART };
+        await navigate(action, '/checkout');
+      }
       const emptyMessage = page.getByText(EMPTY_CART_TEXT);
       const total = page.getByTestId('cart-total');
       await onLocator(action, total.or(emptyMessage), (l) => l.first().waitFor({ timeout: actionMs }));
@@ -195,7 +210,7 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
       // the variant decision from the lines or the lines from the summary.
       const snap = await page.evaluate(snapshotCart, EMPTY_CART_TEXT.source);
       if (snap.problems.length > 0) {
-        throw new Error(`LOCATOR: ${action}: ${snap.problems.join('; ')} (expected ${total} in a table row, or ${emptyMessage})`);
+        throw new LocatorError(`${action}: ${snap.problems.join('; ')} (expected ${total} in a table row, or ${emptyMessage}).`);
       }
       const totalRead = snap.summary.find((r) => r.testId === 'cart-total');
 
@@ -220,7 +235,7 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
         else if (row.testId === 'cart-subtotal') subtotal = value;
         else adjustments.push(value);
       }
-      if (!totalRow) throw new Error(`LOCATOR: ${action}: ${total} not found in the cart table`);
+      if (!totalRow) throw new LocatorError(`${action}: ${total} was not found in the cart table.`);
       const view: CartView = { empty: false, lines, adjustments, total: totalRow };
       if (subtotal) view.subtotal = subtotal;
       return view;
@@ -230,8 +245,11 @@ export function createDriver(page: Page, config: ToolshopDriverConfig = {}): Car
 
 // ---------- helpers ----------
 
+/** The amount with its raw text; a text that is not an amount is a read error (design 9.3). */
 function displayed(rawText: string): Displayed {
-  return { value: parseMoney(rawText), rawText };
+  const value = parseAmount(rawText, USD);
+  if (!value) throw new LocatorError(`readCart: "${rawText}" is not an amount in USD.`);
+  return { value, rawText };
 }
 
 /** Exact visible text, tolerant of surrounding (non-breaking) whitespace. */

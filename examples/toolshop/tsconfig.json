@@ -1,0 +1,11 @@
+{
+  "extends": "../../templates/e2e/tsconfig.json",
+  "compilerOptions": {
+    "typeRoots": ["../../templates/e2e/node_modules/@types"],
+    "paths": {
+      "@playwright/test": ["../../templates/e2e/node_modules/@playwright/test"],
+      "yaml": ["../../templates/e2e/node_modules/yaml"]
+    }
+  },
+  "include": ["app/**/*.ts", "lab/**/*.ts", "tests/**/*.ts"]
+}

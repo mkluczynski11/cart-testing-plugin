@@ -1,24 +1,24 @@
-// Scenario files: specs/<slug>.md with YAML front matter. Parsing, canonical hashing, freeze.
+// Scenario files specs/<slug>.md: YAML front matter, the parsed scenario, hashes and the freeze.
+// Implements design 8.1 (grammar, freeze) and R5/R6 (scenario and rules hashes).
 import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { files } from './config';
+import type { AttrFilter } from './pricing';
 
 export type Alias = string;
 export type StepKind = 'add' | 'setQty' | 'remove';
+export type Precondition = 'empty-cart' | 'guest' | 'no-geolocation';
+export type PriceSource = 'ui' | 'api';
+
+export const PRECONDITIONS: readonly Precondition[] = ['empty-cart', 'guest', 'no-geolocation'];
 
 export type ScenarioPick =
-  | { pick: 'first-available' }
-  | { pick: 'next-available'; distinctFrom: Alias[] }
+  | { pick: 'first-available'; where?: AttrFilter }
+  | { pick: 'next-available'; distinctFrom: Alias[]; where?: AttrFilter }
   | { pick: 'by-name'; name: string };
 
-export type Step = {
-  id: string;
-  do: StepKind;
-  product: Alias;
-  qty?: number;
-  cartAfter: Record<Alias, number>;
-};
+export type Step = { id: string; do: StepKind; product: Alias; qty?: number; cartAfter: Record<Alias, number> };
 
 export type CheckSpec = 'each-step' | 'last-step' | string[];
 
@@ -29,41 +29,27 @@ export type Scenario = {
   status: 'draft' | 'confirmed';
   request: string;
   products: Record<Alias, ScenarioPick>;
-  aliases: Alias[]; // declaration order
+  aliases: Alias[];        // declaration order
   steps: Step[];
   check: CheckSpec;
-  checkpoints: string[]; // step ids, in step order
+  checkpoints: string[];   // step ids, in step order
+  preconditions: Precondition[];
+  priceSource: PriceSource;
 };
 
-export type ScenarioFile = { text: string; data: unknown; body: string };
+export type ScenarioFile = { text: string; data: unknown };
 
-const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)([\s\S]*)$/;
-
-export function splitFrontMatter(text: string): { yaml: string; body: string } | null {
-  const m = FRONT_MATTER.exec(text);
-  return m ? { yaml: m[1], body: m[2] } : null;
-}
+const FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 
 export function parseScenarioText(text: string): ScenarioFile {
-  const parts = splitFrontMatter(text);
-  if (!parts) throw new Error('the file has no YAML front matter between --- lines');
-  return { text, data: parseYaml(parts.yaml), body: parts.body };
+  const m = FRONT_MATTER.exec(text);
+  if (!m) throw new Error('the file has no YAML front matter between --- lines');
+  return { text, data: parseYaml(m[1]) };
 }
-
-// ---- paths -------------------------------------------------------------------------------------
-
-export const paths = {
-  scenario: (root: string, slug: string) => path.join(root, 'specs', `${slug}.md`),
-  example: (root: string, slug: string) => path.join(root, 'specs', `${slug}.example.json`),
-  lock: (root: string, slug: string) => path.join(root, 'specs', `${slug}.lock.json`),
-  test: (root: string, slug: string) => path.join(root, 'tests', `${slug}.spec.ts`),
-};
 
 export function readScenarioFile(root: string, slug: string): ScenarioFile {
-  return parseScenarioText(fs.readFileSync(paths.scenario(root, slug), 'utf8'));
+  return parseScenarioText(fs.readFileSync(files.scenario(root, slug), 'utf8'));
 }
-
-// ---- canonical hash ----------------------------------------------------------------------------
 
 export function canonicalJson(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -73,89 +59,57 @@ export function canonicalJson(value: unknown): string {
   return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalJson(obj[k])}`).join(',')}}`;
 }
 
-export function sha256(text: string): string {
-  return createHash('sha256').update(text, 'utf8').digest('hex');
+export function sha256(text: string | Buffer): string {
+  return createHash('sha256').update(text).digest('hex');
 }
 
-/** SHA-256 over the front-matter data in canonical form, without the `status` field. */
+/** SHA-256 of the contract fields: the front matter in canonical form, without `status`. */
 export function scenarioHash(data: unknown): string {
   const copy = { ...(data as Record<string, unknown>) };
   delete copy.status;
   return sha256(canonicalJson(copy));
 }
 
-// ---- freeze ------------------------------------------------------------------------------------
+/** SHA-256 of a rules file's bytes (R6). */
+export function fileHash(file: string): string {
+  return sha256(fs.readFileSync(file));
+}
 
 /** Change only the value on the `status:` line of the front matter. */
 export function setStatusLine(text: string, status: 'draft' | 'confirmed'): string {
-  const parts = splitFrontMatter(text);
-  if (!parts) throw new Error('the file has no YAML front matter');
-  const start = text.indexOf(parts.yaml);
-  const lines = parts.yaml.split('\n');
-  const idx = lines.findIndex((l) => /^status:/.test(l));
-  if (idx < 0) throw new Error('the front matter has no status line');
-  lines[idx] = lines[idx].replace(/^status:(\s*)("[^"]*"|'[^']*'|[^\s#]+)/, `status:$1${status}`);
-  return text.slice(0, start) + lines.join('\n') + text.slice(start + parts.yaml.length);
+  return text.replace(/^(status:[ \t]*)("[^"]*"|'[^']*'|[^\s#]+)/m, `$1${status}`);
 }
 
-export type Lock = { scenario: string; sha256: string };
+export type ConfirmedHashes = { scenarioSha256: string; rulesSha256: string };
 
-export type FreezeState = 'frozen' | 'not-confirmed' | 'no-lock' | 'changed';
+export type FreezeState = 'frozen' | 'not-confirmed' | 'scenario-changed' | 'rules-changed';
 
-export function freezeState(root: string, slug: string, data: unknown): FreezeState {
-  const status = (data as { status?: unknown })?.status;
-  if (status !== 'confirmed') return 'not-confirmed';
-  const lockFile = paths.lock(root, slug);
-  if (!fs.existsSync(lockFile)) return 'no-lock';
-  const lock = JSON.parse(fs.readFileSync(lockFile, 'utf8')) as Lock;
-  return lock.sha256 === scenarioHash(data) ? 'frozen' : 'changed';
+/** Compare a scenario and its rules file with the hashes recorded at confirmation. */
+export function freezeState(data: unknown, confirmed: ConfirmedHashes | undefined, rulesSha256: string): FreezeState {
+  if ((data as { status?: unknown })?.status !== 'confirmed' || !confirmed) return 'not-confirmed';
+  if (confirmed.scenarioSha256 !== scenarioHash(data)) return 'scenario-changed';
+  if (confirmed.rulesSha256 !== rulesSha256) return 'rules-changed';
+  return 'frozen';
 }
 
-export function freezeMessage(state: FreezeState): string {
+export function freezeMessage(state: FreezeState, slug: string): string {
   switch (state) {
-    case 'frozen': return 'scenario is confirmed and unchanged';
-    case 'not-confirmed': return 'scenario is not confirmed; run `qa-harness confirm <slug>` after the tester approved the example';
-    case 'no-lock': return 'scenario says confirmed but has no lock file; re-confirm it with `qa-harness confirm <slug>`';
-    case 'changed': return 'scenario changed after it was confirmed; re-confirm it with `qa-harness confirm <slug>`';
+    case 'frozen': return `Scenario ${slug} is confirmed and unchanged.`;
+    case 'not-confirmed': return `Scenario ${slug} is not confirmed; show the example to the tester and run \`qa-harness example ${slug} --confirm\` after the approval.`;
+    case 'scenario-changed': return `Scenario ${slug} changed after its confirmation; show the new example and run \`qa-harness example ${slug} --confirm\` again.`;
+    case 'rules-changed': return `The rules file changed after scenario ${slug} was confirmed; show the new example and run \`qa-harness example ${slug} --confirm\` again.`;
   }
 }
 
-// ---- project root and config -------------------------------------------------------------------
-
-export type QaConfig = {
-  app: string;
-  baseURL: string;
-  testIdAttribute: string;
-  locale: string;
-  currency: 'USD';
-  repeat: number;
-  pickLimit: number;
-  timeouts: { actionMs: number; settleMs: number; testMs: number };
-};
-
-/** The e2e project directory: QA_ROOT when set (selftest workspaces), else the directory above support/. */
-export function qaRoot(): string {
-  return process.env.QA_ROOT ? path.resolve(process.env.QA_ROOT) : path.resolve(__dirname, '..', '..');
+export function describeStep(s: Pick<Step, 'do' | 'product' | 'qty'>): string {
+  switch (s.do) {
+    case 'add': return `add ${s.product} ${s.qty}`;
+    case 'setQty': return `setQty ${s.product} ${s.qty}`;
+    case 'remove': return `remove ${s.product}`;
+  }
 }
 
-/** The directory that holds qa.config.json and the package (never a selftest workspace). */
-export function packageRoot(): string {
-  return path.resolve(__dirname, '..', '..');
-}
-
-export function loadConfig(root: string = qaRoot()): QaConfig {
-  const file = fs.existsSync(path.join(root, 'qa.config.json'))
-    ? path.join(root, 'qa.config.json')
-    : path.join(packageRoot(), 'qa.config.json');
-  const cfg = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<QaConfig>;
-  return {
-    app: cfg.app ?? 'toolshop',
-    baseURL: cfg.baseURL ?? '',
-    testIdAttribute: cfg.testIdAttribute ?? 'data-test',
-    locale: cfg.locale ?? 'en-US',
-    currency: 'USD',
-    repeat: cfg.repeat ?? 3,
-    pickLimit: cfg.pickLimit ?? 30,
-    timeouts: { actionMs: 10000, settleMs: 3000, testMs: 90000, ...(cfg.timeouts ?? {}) },
-  };
+export function describeState(state: Record<string, number>): string {
+  const entries = Object.entries(state);
+  return entries.length ? entries.map(([k, q]) => `${k}×${q}`).join(', ') : '(empty)';
 }
