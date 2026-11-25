@@ -1,13 +1,20 @@
 {
   "name": "cart-testing",
   "description": "The qa plugin: scenario-driven, verified Playwright tests for shopping carts.",
-  "owner": { "name": "cart-testing-plugin" },
+  "owner": {
+    "name": "mkluczynski11"
+  },
   "plugins": [
     {
       "name": "qa",
       "source": "./",
       "description": "Turns a cart scenario described in plain words into a verified Playwright test kept in your repo.",
-      "version": "0.3.0"
+      "version": "0.3.0",
+      "author": {
+        "name": "mkluczynski11"
+      },
+      "repository": "https://github.com/mkluczynski11/cart-testing-plugin",
+      "license": "MIT"
     }
   ]
 }

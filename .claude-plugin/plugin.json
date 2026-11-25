@@ -3,8 +3,10 @@
   "version": "0.3.0",
   "description": "Turns a cart scenario described in plain words into a verified Playwright test kept in your repo.",
   "author": {
-    "name": "cart-testing-plugin"
+    "name": "mkluczynski11"
   },
+  "repository": "https://github.com/mkluczynski11/cart-testing-plugin",
+  "license": "MIT",
   "keywords": [
     "testing",
     "playwright",
