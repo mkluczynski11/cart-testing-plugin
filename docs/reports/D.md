@@ -94,3 +94,69 @@ Consequences for the later stages:
 
 Nested sessions of this stage: see the session table at the end (rows M1–M3).
 
+## Stage 2 — shell and setup
+
+`date -u`: `Wed Nov 25 02:19:03 UTC 2026`.
+
+Built: `.claude-plugin/plugin.json` (`qa`, `0.3.0`), `.claude-plugin/marketplace.json` (`cart-testing`, one entry
+`"source": "./"`), `bin/qa-harness`, `scripts/init.mjs`, `skills/setup/SKILL.md`.
+
+- `bin/qa-harness` (Node): walks up from the working directory and takes the first directory that is an e2e root
+  (`qa.config.json` and `support/harness/cli.ts`) or holds one as `e2e/`; runs `support/harness/cli.ts` there with the
+  root's own `tsx`, so the behaviour is the same from the repo root and from `e2e/`. `init` goes to `scripts/init.mjs`.
+  Before setup, `doctor` checks Node, git and the npm registry and says setup has not run (`PASS` when the three are
+  fine); every other subcommand answers one sentence naming `/qa:setup` with `INFRA_FAIL`.
+- `scripts/init.mjs`: the tester's repo is the git top level of the working directory; copies `templates/e2e` with an
+  explicit exclusion list (`node_modules`, `test-results`, `playwright-report`, `reports/*/runs`, `html/`, `.lock`,
+  `attempts.json`, `.promote-*`), never overwrites a file under `app/`, `specs/`, `tests/`, `reports/`, drops the
+  `qa:toolshop` and `typecheck:toolshop` scripts, copies the starter pack `examples/<app>/app/*` found relative to the
+  plugin's own location (one sentence when there is none), writes `qa.config.json` (template < starter pack config <
+  existing config < arguments), runs `npm ci`, `playwright install chromium` and `selftest`, ends with `VERDICT:`.
+- Deviation: with a starter pack, `init` also takes the pack's `qa.config.json` defaults (test-id attribute
+  `data-test`, `settleMs` 1000) except `app` and `baseURL`. Without that the starter driver would fail: the setup
+  command of the order passes no `--test-id-attribute`, and the template default is `data-testid`.
+
+Check (in `.sandbox/tester-1/`, `git init`; `Q` = this worktree's `bin/qa-harness`):
+
+```text
+$ $Q doctor                      (before setup)
+ok: Node 24.16.0
+ok: git version 2.48.0
+ok: the npm registry answers
+No e2e/ directory here or in a parent: setup has not run; run /qa:setup <app> <base-url> first.
+VERDICT: PASS
+$ $Q need foo
+No e2e/ directory here or in a parent: setup has not run, so "need" has nothing to work on; run /qa:setup <app> <base-url> first.
+VERDICT: INFRA_FAIL
+$ $Q init --app toolshop --base-url https://practicesoftwaretesting.com          (65 s)
+Created e2e/: 75 file(s) from the plugin's template, 0 of your file(s) kept.
+Starter pack for "toolshop": 3 file(s) copied into e2e/app/, 0 existing kept.
+Wrote e2e/qa.config.json: app toolshop, baseURL https://practicesoftwaretesting.com, test id attribute data-test, en-US, USD, defects default.
+Installed e2e/ dependencies: added 16 packages in 648ms
+Chromium for Playwright is installed.
+selftest: integrity          PASS  support/core and support/harness match support/core/MANIFEST.json 12/12 rows passed in 62.9 s.
+Setup is complete: e2e/ works without the plugin through "npm run qa -- <subcommand>" in e2e/. Commit e2e/ (its .gitignore keeps run directories out).
+VERDICT: PASS
+$ cd e2e && npm run qa -- selftest          (no plugin involved)
+12/12 rows passed in 68.7 s.
+VERDICT: PASS
+$ grep -rliE "toolshop|practicesoftwaretesting|pliers" e2e --exclude-dir=node_modules | grep -vE "^e2e/(app/|qa.config.json)"
+(no output)
+$ comm -23 <installed files outside node_modules> <git ls-files templates/e2e>   (selftest run directories omitted)
+app/toolshop.driver.ts
+app/toolshop.map.md
+app/toolshop.pricing.ts
+test-results/.last-run.json
+$ comm -13 ...                                   (template files missing from the install)
+(no output)
+$ node -e "console.log(require('./e2e/package.json').scripts)"
+{ 'test:unit': 'playwright test --project unit', qa: 'tsx support/harness/cli.ts' }
+$ git status --short --untracked-files=all | wc -l      (ignored files excluded)
+78                                                       (75 template files + 3 starter files)
+```
+
+The extra files are the starter pack and what `selftest` wrote (`test-results/`, `reports/selftest/runs/`, both
+ignored by the template's `.gitignore`); `node_modules/` comes from `npm ci`, none was copied.
+`claude plugin validate .` → `✔ Validation passed`; its separate "plugin directory" checks report a README under 40
+words and no LICENSE (the README is the final session's file).
+

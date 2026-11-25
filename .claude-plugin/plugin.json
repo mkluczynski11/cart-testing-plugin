@@ -1,0 +1,15 @@
+{
+  "name": "qa",
+  "version": "0.3.0",
+  "description": "Turns a cart scenario described in plain words into a verified Playwright test kept in your repo.",
+  "author": {
+    "name": "cart-testing-plugin"
+  },
+  "keywords": [
+    "testing",
+    "playwright",
+    "e2e",
+    "qa",
+    "cart"
+  ]
+}

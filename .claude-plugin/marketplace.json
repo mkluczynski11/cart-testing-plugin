@@ -1,0 +1,13 @@
+{
+  "name": "cart-testing",
+  "description": "The qa plugin: scenario-driven, verified Playwright tests for shopping carts.",
+  "owner": { "name": "cart-testing-plugin" },
+  "plugins": [
+    {
+      "name": "qa",
+      "source": "./",
+      "description": "Turns a cart scenario described in plain words into a verified Playwright test kept in your repo.",
+      "version": "0.3.0"
+    }
+  ]
+}
