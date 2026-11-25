@@ -400,3 +400,32 @@ of every check on `81c2aae`:
 
 Stages overlapped while nested sessions ran. Ended about `11:45 UTC`, minute 23 of the 110-minute box; no stage was
 cut.
+
+## Follow-up
+
+`date -u`: `Wed Nov 25 11:50:16 UTC 2026` to `11:54`. Three changes, same rules; no push, no merge.
+
+| # | Change | Commit | Check |
+| --- | --- | --- | --- |
+| 1 | `--yes` row in `README.md` and `docs/reference.md`: "Do not wait for the confirmation."; "on this branch" removed twice from `docs/reference.md` | `801a577` | `grep -c 'on this branch' docs/reference.md` → `0`; README 240 lines, reference 449 |
+| 2 | defects-line check out of A4, A7, R1; new case R2 without `--yes`: the answer ends at "Confirm? (ok / correction)", the line before it is the first line `qa-harness defects check` printed, the scenario stays a draft. `evals/run.mjs` back to its state before order E | `f8e6e30` | one run, `docs/eval-log.md` rows 51–54 |
+| 3 | `qa-harness example <slug>` with no rules file: `app/<app>.pricing.ts does not exist; write the app's rules file first (design 9.2).` `VERDICT: SPEC_INVALID` (was "The harness failed unexpectedly … `INFRA_FAIL`" with the absolute path). `need` and the other subcommands that load the scenario end the same way; `doctor` still reports it as `LINT_FAIL`. Reference rows of `need`, `run` and "Creating a driver" step 1, and the design 18 row "Conditions that are not harness bugs", name it | `684c284` | test first: `unit/conditions.spec.ts` "example with no rules file …", red `"verdict": "plain error"`, `"absolute": true`; then green; manifest regenerated |
+
+Eval run (sonnet, once each): R2 `PASS` 3/3, R1 `PASS`, A7 `PASS`, A4 `FAIL` on two checks ("intent review current",
+"the test comes from qa-harness compile"). The A4 session's own `qa-harness intent` and `qa-harness compile` ended
+`VERDICT: PASS`. The transcript logs every tool call a second time after its result (A4: lines 112/113/115 for
+`intent`, 122/123/125 for `compile`), and `evals/run.mjs` `transcript()` replaces the entry on the second
+`tool_use`, losing the result. Regraded from the same transcript with a reader that keeps the first entry (a scratch
+script, nothing committed): 6 of 6 ok. Not fixed, as it is outside the three changes. The fix is one condition in
+`transcript()`: `if (part.type === 'tool_use' && !calls.has(part.id))`. Any check that reads a call's result can be
+hit by it; rows 25–50 may be affected the same way.
+
+Exit checks on `684c284` (plus the eval files of `f8e6e30`), last lines: `tsc` exit 0; `typecheck:toolshop` exit 0;
+`test:unit` `193 passed (4.0s)`; `selftest` `VERDICT: PASS` (13/13); `node --test scripts/` `ℹ fail 0`;
+`check-contracts` `ok: …`; `claude plugin validate .` `✔ Validation passed`; `qa:toolshop -- doctor` `VERDICT: PASS`;
+both examples `run --dry` `VERDICT: PASS`; `grep -c '<!--'` README and reference `0`.
+
+Of "Unverified and left to the owner": the `--yes` item is settled by change 1 and R2; the missing rules file is now
+a condition with its own verdict.
+
+Nested sessions: 4 (the eval run), $1.17. Live invocations: none.
