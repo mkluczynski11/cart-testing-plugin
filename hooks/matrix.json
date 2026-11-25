@@ -1,0 +1,31 @@
+{
+  "$comment": "Design 7.3 (write matrix) and the 'Who invokes it' column of 6.1. Paths are relative to the e2e root; '**' crosses directories, '*' does not. Roles are agent_type values; 'main' is the main thread (no agent_type) and any agent that is not one of this plugin's.",
+  "writes": {
+    "main": {
+      "deny": [
+        { "path": "support/core/**", "reason": "support/core is the plugin's library and nobody edits it (R4); restore it with /qa:setup if it changed." },
+        { "path": "support/harness/**", "reason": "support/harness is the plugin's harness and nobody edits it (R4); restore it with /qa:setup if it changed." },
+        { "path": "specs/*.intent.md", "reason": "the intent review is written only by the test-verifier agent; delegate step 3a to it." },
+        { "path": "reports/**", "reason": "reports are written only by qa-harness (runs, report --promote) and review.md only by test-verifier; use those." }
+      ]
+    },
+    "qa:app-mapper": {
+      "allow": ["app/*.driver.ts", "app/*.map.md"],
+      "reason": "app-mapper writes only app/<app>.driver.ts and app/<app>.map.md (R1); report anything else as an uncertainty."
+    },
+    "qa:defect-designer": {
+      "allow": ["specs/*.defects.json"],
+      "reason": "defect-designer writes only specs/<slug>.defects.json (R1); describe anything else in your answer."
+    },
+    "qa:test-verifier": {
+      "allow": ["specs/*.intent.md", "reports/*/runs/*/review.md"],
+      "reason": "test-verifier writes only specs/<slug>.intent.md and review.md in a run directory (R1); it fixes nothing, so put the finding into your review and verdict."
+    }
+  },
+  "subcommands": {
+    "main": ["init", "doctor", "selftest", "example", "compile", "need", "defects check", "run", "report", "intent"],
+    "qa:app-mapper": ["doctor", "need"],
+    "qa:defect-designer": ["defects list", "defects check"],
+    "qa:test-verifier": ["verify", "intent"]
+  }
+}

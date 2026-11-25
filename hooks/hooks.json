@@ -1,0 +1,11 @@
+{
+  "description": "Role guardrails of the qa plugin: write matrix (R1, R4) and qa-harness subcommands per role (R2).",
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-paths.mjs\"" }] },
+      { "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-bash.mjs\"" }] }
+    ]
+  }
+}
