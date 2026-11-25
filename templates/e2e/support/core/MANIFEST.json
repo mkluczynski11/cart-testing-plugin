@@ -32,7 +32,7 @@
   "support/harness/control-app/server.ts": "d1b50f9939ec6fa329f1718a4daa61f8b96a8b1fba1d56cfeda2a38a25fa34ea",
   "support/harness/defects.ts": "2ae288a425c261f47ee6e572245012cb2f41e5b1fd21a7971e34715f28046bd9",
   "support/harness/doctor.ts": "01725ab857997d5bd3cd4b555f2d447bfb13d7ad3a33f30c43a917ee5bf2e59e",
-  "support/harness/example.ts": "2672de0eff316cbf252100bdba502fc33a4d3708be8a4a2d29ed4f68ada98b7e",
+  "support/harness/example.ts": "ed9d98f1feb3b645b636d8cf2672a3b05262c813f4dc577674f27533467d4cbe",
   "support/harness/fixtures/add-twice.md": "061d6c52f38b55956a4f6dfc3332df5023d2e2097c9e3891c42933d705310d8e",
   "support/harness/fixtures/cart-total-add-change-remove.md": "cecaf655f6ab7f62fe1ed2c8b3fa7cfc8f5f0f068c468898f2787b5a468d9614",
   "support/harness/fixtures/golden/reference.spec.txt": "ee3a9a150c9fb0454ff14a76d3e89f788a0f490ed4d07d91706f4e054ecc0c26",

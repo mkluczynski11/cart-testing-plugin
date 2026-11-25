@@ -42,7 +42,7 @@ not classify prints "The harness failed unexpectedly" and ends `INFRA_FAIL`. Opt
 | `init` | `--app <name>`, `--base-url <url>`, `--test-id-attribute <a>`, `--locale <l>`, `--currency <c>`, `--defects default\|extended` | main | files copied and kept, starter pack, the config line, `npm ci`, Chromium, `selftest` | `PASS`, `SPEC_INVALID`, `INFRA_FAIL` |
 | `doctor` | `--write-manifest` | main, app-mapper | `ok:`, `note:` and one line per finding: Node, Chromium, manifest, each scenario, driver, rules file, type check | `PASS`, `INFRA_FAIL`, `HARNESS_MODIFIED`, `SPEC_INVALID`, `SCENARIO_CHANGED`, `VERIFICATION_STALE`, `LINT_FAIL` |
 | `selftest` | — | main | one row per area of the harness's own test, then the count of rows passed | `PASS`, `INFRA_FAIL` (a row failed) |
-| `example <slug>` | `--confirm` | main | the stubs, the example totals per step, the rules; with `--confirm` the frozen hashes | `PASS`, `SPEC_INVALID` |
+| `example <slug>` | `--confirm` | main | the stubs, the example totals per step, the rules; with `--confirm` the frozen hashes; without it on a confirmed scenario also the freeze state, and `example.json` stays as it is | `PASS`, `SPEC_INVALID` |
 | `compile <slug>` | `--force` | main | the test file written, unchanged, or the difference to a hand edit | `PASS`, `FILE_CONFLICT`, `SPEC_INVALID` |
 | `intent <slug>` | — | main, test-verifier | `scenario_sha256: <hash>`, the review file, `state:` (`missing`, `stale`, `unreadable`, `not-confirmed`, `current <VERDICT>`) | `PASS`, `SPEC_INVALID` |
 | `need <slug>` | — | main, app-mapper | missing actions, product attributes, request bindings | `PASS`, `LINT_FAIL`, `SPEC_INVALID` |

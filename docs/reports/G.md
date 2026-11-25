@@ -435,7 +435,7 @@ browser on the live site.
 ## Not done
 
 - `qa-harness example` without `--confirm` dropping the `confirmed` record of a confirmed scenario (stage 4,
-  observation): not changed, outside the two texts this order changes.
+  observation): not changed in this order; fixed in the follow-up below.
 - A third is never worded "a third" in practice: the rules vocabulary takes only decimal shares, and no finite decimal
   is exactly 1/3 (stage 1).
 - `docs/reference.md` grew from 449 to 465 lines (order E's limit of 450 is not part of this order).
@@ -499,3 +499,59 @@ Exit checks of order F, on `4e56139`, last line of each (`templates/e2e` unless 
 | `git status --short` after the last commit | (no output; checked after the commit below) |
 
 The time box: started 12:15:20, last check 12:42:42, minute 27 of 70; no stage was cut.
+
+## Follow-up — `example` keeps the confirmation record
+
+`date -u`: `Wed Nov 25 12:46:30 UTC 2026`. Same rules as the order; no push, no merge, no live site, no nested session.
+
+`qa-harness example <slug>` without `--confirm` on a confirmed scenario printed the example and rewrote
+`specs/<slug>.example.json` without its `confirmed` record (stage 4, observation), which broke the freeze of a
+verified scenario. Now it prints the example and the freeze state and leaves the file as it is.
+
+Test first: `unit/example-command.spec.ts`, three tests.
+
+| Test | Before the fix | After |
+| --- | --- | --- |
+| confirmed scenario: prints the example, `example.json` byte for byte unchanged, no "Wrote" line | red: `- "kept": true,` `+ "kept": false,` | green |
+| confirmed scenario changed after its confirmation (title edited): the record stays, the output says a new confirmation is due | red: `Expected: true`, `Received: false` (the file was rewritten) | green |
+| draft scenario: `example.json` written as before, without a `confirmed` record | green (unchanged behaviour) | green |
+
+The fix, `templates/e2e/support/harness/example.ts`: when `--confirm` is not given, the freeze state is not
+`not-confirmed` (the scenario says `status: confirmed` and the file has a `confirmed` record) and the stored file has
+that record, `example` prints the example, the freeze message (`Scenario <slug> is confirmed and unchanged.`, or that it
+changed after its confirmation and needs `--confirm` again) and `Left specs/<slug>.example.json as it is: it holds the
+confirmation record (scenario sha256 …).`, ends `PASS` and writes nothing. A draft, and `--confirm`, write the file as
+before. Manifest regenerated. `docs/reference.md` (the `example` row), `skills/contracts/SKILL.md` and design 18 (row
+"`example` on a confirmed scenario") say so.
+
+The case of stage 4, repeated on the committed example (a confirmed, verified scenario), from `templates/e2e`:
+
+```text
+$ npm run qa:toolshop -- example two-products-change-remove
+…
+Rules: eco-discount: 5% off when more than half of the units have co2_rating A or B.
+Source: observed on the live site, confirmed.
+Scenario two-products-change-remove is confirmed and unchanged.
+Left specs/two-products-change-remove.example.json as it is: it holds the confirmation record (scenario sha256 fc04e8abb98b…).
+VERDICT: PASS
+$ git status --short examples
+(no output)
+```
+
+Exit checks of order F, 12:47:29–12:48:59 UTC, on the working tree of the commit below, last line of each:
+
+| Check | Last line |
+| --- | --- |
+| `npm ci` (`templates/e2e`) | `added 16 packages in 707ms` |
+| `npx tsc --noEmit`, `npm run typecheck:toolshop` | exit 0, exit 0 |
+| `npm run test:unit` | `205 passed (6.3s)` (202 + the three new tests) |
+| `npm run qa -- selftest` | `VERDICT: PASS` (`13/13 rows passed in 75.1 s.`) |
+| `npm run qa:toolshop -- doctor` | `VERDICT: PASS` |
+| `qa:toolshop -- run two-products-change-remove --dry`, `run wood-saw-raise-remove-other --dry` | `VERDICT: PASS`, `VERDICT: PASS` |
+| root: `node --test scripts/` | `ℹ tests 16`, `ℹ fail 0` |
+| root: `node scripts/check-contracts.mjs` | `ok: skills/contracts/driver.md quotes templates/e2e/support/core/types.ts exactly.` |
+| root: `claude plugin validate .` | `✔ Validation passed` |
+| C2 grep over `skills` and `agents` | no output |
+| R15 over `examples/` | no hit |
+| `grep -c '<!--'` `README.md`, `docs/reference.md` | `0`, `0` |
+| `git status --short` after the commit | (no output) |

@@ -1,11 +1,12 @@
 // qa-harness example <slug> [--confirm]: validate, compute the stubs and the example table, and freeze.
-// Implements design 8.1 (freeze), 8.2 (example) and 11.1 (what the tester confirms).
+// Implements design 8.1 (freeze), 8.2 (example) and 11.1 (what the tester confirms). Without --confirm a confirmed
+// scenario keeps its example.json and the confirmation record in it (follow-up to order G).
 import * as fs from 'node:fs';
 import { files } from '../core/config';
 import { buildExample, type ExampleFile } from '../core/example';
 import { formatMoney, fromDecimal } from '../core/money';
 import { describeRule, describeSources } from '../core/pricing';
-import { parseScenarioText, scenarioHash, setStatusLine } from '../core/scenario';
+import { freezeMessage, parseScenarioText, scenarioHash, setStatusLine } from '../core/scenario';
 import { loadScenario, rel, type CommandResult } from './common';
 
 export function example(root: string, slug: string, confirm: boolean): CommandResult {
@@ -22,6 +23,12 @@ export function example(root: string, slug: string, confirm: boolean): CommandRe
       : ['No pricing rules apply.']),
     ...ex.gaps.map((g) => `Scenario gap: ${g}.`),
   ];
+  const { freeze, example: stored } = got.loaded;
+  if (!confirm && freeze !== 'not-confirmed' && stored?.confirmed) {
+    // A confirmed scenario: the file holds the confirmation record (8.1), so it is printed, never rewritten here.
+    lines.push(freezeMessage(freeze, slug), `Left ${rel(root, files.example(root, slug))} as it is: it holds the confirmation record (scenario sha256 ${stored.confirmed.scenarioSha256.slice(0, 12)}…).`);
+    return { verdict: 'PASS', lines, data: { example: ex } };
+  }
   if (confirm) {
     const newText = setStatusLine(got.loaded.text, 'confirmed');
     const newData = parseScenarioText(newText).data;

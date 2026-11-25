@@ -71,7 +71,8 @@ A unit price is read at the first add and stays constant. There is no `setQty` t
 
 ### Freeze
 
-`qa-harness example <slug>` computes the example on stub prices and writes `specs/<slug>.example.json`.
+`qa-harness example <slug>` computes the example on stub prices and writes `specs/<slug>.example.json`; on a confirmed
+scenario it only prints the example and the freeze state, and the file with its confirmation record stays as it is.
 `qa-harness example <slug> --confirm` sets `status: confirmed` and records `confirmed.scenarioSha256` (the contract
 fields without `status`) and `confirmed.rulesSha256`. Any later change to the contract fields or to
 `app/<app>.pricing.ts` makes `compile` and `run` refuse (`SPEC_INVALID`, `SCENARIO_CHANGED`) until a new confirmation.
