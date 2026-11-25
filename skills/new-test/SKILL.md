@@ -62,7 +62,8 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
 4. **Compilation.** `qa-harness compile <slug>`, only after `qa-harness intent <slug>` ended `PASS`.
 5. **Dry gates.** `qa-harness run <slug> --dry`. With `--dry`: stop here and give the dry readback.
 6. **Driver.** `qa-harness need <slug>`. `PASS`: skip. Otherwise call `qa:app-mapper` with `mode: build`, `slug`,
-   the missing actions exactly as `need` printed them and `root: e2e`; then `qa-harness need <slug>` again.
+   the missing actions exactly as `need` printed them and `root: e2e`. Its last line is `VERDICT: PASS`,
+   `NEEDS_TESTER` (ask its question, stop) or `UNDETERMINED` (stop). Then `qa-harness need <slug>` again.
 7. **Live run.** `qa-harness run <slug>` (after a driver repair: `qa-harness run <slug> --repair driver`).
 8. **Verification.** Call `qa:test-verifier` with `mode: run` / `slug: <slug>` / `request (verbatim): …` / `root: e2e`.
    `VERIFIED` with a run id: `qa-harness report <slug> --promote <runId>`. Any other verdict: `routing.md`.

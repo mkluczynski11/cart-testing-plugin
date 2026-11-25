@@ -92,11 +92,12 @@ test('subcommands are read from qa-harness and npm forms', () => {
   assert.deepEqual(subcommandsIn('cd e2e && npm run qa -- verify s-1'), ['verify']);
   assert.deepEqual(subcommandsIn('/x/bin/qa-harness example s-1 && qa-harness compile s-1'), ['example', 'compile']);
   assert.deepEqual(subcommandsIn('git status'), []);
+  assert.deepEqual(subcommandsIn('qa-harness --help'), []);
 });
 
 test('main thread: its own subcommands and any other command pass; verify and defects list do not', () => {
   for (const c of ['qa-harness doctor', 'qa-harness example s-1 --confirm', 'qa-harness compile s-1', 'qa-harness run s-1 --dry',
-    'qa-harness report s-1 --promote 20261125T000000Z-abcd', 'qa-harness init --app shop --base-url https://x.test', 'git status', 'ls e2e/specs']) {
+    'qa-harness report s-1 --promote 20261125T000000Z-abcd', 'qa-harness init --app shop --base-url https://x.test', 'qa-harness --help', 'git status', 'ls e2e/specs']) {
     assert.equal(decideBash(bash(undefined, c)), undefined, c);
   }
   assert.match(decideBash(bash(undefined, 'qa-harness verify s-1')), /belongs to qa:test-verifier/);

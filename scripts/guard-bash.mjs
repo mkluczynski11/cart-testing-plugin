@@ -3,10 +3,10 @@
 import { loadMatrix, readInput, refuse, roleOf } from './hook-common.mjs';
 import { pathToFileURL } from 'node:url';
 
-/** Every harness invocation in a command line: `qa-harness <sub>` or `npm run qa -- <sub>`, with "defects list|check". */
+/** Every harness invocation in a command line: `qa-harness <sub>` or `npm run qa -- <sub>`, with "defects list|check"; a flag such as --help is not one. */
 export function subcommandsIn(command) {
   const found = [];
-  const re = /(?:^|[\s;&|(`])(?:\S*\/)?qa-harness\s+([a-z-]+)(?:\s+(list|check)\b)?|npm\s+(?:--prefix\s+\S+\s+)?run\s+qa(?:\s+--silent)?\s+--\s+([a-z-]+)(?:\s+(list|check)\b)?/g;
+  const re = /(?:^|[\s;&|(`])(?:\S*\/)?qa-harness\s+([a-z][a-z-]*)(?:\s+(list|check)\b)?|npm\s+(?:--prefix\s+\S+\s+)?run\s+qa(?:\s+--silent)?\s+--\s+([a-z][a-z-]*)(?:\s+(list|check)\b)?/g;
   for (const m of command.matchAll(re)) {
     const sub = m[1] ?? m[3];
     const extra = m[2] ?? m[4];
