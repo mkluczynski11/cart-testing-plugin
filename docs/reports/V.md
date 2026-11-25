@@ -167,9 +167,9 @@ the background on `templates/e2e`; they used the clean export, so the times over
 | 7 code against the quality bar | 02:26:10 | 02:27:20 | 1 |
 | 6 a tester's read (incl. two control-app runs) | 02:25:45 | 02:29:20 | 3.5 |
 | 8 open questions; G0 and G2 probes | 02:29:20 | 02:32:03 | 3 |
-| summary and commit | 02:48:16 | 02:55 | 7 |
+| summary and commit | 02:48:16 | 02:52 | 4 |
 
-Total about 43 minutes of the 120-minute box; no part was cut.
+Total about 40 minutes (02:12:24–02:52) of the 120-minute box; no part was cut.
 
 Live invocations against https://practicesoftwaretesting.com: **2 of 10**, both headless, one browser.
 
