@@ -1,18 +1,18 @@
 {
   "meta": {
-    "runId": "20261125T102038Z-c54b",
-    "slug": "wood-saw-qty-remove-other",
-    "scenarioSha256": "9b537caaa7c2df6d45a9e97ab31612cfca02c12c945cb389ad9b2e094a4c3cfb",
-    "testSha256": "68193cf5544cba825287010f2361ba349272510ee59da83f48fb9d4c45d1403e",
+    "runId": "20261125T113257Z-498e",
+    "slug": "wood-saw-raise-remove-other",
+    "scenarioSha256": "0b5550fe6e88c543faaefa932bba35a0f45af298aa98c1ede7c6243107ed240e",
+    "testSha256": "e5601de2ef4a3a56c105064b2354775ecac48f822418ba09fcb90222a3844933",
     "testOrigin": "compiled",
-    "timestamp": "2026-11-25T10:20:40Z",
+    "timestamp": "2026-11-25T11:33:00Z",
     "baseURL": "https://practicesoftwaretesting.com",
     "browser": "chromium",
     "locale": "en-US",
     "priceSource": "ui",
     "pluginVersion": "0.1.0",
-    "gitSha": "28b2b96",
-    "gitDirty": false,
+    "gitSha": "6be3048",
+    "gitDirty": true,
     "mode": "live",
     "defect": null,
     "checkpoints": [
@@ -93,7 +93,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 283,
+          "elapsedMs": 387,
           "screenshot": "S1.png"
         },
         {
@@ -163,7 +163,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 341,
+          "elapsedMs": 234,
           "screenshot": "S2.png"
         },
         {
@@ -248,8 +248,8 @@
             }
           },
           "result": "pass",
-          "reads": 19,
-          "elapsedMs": 118,
+          "reads": 28,
+          "elapsedMs": 140,
           "screenshot": "S3.png"
         },
         {
@@ -314,12 +314,12 @@
             }
           },
           "result": "pass",
-          "reads": 23,
-          "elapsedMs": 119,
+          "reads": 29,
+          "elapsedMs": 146,
           "screenshot": "S4.png"
         }
       ],
-      "durationMs": 4922
+      "durationMs": 6470
     },
     {
       "n": 2,
@@ -390,8 +390,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 279,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S1.png"
+          "elapsedMs": 280,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat1/S1.png"
         },
         {
           "step": "S2",
@@ -460,8 +460,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 240,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S2.png"
+          "elapsedMs": 237,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat1/S2.png"
         },
         {
           "step": "S3",
@@ -546,8 +546,8 @@
           },
           "result": "pass",
           "reads": 23,
-          "elapsedMs": 124,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S3.png"
+          "elapsedMs": 121,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat1/S3.png"
         },
         {
           "step": "S4",
@@ -611,12 +611,12 @@
             }
           },
           "result": "pass",
-          "reads": 22,
-          "elapsedMs": 126,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat1/S4.png"
+          "reads": 30,
+          "elapsedMs": 148,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat1/S4.png"
         }
       ],
-      "durationMs": 4868
+      "durationMs": 4976
     },
     {
       "n": 3,
@@ -687,8 +687,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 267,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S1.png"
+          "elapsedMs": 283,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat2/S1.png"
         },
         {
           "step": "S2",
@@ -757,8 +757,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 240,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S2.png"
+          "elapsedMs": 244,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat2/S2.png"
         },
         {
           "step": "S3",
@@ -842,9 +842,9 @@
             }
           },
           "result": "pass",
-          "reads": 20,
-          "elapsedMs": 124,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S3.png"
+          "reads": 26,
+          "elapsedMs": 137,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat2/S3.png"
         },
         {
           "step": "S4",
@@ -908,12 +908,12 @@
             }
           },
           "result": "pass",
-          "reads": 21,
-          "elapsedMs": 115,
-          "screenshot": "artifacts/wood-saw-qty-remove-other--c0f85-tal-checked-after-each-step-live-repeat2/S4.png"
+          "reads": 25,
+          "elapsedMs": 121,
+          "screenshot": "artifacts/wood-saw-raise-remove-othe-426ac--removing-the-other-product-live-repeat2/S4.png"
         }
       ],
-      "durationMs": 4867
+      "durationMs": 4913
     }
   ],
   "errors": []

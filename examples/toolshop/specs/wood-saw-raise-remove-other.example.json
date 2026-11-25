@@ -1,10 +1,10 @@
 {
-  "scenario": "two-products-qty-remove",
+  "scenario": "wood-saw-raise-remove-other",
   "currency": "USD",
   "note": "Stub products and prices, not the application's: they show how the rules behave. Real prices are read during the live run.",
   "stub": {
     "A": {
-      "name": "Product A",
+      "name": "Wood Saw",
       "price": "10.00",
       "attrs": {
         "co2_rating": "A"
@@ -36,24 +36,24 @@
     },
     {
       "step": "S2",
-      "action": "add B 1",
-      "cart": "A×1, B×1",
-      "subtotal": "30.00",
+      "action": "add B 2",
+      "cart": "A×1, B×2",
+      "subtotal": "50.00",
       "adjustments": {},
-      "total": "30.00",
-      "totalExact": "30/1",
+      "total": "50.00",
+      "totalExact": "50/1",
       "checkpoint": true
     },
     {
       "step": "S3",
       "action": "setQty A 3",
-      "cart": "A×3, B×1",
-      "subtotal": "50.00",
+      "cart": "A×3, B×2",
+      "subtotal": "70.00",
       "adjustments": {
-        "eco-discount": "2.50"
+        "eco-discount": "3.50"
       },
-      "total": "47.50",
-      "totalExact": "95/2",
+      "total": "66.50",
+      "totalExact": "133/2",
       "checkpoint": true
     },
     {
@@ -71,7 +71,7 @@
   ],
   "gaps": [],
   "confirmed": {
-    "scenarioSha256": "4ffc3a5fde6fab989fda5a809fd4e5021d38bda9d031930f38d85bdc5d43dcce",
+    "scenarioSha256": "0b5550fe6e88c543faaefa932bba35a0f45af298aa98c1ede7c6243107ed240e",
     "rulesSha256": "70f0378857ffcfb424e3ade87f132726d36f99ef12eed20d39a2eb933a132274"
   }
 }

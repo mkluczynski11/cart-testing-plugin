@@ -1,6 +1,6 @@
-# Wood Saw and two units of another product, raise the saw to three, remove the other; total checked after each step
+# The cart total is correct after adding a Wood Saw and two units of another product, raising the saw to three and removing the other product
 
-**PASS 3/3** · scenario `wood-saw-qty-remove-other` · run `20261125T102038Z-c54b` · 2026-11-25T10:20:40Z · https://practicesoftwaretesting.com · Chromium, en-US
+**PASS 3/3** · scenario `wood-saw-raise-remove-other` · run `20261125T113257Z-498e` · 2026-11-25T11:33:00Z · https://practicesoftwaretesting.com · Chromium, en-US
 
 The tester asked: "Add a Wood Saw, then two units of the first available product. Raise the saw to three units, then remove the other product. Check the total after each change."
 
@@ -34,8 +34,28 @@ The tester asked: "Add a Wood Saw, then two units of the first available product
 | lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted | total "$40.48" at S3, expected $61.60 | S3 | first red at S3 |
 | lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted | total "$61.60" at S4, expected $34.71 | S4 | first red at S4 |
 
-- Intent review: `specs/wood-saw-qty-remove-other.intent.md`, verdict INTENT_OK, for the confirmed scenario (sha256 9b537caaa7c2…).
+- Intent review: `specs/wood-saw-raise-remove-other.intent.md`, verdict INTENT_OK, for the confirmed scenario (sha256 0b5550fe6e88…).
 - Report review: `review.md` of this run, verdict VERIFIED.
+
+## Defects
+
+Every defect the test was checked against. Stub prices: the approved example. Live prices: the products of this run (A = Wood Saw 12.18, B = Combination Pliers 14.15).
+
+| Defect | Origin | What it plants | Stub prices | First red | Live prices | First red |
+| --- | --- | --- | --- | --- | --- | --- |
+| lost-add | default | add is acknowledged and changes nothing | detected | S1 | detected | S1 |
+| lost-qty | default | setQty is acknowledged and changes nothing | detected | S3 | detected | S3 |
+| lost-remove | default | remove is acknowledged and changes nothing | detected | S4 | detected | S4 |
+| qty-wrong-line | default | setQty hits the next line in cart order | detected | S3 | detected | S3 |
+| remove-wrong-line | default | remove hits the next line in cart order | detected | S4 | detected | S4 |
+| stale-total | default | the total shown is the one from before the last change | detected | S1 | detected | S1 |
+| total-off-by-cent | default | the total is one cent too high | detected | S1 | detected | S1 |
+| line-ignores-qty | default | the line total is the unit price, whatever the quantity | detected | S2 | detected | S2 |
+| rule-never | default | rule eco-discount is never applied | detected | S1 | detected | S1 |
+| rule-always | default | rule eco-discount is always applied | detected | S2 | detected | S2 |
+| rule-wrong-rate | default | rule eco-discount is applied at twice its rate | detected | S1 | detected | S1 |
+| rule-boundary | default | the threshold of rule eco-discount is shifted by its boundary | not-applicable | — | not-applicable | — |
+| round-down | default | the total and the adjustments are truncated at the cent instead of rounded | not-applicable | — | detected | S1 |
 
 ## Scope
 
@@ -52,7 +72,7 @@ The total was read from the row "Total". At S1, S3, S4 it differed from the subt
 
 ## How to rerun and how to read a failure
 
-Rerun: `cd e2e && npm run qa -- run wood-saw-qty-remove-other`
+Rerun: `cd e2e && npm run qa -- run wood-saw-raise-remove-other`
 
 A red checkpoint names the step, the action, the expected amount with how it is made up, the raw text the page displayed and the row it came from, the difference, and the first layer that disagreed (state, labels, lines, unit price, line total, adjustments, subtotal, total). `ORACLE_MISMATCH` means the amounts differ: an application bug or a missing rule. `UNMODELED_ADJUSTMENT` means the cart shows an adjustment no rule describes. `LOCATOR_FAIL` means the driver did not find an element, got no acknowledgment, or read a field with another label. `INFRA_FAIL` means the environment failed. The full data is in `run.json` and `verification.json`; the Playwright HTML report of the run stays outside the repo in `runs/<runId>/html/`.
 
