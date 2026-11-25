@@ -454,7 +454,7 @@ Choices:
 
 ## Final — polish and hand-over
 
-Started `Wed Nov 25 01:24 UTC 2026` (stage 5 green), ended at 01:35 UTC with the last commit.
+Started `Wed Nov 25 01:24 UTC 2026` (stage 5 green), ended at 01:32 UTC with commit `01a8ad9` (and this note).
 
 - `report.md` read as a QA engineer: the control table showed raw Angular HTML and cart ids, and the scope sentence
   was hard to parse. Fixed in the generator (`support/harness/report.ts`, `verify.ts`): the target names the row
@@ -540,7 +540,7 @@ Only the npm script the order asks for (`qa:toolshop`) and its type-check compan
 | 4 | `npm run qa -- selftest` | 12/12 rows, all areas of design 10.8, `VERDICT: PASS` | PASS |
 | 5 | `npm run qa:toolshop -- doctor` | `VERDICT: PASS` | PASS |
 | 6 | `npm run qa:toolshop -- run cart-total-add-change-remove --dry` | `VERDICT: PASS`, 12 detected where expected, 0 late, 0 missed | PASS |
-| 7 | `git status --short` | empty after the last commit (see the end of this report) | PASS |
+| 7 | `git status --short` | empty after commit `01a8ad9` (see the end of this report) | PASS |
 
 Live outputs: stage 1 (first joint run), stage 2, stage 4 (both scenarios, promotion), stage 5 and the final
 re-verification are pasted in their sections.
@@ -744,9 +744,9 @@ Wall-clock by `date -u` at the start of every stage (the commit times are from t
 | 3 verification without a browser | 00:55:12 | 01:01 | 6 |
 | 4 runs and evidence | 01:02:20 | 01:11 | 9 |
 | 5 live controls, control page | 01:12:33 | 01:23 | 11 |
-| Final polish, re-verification, report | 01:24 | 01:35 | 11 |
+| Final polish, re-verification, report | 01:24 | 01:32 | 8 |
 
-Total about 66 minutes of the 180-minute box; no stage was skipped.
+Total about 64 minutes of the 180-minute box; no stage was skipped.
 
 Lines (non-empty and empty, `wc -l`):
 
@@ -979,3 +979,14 @@ The `.gitignore` of a root keeps `reports/*/runs/`, `attempts.json`, `.lock`, `.
   when run; it was not run in order N.
 - `selftest` takes about 55 s, of which about 40 s are the control-page row (three browser runs, 12 Playwright
   processes); the part without a browser takes about 15 s.
+
+## Final state of the tree
+
+```text
+$ git log --oneline -1
+01a8ad9 chore: polish, re-verification and the order N report
+$ git status --short
+(no output)
+```
+
+This report section is committed on top of `01a8ad9`; the tree is clean after that commit as well.
