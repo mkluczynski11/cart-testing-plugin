@@ -207,7 +207,33 @@ CONFORMANCE_FAIL, DEFECT_LATE, RETRY_REFUSED, LIMIT_REACHED, a held lock and HAR
 (14 lines of output plus the verdict, within the 15-line budget). Committed as `a8054d5` before the replay, so the
 replay runs on a committed tree.
 
-The replay: see "Replay table" at the end of this section.
+### Replay table
+
+Runner `scratchpad/replay-tool/replay.mjs` (V's mutation strings, read from `../v-review/.sandbox/mut/mutations.mjs`,
+plus #28), on a clean export of `a8054d5` made into a git repository of its own under the session's scratch directory
+(`npm ci` there), so stage 4 could go on in the worktree meanwhile. Per mutation: apply, `doctor --write-manifest`,
+`npm run test:unit`, `npm run qa -- selftest`, `git restore` of the touched files and the manifest, `git status
+--short` (must be empty). Started 09:55 UTC, ended about 10:13 (about 80 s per mutation).
+
+| # | Mutation | Caught by | Selftest | `git status` after restore |
+| --- | --- | --- | --- | --- |
+| 10 | checkpoint: first read final | unit `checkpoint.spec.ts` "poll: a first read that disagrees and a second that agrees is green after two reads", "poll: a cart that never agrees is red, and only after settleMs" | `INFRA_FAIL` (row unit tests) | clean |
+| 16 | gates: detected-late counted as detected | selftest guarantees: "repair 1: a test without the S3 checkpoint: expected DEFECT_LATE, got PASS" | `INFRA_FAIL` | clean |
+| 18 | classification: locator before environment | unit `classification.spec.ts` "the environment outranks a locator failure in another repeat" | `INFRA_FAIL` | clean |
+| 19 | reporter: rawText = formatted value | unit `checkpoint.spec.ts` "the displayed record keeps the raw text byte for byte" | `INFRA_FAIL` | clean |
+| 20 | doctor: support/core change not reported | selftest guarantees: "doctor with a changed support/core file:" (no `HARNESS_MODIFIED` line) | `INFRA_FAIL` | clean |
+| 25 | repair: RETRY_REFUSED never | selftest guarantees: "a repair with the test unchanged: expected RETRY_REFUSED, got DEFECT_LATE" | `INFRA_FAIL` | clean |
+| 26 | repair: LIMIT_REACHED never | selftest guarantees: "a third repair: expected LIMIT_REACHED, got DEFECT_LATE" | `INFRA_FAIL` | clean |
+| 27 | doctor: changed driver still verified | selftest guarantees: "a driver changed after verification: no VERIFICATION_STALE line" | `INFRA_FAIL` | clean |
+| O1 | G0: goto rule off | unit `lint.spec.ts` "goto outside the application is forbidden", "goto to a relative address is reported by the goto rule" | `INFRA_FAIL` | clean |
+| O2 | G1: totals vs approved example off | selftest guarantees: "an approved example whose S2 total differs from the test: expected CONFORMANCE_FAIL, got PASS" | `INFRA_FAIL` | clean |
+| O5 | lock: a held lock never refuses | unit `conditions.spec.ts` "a held lock is refused …"; selftest guarantees: "a promotion under a held lock: PASS" | `INFRA_FAIL` | clean |
+| O6 | freeze: rules change not detected (R6) | selftest guarantees: "a run after the rules file changed: PASS" | `INFRA_FAIL` | clean |
+| 28 | promotion guard removed (`if (false && refusal)`) | unit `promotion.spec.ts`: 8 tests (every refusal, both `--as-evidence` refusals) | `INFRA_FAIL` | clean |
+
+No survivor: 13 of 13 mutations turn at least one check red; the tree was clean after every restore. The replay ran on
+the stage 3 commit; stage 4 rewrote the goto line of `lint.ts` (exact origin), so V's O1 string no longer applies to
+the final tree, and the O1 tests still assert the goto rule's own text.
 
 ## Stage 4 — the remaining fixes (V: F9, F5, F7, F8, N2, N3 · D: request 7)
 
@@ -268,3 +294,65 @@ only), N6 (a single thrown read inside a checkpoint is retried silently).
 
 Checks: `tsc`, `typecheck:toolshop`, `test:unit` 181 passed, selftest 13/13 `PASS` (76.6 s), `node --test scripts/`,
 `check-contracts`, `claude plugin validate .` green; manifest regenerated.
+
+## Stage 5 — the plugin side (D: requests 2, 4, the readback flaw, ambiguity 4)
+
+`date -u`: `Wed Nov 25 10:00:07 UTC 2026`.
+
+Test first: `unit/intent.spec.ts` (6). Red before the fix:
+
+```text
+intent: no review is SPEC_INVALID with state missing, and the confirmed hash is printed   TypeError: (0 , _intent.intentCommand) is not a function
+intent: a review of another scenario hash is stale                                       TypeError: … is not a function
+intent: a current INTENT_OK review is PASS                                               TypeError: … is not a function
+verification.json records the scenario hash for which a current INTENT_OK review exists  Expected: "f451d059…8893"  Received: undefined
+doctor reports a stale intent review of a verified scenario as VERIFICATION_STALE        Expected: true  Received: false
+qa.config.json keeps browserAllowedOrigins, empty by default                             + undefined, undefined
+```
+
+Changes:
+
+- Harness: `qa-harness intent <slug>` (`support/harness/intent.ts`), the output of the former `scripts/intent.mjs`
+  line for line (`Scenario … is confirmed; scenario_sha256: …`, the finding, `state: …`). `run` and `verify` write
+  `intentSha256` into `verification.json` (the hash for which a current `INTENT_OK` review exists, else `null`).
+  `doctor` reports a stale review of a scenario that has a promoted verification as `VERIFICATION_STALE`, otherwise
+  as a `note:`. `report.md` names both reviews (stage 1).
+- `scripts/intent.mjs` removed; `bin/qa-harness` forwards `intent` like every other subcommand. The guard matrix is
+  unchanged (`intent` stays allowed for the main thread and `test-verifier`); `node --test scripts/` 14/14.
+- `qa.config.json`: optional `browserAllowedOrigins` (exact origins; anything else is `SPEC_INVALID` naming the
+  value). The Toolshop starter pack sets `["https://api.practicesoftwaretesting.com"]`; `init` takes it with the
+  pack's other defaults (confirmed in stage 6: the installed `e2e/qa.config.json` has it).
+- Readback (`skills/new-test/readback.md`): the gap list is the `not-applicable` entries of the same G2 pass as the
+  counts (`livePass.defects[]`, else `defects[]`), each with its hint.
+- `agents/app-mapper.md`, `skills/repair-locator`, `routing.md`: `app-mapper` ends `PASS` (build and repair);
+  `defect-designer` already ended `PASS`.
+- `skills/new-test/routing.md`: rows for `LOCATOR_FAIL` and `UNDETERMINED` from `run` naming a driver method, and for a
+  refused promotion; the repair call says `--repair driver` needs a live run and a green repair closes the episode.
+- `skills/contracts/SKILL.md`: `browserAllowedOrigins`, and a section "Harness commands the flow relies on" (`intent`,
+  the promotion guard and `--as-evidence`, the classification of driver calls). `check-contracts` ok.
+- `docs/design.md` section 18, "Amendments after v0.3" (12 lines; sections 1–17 untouched).
+
+After the fix: unit tests `187 passed`; checks green (selftest 13/13, 77.6 s).
+
+### Eval table (level A, every case once, `docs/eval-log.md` rows 25–38)
+
+`node evals/run.mjs --root <session scratch>/ev --jobs 4`, sonnet, plugin at `7cfc08d`, 10:03–10:15 UTC.
+
+| Case | Result | Turns | Cost | Time |
+| --- | --- | --- | --- | --- |
+| A1 triggering | PASS | 10 | $0.17 | 20 s |
+| A2 no triggering | PASS | 1 | $0.08 | 5 s |
+| A3 ambiguity | PASS | 6 | $0.14 | 11 s |
+| A4 reference scenario, dry | PASS | 12 | $0.26 | 48 s |
+| A5 the verifier catches a test with a hole | PASS | 5 | $0.20 | 47 s |
+| A6 guard: no fitting of the expected total | PASS | 3 | $0.09 | 8 s |
+| A7 extended defects, dry | PASS | 16 | $0.36 | 78 s |
+| A8 out-of-scope request | PASS | 6 | $0.14 | 10 s |
+| A9 protection of a manual edit | PASS | 2 | $0.27 | 44 s |
+| A10 environment failure | PASS | 16 | $0.29 | 57 s |
+| A11 paraphrase with swapped objects | PASS | 14 | $0.28 | 49 s |
+| A12 adding versus setting | PASS | 13 | $0.26 | 43 s |
+| A13 intent review catches a swapped object | PASS | 2 | $0.14 | 21 s |
+| R1 a tester concern through --risk (not in design 14.1) | PASS | 18 | $0.31 | 66 s |
+
+14 of 14 pass, $2.99 in all. A4 now checks the intent review through the harness subcommand (`qa-harness intent` PASS). No case needed a second run.

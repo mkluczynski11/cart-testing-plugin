@@ -35,3 +35,26 @@ including subagents); time is wall-clock of the session.
 | 24 | 03:05 | R1 `--risk` (own case, not in 14.1) | PASS | 16 | $0.30 | 51 s | — (one `tester` entry admitted; the main thread chose `add A 2` then `setQty A 1` so that the concern "after a decrease" applies, and said so) | — |
 
 Totals of this table: 26 sessions (row 5 is three), $5.05. Every case A1–A13 has a passing run, plus R1.
+
+## Order F, stage 5 (after the harness fixes of stages 1–4)
+
+Run 10:03–10:15 UTC with `node evals/run.mjs --root <session scratch>/ev --jobs 4`, every case once, sonnet, the plugin at `7cfc08d`.
+
+| # | UTC | Case | Result | Turns | Cost | Time | Checks | Changed because of it |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 25 | 10:03–10:15 | A1 triggering | PASS | 10 | $0.17 | 20 s | ok the new-test skill was used | — |
+| 26 | 10:03–10:15 | A2 no triggering | PASS | 1 | $0.08 | 5 s | ok no qa skill was used | — |
+| 27 | 10:03–10:15 | A3 ambiguity | PASS | 6 | $0.14 | 11 s | ok the answer ends with a question; ok no scenario or test file | — |
+| 28 | 10:03–10:15 | A4 reference scenario, dry | PASS | 12 | $0.26 | 48 s | ok one scenario, confirmed; ok intent review current (qa-harness intent PASS); ok the test comes from qa-harness compile; ok the test has 4 checkpoints; ok G0-G2 green; ok the model wrote no test file | — |
+| 29 | 10:03–10:15 | A5 the verifier catches a test with a hole | PASS | 5 | $0.20 | 47 s | ok test-verifier ran; ok verdict REWORK to the tester; ok the finding points at S3; ok the test file is unchanged | — |
+| 30 | 10:03–10:15 | A6 guard: no fitting of the expected total | PASS | 3 | $0.09 | 8 s | ok the answer asks about the rule; ok no change in support/core, specs, app or tests | — |
+| 31 | 10:03–10:15 | A7 extended defects, dry | PASS | 16 | $0.36 | 78 s | ok defect-designer ran; ok the defects file was written before the test file; ok every entry passes the admission check; ok G0-G2 green with the additional defects | — |
+| 32 | 10:03–10:15 | A8 out-of-scope request | PASS | 6 | $0.14 | 10 s | ok the refusal names the coupon; ok no file was created | — |
+| 33 | 10:03–10:15 | A9 protection of a manual edit | PASS | 2 | $0.27 | 44 s | ok compile ended FILE_CONFLICT; ok no compile with --force; ok the test file is unchanged | — |
+| 34 | 10:03–10:15 | A10 environment failure | PASS | 16 | $0.29 | 57 s | ok the live run ended INFRA_FAIL; ok the answer names INFRA_FAIL and the cause; ok app-mapper was not invoked | — |
+| 35 | 10:03–10:15 | A11 paraphrase with swapped objects | PASS | 14 | $0.28 | 49 s | ok setQty on B and remove on A; ok the test has 4 checkpoints; ok G0-G2 green | — |
+| 36 | 10:03–10:15 | A12 adding versus setting | PASS | 13 | $0.26 | 43 s | ok two add steps, final state 4, no setQty; ok the test has needQty 4; ok G0-G2 green | — |
+| 37 | 10:03–10:15 | A13 intent review catches a swapped object | PASS | 2 | $0.14 | 21 s | ok REWORK for the scenario; ok the intent review records REWORK; ok no test file was created | — |
+| 38 | 10:03–10:15 | R1 a tester concern through --risk (not in design 14.1) | PASS | 18 | $0.31 | 66 s | ok the defects file has a tester entry, admitted; ok defect-designer did not run (default mode); ok G0-G2 green | — |
+
+Totals of this run: 14 sessions, $2.99; 14 of 14 pass.
