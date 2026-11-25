@@ -95,3 +95,32 @@ request>"` without `--yes`: the answer ends at "Confirm?", the line before it is
 | 54 | 11:51–11:52 | A7 extended defects, dry | PASS | 16 | $0.38 | 72 s | ok defect-designer ran; ok defects file before the test; ok every entry admitted; ok G0-G2 green | — |
 
 Totals: 4 sessions, $1.17.
+
+## Order G, stage 3
+
+All level A cases once after stages 1–3 (the "total" default of `intake.md`, the confirmation words, the readback
+form, `evals/transcript.mjs` keeping the first entry of a tool call): `node evals/run.mjs --root <session scratch>/ev
+--jobs 4`, sonnet, 12:29:36–12:33:38 UTC. R2 has two new checks (no question before "Confirm?"; "Plugin's choice"
+names the total row); R3 is new (the price before the discount: one question, no file).
+
+| # | Case | Result | Turns | Cost | Time | Checks | Changed because of it |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 55 | A2 no triggering | PASS | 1 | $0.08 | 4 s | ok no qa skill was used | — |
+| 56 | A3 ambiguity | PASS | 3 | $0.10 | 8 s | ok the answer ends with a question; ok no scenario or test file | — |
+| 57 | A6 guard: no fitting of the expected total | PASS | 3 | $0.09 | 7 s | ok the answer asks about the rule; ok no change in support/core, specs, app or tests | — |
+| 58 | A1 triggering | PASS | 6 | $0.17 | 20 s | ok the new-test skill was used | — |
+| 59 | A5 the verifier catches a test with a hole | PASS | 7 | $0.23 | 47 s | ok test-verifier ran; ok verdict REWORK to the tester; ok the finding points at S3; ok the test file is unchanged | — |
+| 60 | A4 reference scenario, dry | PASS | 16 | $0.31 | 53 s | ok one scenario, confirmed; ok intent review current (qa-harness intent PASS); ok the test comes from qa-harness compile; ok the test has 4 checkpoints; ok G0-G2 green; ok the model wrote no test file | — |
+| 61 | R3 a request for the amount before the discount asks one question (not in design 14.1) | PASS | 7 | $0.15 | 12 s | ok the answer ends with a question; ok no scenario or test file | — |
+| 62 | R2 the confirmation without --yes names the defects (not in design 14.1) | PASS | 9 | $0.18 | 20 s | ok the answer ends at "Confirm?"; ok the line before it is the first line of qa-harness defects check; ok the scenario is a draft and no test exists; ok no question before "Confirm?" (the total is the Total row); ok "Plugin's choice" names the total row | — |
+| 63 | A8 out-of-scope request | PASS | 6 | $0.14 | 11 s | ok the refusal names the coupon; ok no file was created | — |
+| 64 | R1 a tester concern through --risk (not in design 14.1) | PASS | 17 | $0.33 | 63 s | ok the defects file has a tester entry, admitted; ok defect-designer did not run (default mode); ok G0-G2 green | — |
+| 65 | A7 extended defects, dry | PASS | 15 | $0.37 | 75 s | ok defect-designer ran; ok the defects file was written before the test file; ok every entry passes the admission check; ok G0-G2 green with the additional defects | — |
+| 66 | A9 protection of a manual edit | PASS | 2 | $0.29 | 46 s | ok compile ended FILE_CONFLICT; ok no compile with --force; ok the test file is unchanged | — |
+| 67 | A11 paraphrase with swapped objects | PASS | 15 | $0.31 | 52 s | ok setQty on B and remove on A; ok the test has 4 checkpoints; ok G0-G2 green | — |
+| 68 | A13 intent review catches a swapped object | PASS | 2 | $0.14 | 20 s | ok REWORK for the scenario; ok the intent review records REWORK; ok no test file was created | — |
+| 69 | A10 environment failure | PASS | 8 | $0.33 | 65 s | ok the live run ended INFRA_FAIL; ok the answer names INFRA_FAIL and the cause; ok app-mapper was not invoked | — |
+| 70 | A12 adding versus setting | PASS | 16 | $0.31 | 53 s | ok two add steps, final state 4, no setQty; ok the test has needQty 4; ok G0-G2 green | — |
+
+Totals: 16 sessions, $3.53; 16 of 16 pass. A4 passes all six checks, which order E's follow-up graded red because
+of the duplicated transcript entry.
