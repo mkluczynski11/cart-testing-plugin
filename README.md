@@ -127,20 +127,30 @@ and call no model.
 
 ## Result
 
-    PASS 3/3 · test verified
-    Products: Combination Pliers ($14.15, co2_rating D) · Pliers ($12.01, co2_rating D)
+The answer to the reference request, shortened:
 
-    Step  Shopper's action                         Expected  Displayed  Result
-    S1    add Combination Pliers, 1 unit           $14.15    "$14.15"   match
-    S2    add Pliers, 1 unit                       $26.16    "$26.16"   match
-    S3    set quantity of Combination Pliers to 3  $54.46    "$54.46"   match
-    S4    remove Pliers                            $42.45    "$42.45"   match
+    ## PASS · test verified
+    | Test | `e2e/tests/two-products-change-remove.spec.ts` |
+    | Status | PASS, 3 of 3 repeats · verified |
+    | Test data | A = Combination Pliers, $14.15, co2_rating D · B = Pliers, $12.01, co2_rating D (read from the product pages in this run) |
 
-The answer continues with the evidence, the scope, the scenario gaps, the pricing rules used and the rerun
-command. The full answers of both example runs are in `examples/toolshop/reports/<slug>/readback.txt`.
+    ### Steps
+    | # | Shopper's action | Expected total | Actual (as displayed) | Status | Evidence |
+    | --- | --- | --- | --- | --- | --- |
+    | S1 | add Combination Pliers, 1 unit | $14.15 | "$14.15" | pass | `e2e/reports/two-products-change-remove/screens/S1.png` |
+    | S2 | add Pliers, 1 unit | $26.16 | "$26.16" | pass | `e2e/reports/two-products-change-remove/screens/S2.png` |
+    | S3 | set quantity of Combination Pliers to 3 | $54.46 | "$54.46" | pass | `e2e/reports/two-products-change-remove/screens/S3.png` |
+    | S4 | remove Pliers | $42.45 | "$42.45" | pass | `e2e/reports/two-products-change-remove/screens/S4.png` |
 
-`e2e/reports/<slug>/` holds `report.md`, `run.json`, `verification.json`, `review.md` and a screenshot of every
-checkpoint. `report.md` lists every defect with its origin and its outcome, on stub prices and on live prices.
+    ### Verification of the test
+    | Defects on stub prices | 12 of 12 detected at the right step, 1 not applicable |
+    | Defects on the prices of this run | 9 of 9 detected at the right step, 4 not applicable |
+    | Live controls | 4 of 4 caught |
+
+The answer goes on with the reviews, what the scenario does not cover, the pricing rules, the page driver, the
+files and two commands that run the test again. `e2e/reports/<slug>/report.md` starts with the same form and adds
+every defect and every live control with its outcome; next to it are `run.json`, `verification.json`, `review.md`
+and a screenshot of every step. Both example answers: `examples/toolshop/reports/<slug>/readback.txt`.
 
 | Verdict | Meaning | Tester's decision |
 | --- | --- | --- |

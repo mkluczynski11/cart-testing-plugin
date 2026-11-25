@@ -1,17 +1,17 @@
 {
   "meta": {
-    "runId": "20261125T112933Z-b685",
+    "runId": "20261125T123349Z-fee3",
     "slug": "two-products-change-remove",
-    "scenarioSha256": "31f919ab322c6b4358c19946f2f2f1c7c790fe604b5926b8d7b1985aaf94cfb9",
-    "testSha256": "abf552e285eb07f6436658b179bd6cbb1d82457042fe9889c11d1f2426d9bf25",
+    "scenarioSha256": "fc04e8abb98b8e8f35f48f41ab7abf195f69614d81990a297d3013e0917984fd",
+    "testSha256": "90d7a32c7ccc59a6751eb50da8f7e1217041f507b7d52e377aedb9953d0f197d",
     "testOrigin": "compiled",
-    "timestamp": "2026-11-25T11:29:35Z",
+    "timestamp": "2026-11-25T12:33:51Z",
     "baseURL": "https://practicesoftwaretesting.com",
     "browser": "chromium",
     "locale": "en-US",
     "priceSource": "ui",
     "pluginVersion": "0.1.0",
-    "gitSha": "f2a15ba",
+    "gitSha": "70a10cc",
     "gitDirty": true,
     "mode": "live",
     "defect": null,
@@ -77,7 +77,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 285,
+          "elapsedMs": 382,
           "screenshot": "S1.png"
         },
         {
@@ -147,7 +147,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 239,
+          "elapsedMs": 233,
           "screenshot": "S2.png"
         },
         {
@@ -216,8 +216,8 @@
             }
           },
           "result": "pass",
-          "reads": 25,
-          "elapsedMs": 131,
+          "reads": 31,
+          "elapsedMs": 146,
           "screenshot": "S3.png"
         },
         {
@@ -267,11 +267,11 @@
           },
           "result": "pass",
           "reads": 31,
-          "elapsedMs": 137,
+          "elapsedMs": 164,
           "screenshot": "S4.png"
         }
       ],
-      "durationMs": 4999
+      "durationMs": 5146
     },
     {
       "n": 2,
@@ -326,8 +326,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 275,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat1/S1.png"
+          "elapsedMs": 372,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat1/S1.png"
         },
         {
           "step": "S2",
@@ -396,8 +396,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 238,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat1/S2.png"
+          "elapsedMs": 331,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat1/S2.png"
         },
         {
           "step": "S3",
@@ -465,9 +465,9 @@
             }
           },
           "result": "pass",
-          "reads": 28,
-          "elapsedMs": 132,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat1/S3.png"
+          "reads": 36,
+          "elapsedMs": 167,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat1/S3.png"
         },
         {
           "step": "S4",
@@ -515,12 +515,12 @@
             }
           },
           "result": "pass",
-          "reads": 26,
-          "elapsedMs": 117,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat1/S4.png"
+          "reads": 33,
+          "elapsedMs": 150,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat1/S4.png"
         }
       ],
-      "durationMs": 4898
+      "durationMs": 5386
     },
     {
       "n": 3,
@@ -575,8 +575,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 383,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat2/S1.png"
+          "elapsedMs": 270,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat2/S1.png"
         },
         {
           "step": "S2",
@@ -645,8 +645,8 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 233,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat2/S2.png"
+          "elapsedMs": 237,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat2/S2.png"
         },
         {
           "step": "S3",
@@ -714,9 +714,9 @@
             }
           },
           "result": "pass",
-          "reads": 25,
+          "reads": 24,
           "elapsedMs": 121,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat2/S3.png"
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat2/S3.png"
         },
         {
           "step": "S4",
@@ -764,12 +764,12 @@
             }
           },
           "result": "pass",
-          "reads": 28,
-          "elapsedMs": 123,
-          "screenshot": "artifacts/two-products-change-remove-52507--one-and-removing-the-other-live-repeat2/S4.png"
+          "reads": 25,
+          "elapsedMs": 119,
+          "screenshot": "artifacts/two-products-change-remove-858d5-tal-checked-after-each-step-live-repeat2/S4.png"
         }
       ],
-      "durationMs": 5226
+      "durationMs": 5024
     }
   ],
   "errors": []

@@ -47,7 +47,7 @@
   "support/harness/manifest.ts": "8123184b0fa4fb5f84c127de975ad439e1d1b38f7fa5a20e24c625eb6ef29c6c",
   "support/harness/need.ts": "63fc83b3a71513b2866a8da4fa71c25f1f4e5b86284dc96613988cf939551880",
   "support/harness/playwright-runner.ts": "b998ed91ca03fd0c88ad81170fb2db43bc02a20d46da568f39f33792e1950397",
-  "support/harness/report.ts": "03da8f2314e79f2d605a1b7b5cd44dfd19b19aaa11cb9cf78fa74a3c34c1583f",
+  "support/harness/report.ts": "367d08a0a4238aa3ceaf33c456cbe8f16fdb8a5d559c0debce7e6148b4a9f370",
   "support/harness/run-dir.ts": "3b8a8bb1226e59b9ad3295d803847101ffef2175b80ebe762592d583e4cbcedb",
   "support/harness/run.ts": "c89d8aaac596f766d18f5b239b1301627b3be3ec92655bee7aac682a266b989c",
   "support/harness/selftest.ts": "037be46c547fdf0c7ec045ee47c0303132013bce2c2196f5e0befaf9108a7f4e",

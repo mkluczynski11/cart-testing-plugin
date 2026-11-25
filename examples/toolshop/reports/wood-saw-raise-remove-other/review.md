@@ -1,23 +1,25 @@
 ---
 scenario: wood-saw-raise-remove-other
-run: 20261125T113257Z-498e
+run: 20261125T123701Z-8ba1
 verdict: VERIFIED
 ---
 
-# Review of run 20261125T113257Z-498e
+# Review of run 20261125T123701Z-8ba1
 
 | Gate | Result | Evidence |
 | --- | --- | --- |
-| Intent | current INTENT_OK | specs/wood-saw-raise-remove-other.intent.md, scenario_sha256 0b5550fe6e88 (equals verification.json intentSha256) |
-| G0–G2 | PASS | stub prices: 11 detected where expected / 0 late / 0 missed / 2 not applicable (rule-boundary, round-down); live prices (Wood Saw 12.18, Combination Pliers 14.15): 12 detected / 0 late / 0 missed / 1 not applicable (rule-boundary) |
-| G3 | PASS | 3/3 repeats passed on https://practicesoftwaretesting.com |
-| G4 | PASS | 4 caught / 0 missed / 0 not bound; each activated, with target and value shown at the read: skew-total red at S1 (+$0.01 at every checkpoint), drift-price red at S1, lost-update red at S3, lost-remove red at S4, each at its expected step |
-| G5 | PASS | report.md names the action at S1–S4 in the tester's terms (add Wood Saw 1, add Combination Pliers 2, set Wood Saw to 3, remove Combination Pliers), the expected amount with its composition (subtotal and eco-discount), the displayed raw text and the row label "Total", screenshots S1–S4, and states what is not available (review.md at report time). S4.png shows Total $34.71 = $36.54 − $1.83, matching the report. |
+| Intent | current INTENT_OK | specs/wood-saw-raise-remove-other.intent.md, scenario_sha256 621785b3de62 (equals `intentSha256` in verification.json) |
+| G0–G2 | PASS (`gates.dry`) | stub prices: 11 detected / 0 late / 0 missed / 2 not applicable (rule-boundary, round-down); live prices (`G2live` PASS): 12 detected / 0 late / 0 missed / 1 not applicable (rule-boundary) |
+| G3 | PASS | 3 / 3 repeats passed on https://practicesoftwaretesting.com |
+| G4 | PASS | 4 caught / 0 missed / 0 not bound; skew-total (activated, row "Total", read "$11.58" S1 … "$34.72" S4, red at S1), drift-price (activated, GET carts x7, red at S1), lost-update (activated, PUT quantity x1, red at S3), lost-remove (activated, DELETE product x1, red at S4); each reacted at its expected step |
+| G5 | PASS | every checkpoint S1–S4 names the action in the tester's terms (add Wood Saw 1 unit; add Combination Pliers 2 units; set Wood Saw to 3; remove Combination Pliers), the expected total with its composition (eco-discount at S1, S3, S4; plain subtotal at S2), the displayed raw text, the row read ("Total"), and a screenshot per step; the report states the HTML report stays outside the repo and traces exist only for failed repeats (none here) |
 
-Test origin: compiled (no step-by-step comparison needed; G0 confirms the untouched compilation of the confirmed scenario).
+Test origin: compiled (no step-by-step comparison needed; the test's calls nonetheless match S1–S4: by-name Wood Saw x1, first-available x2, setQuantity(a, 3), remove(b), checkTotal after each)
+
+Live data: A = Wood Saw $12.18 (co2_rating B), B = Combination Pliers $14.15 (co2_rating D); B is not the saw, so "the other product" is a distinct product.
 
 Scenario gaps and the hint that closes each:
-- rule-boundary (not applicable with stub and live prices): the eco-discount applies when more than half of the units are A/B-rated. To test the edge, add a step where exactly half of the units in the cart are A/B-rated, e.g. set the Wood Saw to two units while two units of the other product (not A/B-rated) are in the cart, and check the total there.
-- round-down: not applicable on the stub prices only; detected at S1 on the live prices of this run, so no change is needed for these products.
+- rule-boundary (eco-discount threshold): add a step after which exactly half of the units in the cart are Wood Saws (for example the saw at 2 units next to 2 units of the other product), so the cart sits exactly at the "more than half" threshold of the eco-discount.
+- round-down (stub prices only; detected on the live prices of this run): no change needed for this run; it stays not applicable only on the approved example's stub prices.
 
 Finding: none

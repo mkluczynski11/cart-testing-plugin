@@ -81,7 +81,22 @@ Option details:
 | 6 Driver | `qa-harness need`, `qa:app-mapper` (`mode: build`) | the missing actions as `need` printed them | `app/<app>.driver.ts`, `app/<app>.map.md` | `NEEDS_TESTER`, `UNDETERMINED` |
 | 7 Live run | `qa-harness run` | the test, the driver, the application | a run directory with G0–G3 | any verdict but `PASS` (routing) |
 | 8 Verification | `qa:test-verifier` (`mode: run`), then `qa-harness report --promote` | the run | `review.md`; `reports/<slug>/` | any verdict but `VERIFIED` (routing) |
-| 9 Readback | main thread | command output, `report.md`, `verification.json` | the readback | — |
+| 9 Readback | main thread | `report.md` of the run | the form at the top of `report.md`, copied verbatim | — |
+
+### Confirmation and readback
+
+The confirmation (`skills/new-test/intake.md`) shows the scenario, the plugin's choices, the steps, the example on stub
+prices and the rules in the words `qa-harness example` prints: `A = Product A, $10.00, co2_rating A`; `eco-discount:
+5% off when more than half of the units have co2_rating A or B`; `Source: observed on the live site, confirmed.` A
+share of one half, a third or a quarter is a fraction in words, any other share a percentage. "The total" is the row
+the rules file labels as the total, after every rule in force, stated under "Plugin's choice"; the plugin asks only
+when the request names another amount (subtotal, price before the discount) or contradicts itself.
+
+The readback is the top of the run's `report.md`, from its `## <verdict> · <meaning>` line to the end of "Run it
+again", copied verbatim: a table of the test case (test, objective, status, environment, preconditions, test data),
+"Steps" (expected and actual apart; `pass`, `fail`, `not run`; a screenshot each), "Verification of the test", "Not
+covered by this scenario", "Pricing rules", "Page driver" (origin, change in this flow, operations used, the row
+read), "Files", "Run it again". On a red run "Failing step" stands under the verdict. Every run writes `report.md`.
 
 The confirmation's last line before "Confirm?" is the first line of `qa-harness defects check <slug>`, verbatim:
 "The test will be checked against N defects: D default, T tester (ids), G generated; the full list will be in
@@ -111,8 +126,8 @@ and reacts by `skills/new-test/routing.md` (see Verdicts). After a repair that e
 
 ### Dry mode
 
-`--dry` ends after step 5. The dry readback names the G0–G2 lines and the scenario gaps, and lists what did not run:
-the driver check, the live run, the live controls and the report review.
+`--dry` ends after step 5. The readback is the form of that run's `report.md`, headed `## PASS · dry gates only, not
+run live`: every step `not run`, the stub products as test data, the live rows `not run (dry run)`.
 
 ## Agents
 
@@ -411,6 +426,7 @@ From `support/core/verdicts.ts`; issuers, meanings and reactions from `skills/ne
 | `qa.config.json` | `init` | yes |
 | `app/<app>.driver.ts`, `app/<app>.map.md` | app-mapper, a starter pack, the tester | yes |
 | `app/<app>.pricing.ts` | a starter pack, the tester | yes |
+| `app/starter-pack.json` | `init`, when it installs a starter pack: the sha256 of each file it installed | yes |
 | `specs/<slug>.md` | main thread; `example --confirm` sets `status` | yes |
 | `specs/<slug>.example.json` | `example` | yes |
 | `specs/<slug>.intent.md` | test-verifier | yes |

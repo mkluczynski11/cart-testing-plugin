@@ -118,6 +118,7 @@ test('a dry run writes report.md in the same form: dry heading, every step not r
   const file = path.join(files.runs(root, SLUG), r.data?.runId as string, 'report.md');
   const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
   expect(headings(text)[0]).toBe('## PASS · dry gates only, not run live');
+  expect(cells(text, 'Environment')?.[1]).toMatch(/ · \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC · run `/);
   expect([cells(text, 'S1')?.[4], cells(text, 'Live run')?.[1], cells(text, 'Live controls')?.[1]]).toEqual(['not run', 'not run (dry run)', 'not run (dry run)']);
   expect(cells(text, 'Test data')?.[1]).toMatch(/^A = Product A, \$10\.00, energy_class A · B = Product B, \$20\.00, energy_class C \(stub products/);
 });

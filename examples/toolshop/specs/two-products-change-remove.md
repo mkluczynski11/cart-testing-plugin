@@ -1,6 +1,6 @@
 ---
 id: two-products-change-remove
-title: The cart total is correct after adding two products, changing the quantity of one and removing the other
+title: Two different products, change the quantity of one, remove the other, total checked after each step
 app: toolshop
 status: confirmed
 request: "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
@@ -17,5 +17,5 @@ preconditions: [empty-cart, guest, no-geolocation]
 price_source: ui
 ---
 
-A guest adds two different products, one unit each, changes the quantity of the first to 3, then removes the second.
-The cart state and the total are checked after every step.
+A guest adds two different products, changes the quantity of the first to 3, then removes the second.
+The cart total is checked after every step.

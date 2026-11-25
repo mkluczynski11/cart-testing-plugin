@@ -1,43 +1,73 @@
-# The cart total is correct after adding two products, changing the quantity of one and removing the other
+# Two different products, change the quantity of one, remove the other, total checked after each step
 
-**PASS 3/3** · scenario `two-products-change-remove` · run `20261125T112933Z-b685` · 2026-11-25T11:29:35Z · https://practicesoftwaretesting.com · Chromium, en-US
+## PASS · test verified
 
-The tester asked: "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
+| | |
+| --- | --- |
+| Test | `e2e/tests/two-products-change-remove.spec.ts` |
+| Objective | Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change. |
+| Status | PASS, 3 of 3 repeats · verified |
+| Environment | https://practicesoftwaretesting.com · Chromium · en-US · 2026-11-25 12:33 UTC · run `20261125T123349Z-fee3` |
+| Preconditions | empty cart, guest, no geolocation |
+| Test data | A = Combination Pliers, $14.15, co2_rating D · B = Pliers, $12.01, co2_rating D (read from the product pages in this run) |
 
-## Products
+### Steps
 
-| Alias | Product | Unit price (read at the add) | Attributes |
-| --- | --- | --- | --- |
-| A | Combination Pliers | $14.15 | co2_rating D |
-| B | Pliers | $12.01 | co2_rating D |
+| # | Shopper's action | Expected total | Actual (as displayed) | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| S1 | add Combination Pliers, 1 unit | $14.15 | "$14.15" | pass | `e2e/reports/two-products-change-remove/screens/S1.png` |
+| S2 | add Pliers, 1 unit | $26.16 | "$26.16" | pass | `e2e/reports/two-products-change-remove/screens/S2.png` |
+| S3 | set quantity of Combination Pliers to 3 | $54.46 | "$54.46" | pass | `e2e/reports/two-products-change-remove/screens/S3.png` |
+| S4 | remove Pliers | $42.45 | "$42.45" | pass | `e2e/reports/two-products-change-remove/screens/S4.png` |
 
-## Steps (repeat 1 of 3)
+Repeat 1 of 3 is shown; every repeat is in `run.json`.
 
-| Step | Shopper's action | Expected | How it is made up | Displayed (raw text) | Row read | Result | Screenshot |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| S1 | add Combination Pliers, 1 unit | $14.15 | subtotal $14.15 | "$14.15" | "Total" | match | [S1](screens/S1.png) |
-| S2 | add Pliers, 1 unit | $26.16 | subtotal $26.16 | "$26.16" | "Total" | match | [S2](screens/S2.png) |
-| S3 | set quantity of Combination Pliers to 3 | $54.46 | subtotal $54.46 | "$54.46" | "Total" | match | [S3](screens/S3.png) |
-| S4 | remove Pliers | $42.45 | subtotal $42.45 | "$42.45" | "Total" | match | [S4](screens/S4.png) |
+### Verification of the test
 
-## Evidence
+| Check | Result |
+| --- | --- |
+| Intent review | INTENT_OK, `e2e/specs/two-products-change-remove.intent.md`, for the confirmed scenario |
+| Static check, reference cart | PASS (gates G0, G1) |
+| Defects on stub prices | 12 of 12 detected at the right step, 1 not applicable |
+| Defects on the prices of this run | 9 of 9 detected at the right step, 4 not applicable |
+| Live run | 3 of 3 repeats passed; the test is the untouched compilation of the confirmed scenario |
+| Live controls | 4 of 4 caught |
+| Report review | VERIFIED, `review.md` of this run |
 
-- Static check G0, reference cart G1 and defects G2: PASS; defects 12/12 applicable, each detected at the expected checkpoint (on the example's stub prices).
-- G2 repeated on the products of this run (A = Combination Pliers 14.15, B = Pliers 12.01): 9/9 applicable defects detected where expected.
-- Live run G3: PASS, 3/3 repeats passed; the test is the untouched compilation of the confirmed scenario.
-- Live controls G4: PASS.
+### Not covered by this scenario
 
-| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |
-| --- | --- | --- | --- | --- | --- | --- |
-| skew-total | caught | yes | row "Total" (its DOM fragment is in verification.json) | the driver read "$14.16" at S1, "$26.17" at S2, "$54.47" at S3, "$42.46" at S4 | S1 | every checkpoint with a total red by exactly +$0.01 |
-| drift-price | caught | yes | GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7 | total "$14.16" at S1, expected $14.15 | S1 | first red at S1 |
-| lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted | total "$26.16" at S3, expected $54.46 | S3 | first red at S3 |
-| lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted | total "$54.46" at S4, expected $42.45 | S4 | first red at S4 |
+- rule-never: Add a step at which rule eco-discount is in force.
+- rule-wrong-rate: Add a step at which rule eco-discount is in force.
+- rule-boundary: Add a step at which the cart sits exactly at the threshold of rule eco-discount.
+- round-down: No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation.
 
-- Intent review: `specs/two-products-change-remove.intent.md`, verdict INTENT_OK, for the confirmed scenario (sha256 31f919ab322c…).
-- Report review: `review.md` of this run, verdict VERIFIED.
+### Pricing rules
 
-## Defects
+- eco-discount: 5% off when more than half of the units have co2_rating A or B · source: observed on the live site, confirmed · not in force in this run.
+
+### Page driver
+
+`e2e/app/toolshop.driver.ts`: the plugin's starter pack for toolshop, as setup installed it. This flow did not change it (sha256 382d9e8915d5…). Operations this scenario used: candidates, productFacts, readCart, addProduct, setQuantity, remove. The total was read from the row "Total".
+
+The page driver is the one file that knows the shop's pages: the test calls it to find products, add them, change quantities, remove them and read the cart, so the test holds no locator.
+
+### Files
+
+| File | Content |
+| --- | --- |
+| `e2e/tests/two-products-change-remove.spec.ts` | the test |
+| `e2e/specs/two-products-change-remove.md` | the confirmed scenario |
+| `e2e/specs/two-products-change-remove.intent.md` | the intent review |
+| `e2e/reports/two-products-change-remove/report.md` | the full report, every defect and control |
+| `e2e/reports/two-products-change-remove/screens/` | one screenshot per step |
+| `e2e/app/toolshop.driver.ts`, `.pricing.ts`, `.map.md` | page driver, pricing rules, locator evidence |
+
+### Run it again
+
+`cd e2e && npm run qa -- run two-products-change-remove` (3 repeats, with the report)
+`cd e2e && npx playwright test tests/two-products-change-remove.spec.ts` (plain Playwright)
+
+### Defects
 
 Every defect the test was checked against. Stub prices: the approved example. Live prices: the products of this run (A = Combination Pliers 14.15, B = Pliers 12.01).
 
@@ -57,26 +87,30 @@ Every defect the test was checked against. Stub prices: the approved example. Li
 | rule-boundary | default | the threshold of rule eco-discount is shifted by its boundary | detected | S2 | not-applicable | — |
 | round-down | default | the total and the adjustments are truncated at the cent instead of rounded | not-applicable | — | not-applicable | — |
 
-## Scope
+### Live controls
+
+| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |
+| --- | --- | --- | --- | --- | --- | --- |
+| skew-total | caught | yes | row "Total" (its DOM fragment is in verification.json) | the driver read "$14.16" at S1, "$26.17" at S2, "$54.47" at S3, "$42.46" at S4 | S1 | every checkpoint with a total red by exactly +$0.01 |
+| drift-price | caught | yes | GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7 | total "$14.16" at S1, expected $14.15 | S1 | first red at S1 |
+| lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted | total "$26.16" at S3, expected $54.46 | S3 | first red at S3 |
+| lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted | total "$54.46" at S4, expected $42.45 | S4 | first red at S4 |
+
+### Scope
 
 The total was read from the row "Total". In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart; only the label-based control skew-total shows that the driver reads the total.
 
-## Scenario gaps
+### Rows read
 
-- rule-never is not applicable with the products of this run: Add a step at which rule eco-discount is in force.
-- rule-wrong-rate is not applicable with the products of this run: Add a step at which rule eco-discount is in force.
-- rule-boundary is not applicable with the products of this run: Add a step at which the cart sits exactly at the threshold of rule eco-discount.
-- round-down is not applicable with the products of this run: No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation.
+| # | Expected, how it is made up | Row read |
+| --- | --- | --- |
+| S1 | $14.15 = subtotal $14.15 | "Total" |
+| S2 | $26.16 = subtotal $26.16 | "Total" |
+| S3 | $54.46 = subtotal $54.46 | "Total" |
+| S4 | $42.45 = subtotal $42.45 | "Total" |
 
-## Rules used
-
-- eco-discount: 5% of the running value off when more than 0.5 of the units have co2_rating A or B · source: observed (docs/toolshop-facts.md#h1, 2026-11-25; cart.component.ts @ae7caec) · live: confirmed · not in force in this run.
-- Total row label /^total\b/i, subtotal row label /^subtotal\b/i · source: observed (docs/toolshop-facts.md#h6, 2026-11-25).
-
-## How to rerun and how to read a failure
-
-Rerun: `cd e2e && npm run qa -- run two-products-change-remove`
+### Reading a failure
 
 A red checkpoint names the step, the action, the expected amount with how it is made up, the raw text the page displayed and the row it came from, the difference, and the first layer that disagreed (state, labels, lines, unit price, line total, adjustments, subtotal, total). `ORACLE_MISMATCH` means the amounts differ: an application bug or a missing rule. `UNMODELED_ADJUSTMENT` means the cart shows an adjustment no rule describes. `LOCATOR_FAIL` means the driver did not find an element, got no acknowledgment, or read a field with another label. `INFRA_FAIL` means the environment failed. The full data is in `run.json` and `verification.json`; the Playwright HTML report of the run stays outside the repo in `runs/<runId>/html/`.
 
-Amounts are in USD; expected amounts are exact values rounded to the cent, displayed amounts are the page's own text.
+Amounts are in USD; expected amounts are exact values rounded to the cent, displayed amounts are the page's own text. Total row label /^total\b/i, subtotal row label /^subtotal\b/i · source: observed on the live site, confirmed.

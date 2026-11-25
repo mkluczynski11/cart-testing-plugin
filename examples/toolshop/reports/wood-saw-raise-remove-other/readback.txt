@@ -1,23 +1,67 @@
-The test is verified. It ran live against practicesoftwaretesting.com, passed 3 of 3 repeats, and is promoted as `wood-saw-raise-remove-other`.
+## PASS · test verified
 
-```text
-PASS 3/3 · test verified
-Products: Wood Saw ($12.18, co2_rating B) · Combination Pliers ($14.15, co2_rating D)
+| | |
+| --- | --- |
+| Test | `e2e/tests/wood-saw-raise-remove-other.spec.ts` |
+| Objective | Add a Wood Saw, then two units of the first available product. Raise the saw to three units, then remove the other product. Check the total after each change. |
+| Status | PASS, 3 of 3 repeats · verified |
+| Environment | https://practicesoftwaretesting.com · Chromium · en-US · 2026-11-25 12:37 UTC · run `20261125T123701Z-8ba1` |
+| Preconditions | empty cart, guest, no geolocation |
+| Test data | A = Wood Saw, $12.18, co2_rating B · B = Combination Pliers, $14.15, co2_rating D (read from the product pages in this run) |
 
-Step  Shopper's action                     Expected  Displayed  Result
-S1    add Wood Saw, 1 unit                 $11.57    "$11.57"   match
-S2    add Combination Pliers, 2 units      $40.48    "$40.48"   match
-S3    set quantity of Wood Saw to 3        $61.60    "$61.60"   match
-S4    remove Combination Pliers            $34.71    "$34.71"   match
+### Steps
 
-Evidence: intent review without remarks; defects 12/12 applicable, each in the right place; live controls 4/4; report review without remarks.
-Scope: The total was read from the row "Total". At S1, S3, S4 it differed from the subtotal and from every line total, so a driver reading another field would have failed there.
-Scenario gap: rule-boundary is not applicable: Add a step at which the cart sits exactly at the threshold of rule eco-discount.
-Rules used: eco-discount · observed · live: confirmed (in force at S1, S3, S4 in this run)
-Rerun: cd e2e && npm run qa -- run wood-saw-raise-remove-other
-Files: e2e/specs/wood-saw-raise-remove-other.md, e2e/specs/wood-saw-raise-remove-other.intent.md, e2e/tests/wood-saw-raise-remove-other.spec.ts, e2e/reports/wood-saw-raise-remove-other/
-```
+| # | Shopper's action | Expected total | Actual (as displayed) | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| S1 | add Wood Saw, 1 unit | $11.57 = $12.18 − eco-discount $0.61 | "$11.57" | pass | `e2e/reports/wood-saw-raise-remove-other/screens/S1.png` |
+| S2 | add Combination Pliers, 2 units | $40.48 | "$40.48" | pass | `e2e/reports/wood-saw-raise-remove-other/screens/S2.png` |
+| S3 | set quantity of Wood Saw to 3 | $61.60 = $64.84 − eco-discount $3.24 | "$61.60" | pass | `e2e/reports/wood-saw-raise-remove-other/screens/S3.png` |
+| S4 | remove Combination Pliers | $34.71 = $36.54 − eco-discount $1.83 | "$34.71" | pass | `e2e/reports/wood-saw-raise-remove-other/screens/S4.png` |
 
-Choices I made: the Wood Saw was added as 1 unit at the start. "The first available product" means the first available product other than the Wood Saw, since that is the one you later call "the other product". "The total" is the row labelled Total, after the eco discount.
+Repeat 1 of 3 is shown; every repeat is in `run.json`.
 
-The eco discount itself is checked, but not the exact point where it switches on. To cover that, the test would need a step where exactly half of the units are rated A or B, for example 2 saws next to 2 units of the other product.
+### Verification of the test
+
+| Check | Result |
+| --- | --- |
+| Intent review | INTENT_OK, `e2e/specs/wood-saw-raise-remove-other.intent.md`, for the confirmed scenario |
+| Static check, reference cart | PASS (gates G0, G1) |
+| Defects on stub prices | 11 of 11 detected at the right step, 2 not applicable |
+| Defects on the prices of this run | 12 of 12 detected at the right step, 1 not applicable |
+| Live run | 3 of 3 repeats passed; the test is the untouched compilation of the confirmed scenario |
+| Live controls | 4 of 4 caught |
+| Report review | VERIFIED, `review.md` of this run |
+
+### Not covered by this scenario
+
+- rule-boundary: Add a step at which the cart sits exactly at the threshold of rule eco-discount.
+
+### Pricing rules
+
+- eco-discount: 5% off when more than half of the units have co2_rating A or B · source: observed on the live site, confirmed · in force at S1, S3, S4 in this run.
+
+### Page driver
+
+`e2e/app/toolshop.driver.ts`: the plugin's starter pack for toolshop, as setup installed it. This flow did not change it (sha256 382d9e8915d5…). Operations this scenario used: candidates, productFacts, readCart, addProduct, setQuantity, remove. The total was read from the row "Total".
+
+The page driver is the one file that knows the shop's pages: the test calls it to find products, add them, change quantities, remove them and read the cart, so the test holds no locator.
+
+### Files
+
+| File | Content |
+| --- | --- |
+| `e2e/tests/wood-saw-raise-remove-other.spec.ts` | the test |
+| `e2e/specs/wood-saw-raise-remove-other.md` | the confirmed scenario |
+| `e2e/specs/wood-saw-raise-remove-other.intent.md` | the intent review |
+| `e2e/reports/wood-saw-raise-remove-other/report.md` | the full report, every defect and control |
+| `e2e/reports/wood-saw-raise-remove-other/screens/` | one screenshot per step |
+| `e2e/app/toolshop.driver.ts`, `.pricing.ts`, `.map.md` | page driver, pricing rules, locator evidence |
+
+### Run it again
+
+`cd e2e && npm run qa -- run wood-saw-raise-remove-other` (3 repeats, with the report)
+`cd e2e && npx playwright test tests/wood-saw-raise-remove-other.spec.ts` (plain Playwright)
+
+---
+
+This scenario never puts the cart exactly on the eco-discount threshold. To cover that, a follow-up scenario could add a step where exactly half of the units are saws.

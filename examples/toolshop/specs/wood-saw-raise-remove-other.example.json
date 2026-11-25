@@ -19,7 +19,7 @@
     }
   },
   "rules": [
-    "eco-discount: 5% of the running value off when more than 0.5 of the units have co2_rating A or B"
+    "eco-discount: 5% off when more than half of the units have co2_rating A or B"
   ],
   "expected": [
     {
@@ -71,7 +71,7 @@
   ],
   "gaps": [],
   "confirmed": {
-    "scenarioSha256": "0b5550fe6e88c543faaefa932bba35a0f45af298aa98c1ede7c6243107ed240e",
+    "scenarioSha256": "621785b3de62ae7d078778e083f5292abc024c07516181f8bd6c6211b6a4a317",
     "rulesSha256": "70f0378857ffcfb424e3ade87f132726d36f99ef12eed20d39a2eb933a132274"
   }
 }

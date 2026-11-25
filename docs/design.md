@@ -1568,7 +1568,7 @@ Two elements of DEP-09 did not make it into the first draft of v0.3 and were not
 
 ## 18. Amendments after v0.3
 
-Places where the code now differs from sections 1–17 on purpose (orders D, F and E). Sections 1–17 are unchanged.
+Places where the code now differs from sections 1–17 on purpose (orders D, F, E and G). Sections 1–17 are unchanged.
 
 | Place | Sections | What the code does now |
 | --- | --- | --- |
@@ -1586,3 +1586,7 @@ Places where the code now differs from sections 1–17 on purpose (orders D, F a
 | Agents' positive verdict | 4, 6.3 | `app-mapper` and `defect-designer` end with `PASS`. |
 | Defects in `report.md` | 10.2–10.5, 11.4 | `report.md` has a section "Defects": one row per defect of the run with id, origin, its `why`, and result and first red checkpoint for the pass on stub prices and for the pass on the prices of the live run, read from `verification.json`; G2 records each defect's `why` there. |
 | Defects line of the confirmation | 11.1 | `defects check <slug> [--extended]` prints first how many defects the test will be checked against, by origin (tester and generated ids named), and that the full list will be in `e2e/reports/<slug>/report.md`; with `--extended` or `defects: extended` it adds the generated defects still to come. `new-test` writes the `--risk` entry before the confirmation and quotes that line verbatim before "Confirm?", also with `--yes`. |
+| "Total" in a request | 5.3, 11.1 | "the total" or "the correct total" is the row the rules file labels as the total (`summary.total`), after every rule in force, with no question; the confirmation says so under "Plugin's choice". A question only when the request names another amount (subtotal, price before the discount) or contradicts itself. |
+| Words of the confirmation | 11.1 | `example` prints each stub as `A = Product A, $10.00, <attribute> <value>`, each rule as `<id>: 5% off when more than half of the units have <attribute> <values>` (a share of one half, a third, a quarter in words, any other as a percentage; a later rule names its base; amounts as money), and one `Source:` line in words (`observed on the live site, confirmed`); the file reference of `provenance.ref` stays in the rules file. `report.md` uses the same words. |
+| Readback form | 11.2, 11.3, 11.4 | `report.md` of every run (also `--dry`) starts with one form: `## <verdict> · <meaning>`, a table of the test case (test, objective, status, environment, preconditions, test data), "Steps" (expected and actual apart, `pass`, `fail`, `not run`, a screenshot each), "Verification of the test", "Not covered by this scenario", "Pricing rules", "Page driver", "Files", "Run it again"; on a red run "Failing step" stands under the verdict. The readback is that part, copied verbatim. |
+| Driver origin | 5.3, 9.1 | `setup` writes `e2e/app/starter-pack.json` with the sha256 of every starter pack file it installed; `report.md` says whether the driver is the starter pack's, was built or repaired in this flow, and whether this flow changed it, from that record, the run records and `attempts.json`. |

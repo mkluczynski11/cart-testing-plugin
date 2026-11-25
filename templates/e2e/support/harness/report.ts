@@ -222,7 +222,9 @@ export function buildReport(root: string, slug: string, runDir: string, screens:
     ? `${[...products.values()].map((p, i) => [`${aliases[i] ?? '—'} = ${p.name}`, p.unitPrice, ...attrs(p.attrs)].join(', ')).join(' · ')} (read from the product pages in this run)`
     : example ? `${aliases.map((a) => [`${a} = ${example.stub[a]?.name}`, money(example.stub[a]?.price ?? '0'), ...attrs(example.stub[a]?.attrs ?? {})].join(', ')).join(' · ')} (stub products of the example; no live run)`
     : 'no product was chosen';
-  const when = run?.meta.timestamp ? `${run.meta.timestamp.slice(0, 10)} ${run.meta.timestamp.slice(11, 16)} UTC` : '—';
+  const idTime = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/.exec(path.basename(runDir));  // a run id starts with its UTC start
+  const when = run?.meta.timestamp ? `${run.meta.timestamp.slice(0, 10)} ${run.meta.timestamp.slice(11, 16)} UTC`
+    : idTime ? `${idTime[1]}-${idTime[2]}-${idTime[3]} ${idTime[4]}:${idTime[5]} UTC` : '—';
   const browser = run?.meta.browser ? run.meta.browser[0].toUpperCase() + run.meta.browser.slice(1) : 'Chromium';
   out.push('| | |', '| --- | --- |');
   out.push(`| Test | ${code(path.join('tests', `${slug}.spec.ts`))} |`);
