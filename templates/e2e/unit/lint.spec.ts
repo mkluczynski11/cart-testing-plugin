@@ -24,3 +24,8 @@ test('a CSS-class locator with the marker is allowed', () => expect(driver('func
 test('goto outside the application is forbidden', () => expect(driver('async function f(page: Page) { await page.goto("https://evil.example.org/"); }').join()).toContain('goto outside the application'));
 test('goto to a relative address is reported by the goto rule', () => expect(driver('async function f(page: Page) { await page.goto("elsewhere.html"); }').join()).toContain('goto outside the application'));
 test('an import from outside support/core is forbidden', () => expect(driver("import { x } from '../../elsewhere';").join()).toContain('outside support/core'));
+
+// Report V F9: three ways past G0.
+test('a URL literal on a look-alike origin is outside the application', () => expect(driver('async function f(page: Page) { await page.goto("https://shop.example.com.attacker.example/steal"); }').join()).toContain('outside the application'));
+test('a computed member with a string literal is resolved: page["waitForTimeout"]', () => expect(driver("async function f(page: Page) { await page['waitForTimeout'](500); }").join()).toContain('waitForTimeout'));
+test('a setTimeout-based wait is a fixed wait', () => expect(driver('async function f() { await new Promise((r) => setTimeout(r, 500)); }').join()).toContain('setTimeout'));

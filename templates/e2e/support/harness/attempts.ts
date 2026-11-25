@@ -37,8 +37,15 @@ export function admitRepair(root: string, slug: string, app: string, target: Rep
   return { ok: true, attempt };
 }
 
-/** Record how an admitted attempt ended. Call under the lock. */
+/**
+ * Record how an admitted attempt ended. A repair that ends PASS closes the episode: attempts.json moves into that
+ * run's directory, so the counter starts again for the next failure. Call under the lock.
+ */
 export function closeAttempt(root: string, slug: string, attempt: number, runId: string, verdict: Verdict): void {
   const all = readAttempts(root, slug).map((a) => (a.attempt === attempt ? { ...a, runId, verdict } : a));
   fs.writeFileSync(attemptsFile(root, slug), JSON.stringify(all, null, 2) + '\n');
+  if (verdict !== 'PASS') return;
+  const runDir = path.join(files.runs(root, slug), runId);
+  fs.mkdirSync(runDir, { recursive: true });
+  fs.renameSync(attemptsFile(root, slug), path.join(runDir, 'attempts.json'));
 }

@@ -33,6 +33,22 @@ const lineOf = (n: Node) => n.loc?.start.line ?? 0;
 const child = (n: Node, key: string) => n[key] as Node;
 const name = (n: Node | undefined) => (n?.type === 'Identifier' ? (n.name as string) : undefined);
 
+/** The origin of an absolute URL literal, or null for a relative one. */
+function originOf(s: string): string | null {
+  try {
+    return /^[a-z][a-z0-9+.-]*:/i.test(s) ? new URL(s).origin : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A member's name in a driver, also when written as a computed string literal: page['waitForTimeout']. */
+function memberKey(n: Node): string | undefined {
+  if (n.type !== 'MemberExpression') return undefined;
+  const p = child(n, 'property');
+  return n.computed ? (p?.type === 'StringLiteral' ? (p.value as string) : undefined) : name(p);
+}
+
 function memberName(n: Node): string | undefined {
   return n.type === 'MemberExpression' && !n.computed ? name(child(n, 'property')) : undefined;
 }
@@ -115,20 +131,23 @@ export function lintDriver(file: string, text: string, origin: string): LintViol
     if (!inCore && source !== '@playwright/test') v(st, `an import from outside support/core and Playwright (${source})`);
   }
   walk(ast, (n) => {
-    const member = memberName(n);
+    const member = memberKey(n);
     if (member === 'waitForTimeout') v(n, 'waitForTimeout: a fixed wait instead of a completion signal');
     if (member === 'request' && name(child(n, 'object')) === 'page') v(n, 'page.request: an API call outside the UI (R13)');
-    if (member === 'newContext' && memberName(child(n, 'object')) === 'request') v(n, 'request.newContext: an API call outside the UI (R13)');
-    if (n.type === 'CallExpression' && name(child(n, 'callee')) === 'fetch') v(n, 'fetch: an API call outside the UI (R13)');
+    if (member === 'newContext' && memberKey(child(n, 'object')) === 'request') v(n, 'request.newContext: an API call outside the UI (R13)');
+    if (n.type === 'CallExpression' && (name(child(n, 'callee')) ?? memberKey(child(n, 'callee'))) === 'fetch') v(n, 'fetch: an API call outside the UI (R13)');
+    if (n.type === 'CallExpression' && ['setTimeout', 'setInterval'].includes(name(child(n, 'callee')) ?? memberKey(child(n, 'callee')) ?? '')) {
+      v(n, `${name(child(n, 'callee')) ?? memberKey(child(n, 'callee'))}: a fixed wait instead of a completion signal`);
+    }
     if (n.type === 'StringLiteral') {
       const s = n.value as string;
       if (/^\(?\/\/|^xpath=/.test(s)) v(n, `an XPath locator ${JSON.stringify(s)}`);
-      if (/^https?:\/\//.test(s) && !s.startsWith(origin)) v(n, `a URL outside the application's origin ${JSON.stringify(s)}`);
+      if (/^https?:\/\//.test(s) && originOf(s) !== origin) v(n, `a URL outside the application's origin ${JSON.stringify(s)}`);
     }
-    if (n.type === 'CallExpression' && memberName(child(n, 'callee')) === 'goto') {
+    if (n.type === 'CallExpression' && memberKey(child(n, 'callee')) === 'goto') {
       const arg = (n.arguments as Node[])[0];
       const lit = arg?.type === 'StringLiteral' ? (arg.value as string) : undefined;
-      if (lit !== undefined && !lit.startsWith('/') && !lit.startsWith(origin)) v(n, `goto outside the application: ${JSON.stringify(lit)}`);
+      if (lit !== undefined && !lit.startsWith('/') && originOf(lit) !== origin) v(n, `goto outside the application: ${JSON.stringify(lit)}`);
     }
     if (n.type === 'CallExpression' && ['locator', 'querySelector', 'querySelectorAll', 'closest'].includes(memberName(child(n, 'callee')) ?? '')) {
       const arg = (n.arguments as Node[])[0];

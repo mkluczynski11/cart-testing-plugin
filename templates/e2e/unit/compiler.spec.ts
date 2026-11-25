@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { compileBody, compileScenario, inspectTestFile, needQty } from '../support/core/compiler';
 import { scenarioHash } from '../support/core/scenario';
+import { lineDiff } from '../support/harness/compile';
 import { dataOf, scenario, STEPS, yaml } from './helpers';
 
 const FIXTURES = path.join(__dirname, '..', 'support', 'harness', 'fixtures');
@@ -43,3 +44,7 @@ test('the checkpoints follow the check field', () => {
   const s = scenario({ check: '[S2, S4]' });
   expect(compileBody(s).match(/checkTotal/g)?.length).toBe(2);
 });
+
+// Report V F5: the difference of a hand edit is shown by position, so moved and duplicated lines appear.
+test('FILE_CONFLICT shows two swapped lines', () => expect(lineDiff('a\nb\nc\n', 'a\nc\nb\n', 11).length).toBeGreaterThan(0));
+test('FILE_CONFLICT shows a duplicated line with its line number', () => expect(lineDiff('a\nb\nc\n', 'a\nb\nb\nc\n', 11).join('\n')).toMatch(/\+ in file:\s+line 3: b/));

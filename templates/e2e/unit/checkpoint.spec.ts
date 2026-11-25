@@ -92,3 +92,14 @@ test('the displayed record keeps the raw text byte for byte', () => {
   const rec = displayedRecord(discounted({ adjustments: [row('Green discount (5%)', '- $2.50')], total: row('Total', 'USD 47.50') }), USD) as { adjustments: Array<{ rawText: string }>; total: { rawText: string } };
   expect([rec.adjustments[0].rawText, rec.total.rawText]).toEqual(['- $2.50', 'USD 47.50']);
 });
+
+// Report V F8 and report D request 7: messages a tester can follow without the code.
+test('an amount mismatch names the raw text of the row in its cause line', () => {
+  const findings = judge(discounted({ adjustments: [row('Green discount (5%)', '- $2.60')], total: row('Total', '$47.40') }), snap(3), ctx);
+  expect(formatMismatch('S1', 'add Lamp, 3 units', findings).split('\n').find((l) => l.startsWith('  layer:'))).toContain('"- $2.60"');
+});
+test('an unmodeled adjustment whose rows add up does not say the total is not the subtotal minus the adjustments', () => {
+  const findings = judge(view({ adjustments: [row('Loyalty bonus', '- $1.00')], subtotal: row('Subtotal', '$30.00'), total: row('Total', '$29.00') }), snap(), ctx);
+  expect(formatMismatch('S1', 'add Lamp, 1 unit', findings)).not.toContain('not the subtotal minus the adjustments');
+});
+test('a total that is not an amount is reported in the total layer, not labels', () => expect(judge(view({ total: row('Total', 'gratis') }), snap(), ctx)[0].layer).toBe('total'));

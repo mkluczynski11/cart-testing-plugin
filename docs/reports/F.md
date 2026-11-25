@@ -178,3 +178,93 @@ compile onto a dangling link    → tests/cart-eco-threshold.spec.ts is in the w
 
 Checks: `tsc`, `typecheck:toolshop`, `test:unit` 165 passed, selftest 12/12 `PASS` (62.1 s), `node --test scripts/`,
 `check-contracts`, `claude plugin validate .` green; manifest regenerated.
+
+## Stage 3 — a test for every survivor (V: F10, F11, F12, mutation table)
+
+`date -u`: `Wed Nov 25 09:51:34 UTC 2026`.
+
+For a finding that is "no test exists" the test is the fix; it is shown able to fail by the replay below (V's
+mutation applied once: red, then restored).
+
+| Survivor | Test (where) |
+| --- | --- |
+| #10 settle poll | `unit/checkpoint.spec.ts` "poll: a first read that disagrees and a second that agrees is green after two reads", "poll: a cart that never agrees is red, and only after settleMs" |
+| #16 `DEFECT_LATE` | selftest row "guarantees": the compiled test without `checkTotal('S3')`, `run --dry --repair test` → `DEFECT_LATE` |
+| #18 environment before locator | `unit/classification.spec.ts` "the environment outranks a locator failure in another repeat" |
+| #19 raw text | `unit/checkpoint.spec.ts` "the displayed record keeps the raw text byte for byte" (`- $2.50`, `USD 47.50`) |
+| #20 `doctor` `HARNESS_MODIFIED` | row "guarantees": a scratch copy of the package with one line added to `support/core/money.ts`, its own `doctor` → `HARNESS_MODIFIED: … support/core/money.ts` |
+| #25 `RETRY_REFUSED` | row "guarantees": a second `--repair test` with the test unchanged |
+| #26 `LIMIT_REACHED` | row "guarantees": a third repair after two red ones |
+| #27 `VERIFICATION_STALE` | row "guarantees": a verification record of the current files, one byte more in the driver → `VERIFICATION_STALE … the driver` |
+| O1 goto rule | `unit/lint.spec.ts` "goto to a relative address is reported by the goto rule" (and the absolute case now asserts the rule's text, not `length > 0`) |
+| O2 G1 conformance | row "guarantees": the approved example's S2 `totalExact` changed → `CONFORMANCE_FAIL` |
+| O5 lock | row "guarantees": promotion of a verified run under a fresh `.lock` → `INFRA_FAIL`, no `report.md`; and `unit/conditions.spec.ts` "a held lock is refused …" |
+| O6 rules freeze | row "guarantees": a line appended to the rules file → `run` `SCENARIO_CHANGED` naming the rules file |
+| F10 | row "reference cart" asserts applicable/detected/total per fixture: 12/12/13, 12/12/13, 10/10/11 |
+
+Selftest after the change: `13/13 rows passed`, the new row "guarantees PASS VERIFICATION_STALE, SCENARIO_CHANGED,
+CONFORMANCE_FAIL, DEFECT_LATE, RETRY_REFUSED, LIMIT_REACHED, a held lock and HARNESS_MODIFIED each where expected"
+(14 lines of output plus the verdict, within the 15-line budget). Committed as `a8054d5` before the replay, so the
+replay runs on a committed tree.
+
+The replay: see "Replay table" at the end of this section.
+
+## Stage 4 — the remaining fixes (V: F9, F5, F7, F8, N2, N3 · D: request 7)
+
+`date -u`: `Wed Nov 25 09:55:41 UTC 2026`.
+
+Tests first (in `unit/lint.spec.ts`, `compiler.spec.ts`, `checkpoint.spec.ts`, new `attempts.spec.ts`,
+`reporter.spec.ts`). Red before the fix, 12 failed:
+
+```text
+lint      a URL literal on a look-alike origin is outside the application        Expected substring: "outside the application"  Received string: ""
+lint      a computed member with a string literal is resolved: page["waitForTimeout"]  Received string: ""
+lint      a setTimeout-based wait is a fixed wait                                 Received string: ""
+compiler  FILE_CONFLICT shows two swapped lines                                   Expected: > 0  Received: 0
+compiler  FILE_CONFLICT shows a duplicated line with its line number              Expected pattern: /\+ in file:\s+line 3: b/  Received string: ""
+attempts  a driver repair is refused for a dry run …                              ENOENT … unit-repair-dry/app/reference.driver.ts (the dry run went into admission)
+attempts  after two repairs that ended PASS a third repair is admitted as the first of a new episode   -   1, 1   +   2, "LIMIT_REACHED"
+checkpoint an amount mismatch names the raw text of the row in its cause line    Received string: "  layer:     adjustments · row \"Green discount (5%)\" does not agree with rule green-discount"
+checkpoint an unmodeled adjustment whose rows add up does not say the total is not the subtotal minus the adjustments   Expected substring: not "not the subtotal minus the adjustments"
+checkpoint a total that is not an amount is reported in the total layer, not labels   Expected: "total"  Received: "labels"
+reporter  the git state of a run records a dirty tree next to the commit         TypeError: (0 , _reporter.gitState) is not a function
+```
+
+Fix:
+
+- G0 (`lint.ts`): URL literals and `goto` targets are compared by `new URL(x).origin` with the configured origin
+  exactly; a computed member with a string literal is resolved (`page['waitForTimeout']`, `globalThis['fetch']`);
+  `setTimeout`/`setInterval` calls in a driver are fixed waits.
+- `FILE_CONFLICT` (`compile.ts`): the difference is a longest-common-subsequence diff with line numbers.
+- Repairs (`run.ts`, `attempts.ts`): `run --dry --repair driver` → `SPEC_INVALID` "--repair driver needs a live run …",
+  nothing counted; a repair that ends `PASS` moves `attempts.json` into its run directory, closing the episode.
+- Messages (`checkpoint.ts`): the cause line quotes the row's raw text ("row "Rabatt" ("-7,47 €") does not agree
+  with rule rabatt, which gives 3,74 €"); with an unmodeled adjustment whose displayed rows add up there is no total
+  finding; a text that is not an amount is reported in the layer of the field read (total, subtotal, adjustments,
+  unit price, line total), the layer names of design 9.1.
+- N2: `examples/toolshop/lab/driver.live.spec.ts` `?? ''` instead of `!`. N3: `run.json` `meta.gitDirty` (uncommitted
+  changes to tracked files when the run started) next to `gitSha`.
+
+After the fix: `181 passed`.
+
+CLI on a scratch copy of the example (no live run):
+
+```text
+t1 (setQuantity and remove swapped)  compile → tests/cart-total-add-change-remove.spec.ts was edited by hand, so nothing was written. Differences:
+                                        + in file:  line 16: await shopper.remove(b);
+                                        - compiled: line 16: await shopper.setQuantity(a, 3);
+                                        + in file:  line 19: await shopper.setQuantity(a, 3);
+                                        - compiled: line 19: await shopper.remove(b);
+                                      VERDICT: FILE_CONFLICT
+g0 (V's three lines in the driver)   doctor → LINT_FAIL: app/toolshop.driver.ts:342 goto outside the application: "https://practicesoftwaretesting.com.attacker.example/steal"
+                                              LINT_FAIL: …:342 a URL outside the application's origin "…attacker.example/steal"
+                                              LINT_FAIL: …:343 waitForTimeout: a fixed wait instead of a completion signal
+                                      (doctor shows the first three; the setTimeout line is the unit test's)
+rp                                   run cart-eco-threshold --dry --repair driver → --repair driver needs a live run: a dry run (G0–G2 on the reference cart) never calls the driver, so it cannot show a repair. … VERDICT: SPEC_INVALID
+```
+
+Not in this order, kept as known limits for the hand-over: N1 (15 lines plus the `VERDICT` line), N5 (USD and EUR
+only), N6 (a single thrown read inside a checkpoint is retried silently).
+
+Checks: `tsc`, `typecheck:toolshop`, `test:unit` 181 passed, selftest 13/13 `PASS` (76.6 s), `node --test scripts/`,
+`check-contracts`, `claude plugin validate .` green; manifest regenerated.

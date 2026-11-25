@@ -103,7 +103,7 @@ async function toastOverlap(page: Page) {
 
 const dataTestInventory = (page: Page) =>
   page.evaluate(() => [...new Set(Array.from(document.querySelectorAll('[data-test]'))
-    .map((e) => e.getAttribute('data-test')!.replace(/[0-9A-Z]{26}$/, '<id>')))]);
+    .map((e) => (e.getAttribute('data-test') ?? '').replace(/[0-9A-Z]{26}$/, '<id>')))]);
 
 // ---------- tests ----------
 

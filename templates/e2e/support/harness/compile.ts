@@ -7,14 +7,28 @@ import { files } from '../core/config';
 import { freezeMessage } from '../core/scenario';
 import { loadScenario, rel, type CommandResult } from './common';
 
-/** The lines that differ between the compiled text and the file, at most `limit`. */
+/**
+ * The lines that differ between the compiled text and the file, by position (a longest common subsequence), so a
+ * moved or duplicated line appears with its line number; at most `limit` lines.
+ */
 export function lineDiff(compiled: string, existing: string, limit: number): string[] {
   const a = compiled.split('\n');
   const b = existing.split('\n');
-  const out = [
-    ...a.filter((l) => !b.includes(l) && !l.startsWith('// ')).map((l) => `  - compiled: ${l.trim()}`),
-    ...b.filter((l) => !a.includes(l) && !l.startsWith('// ')).map((l) => `  + in file:  ${l.trim()}`),
-  ];
+  const lcs = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+  const out: string[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) { i++; j++; continue; }
+    if (j < b.length && (i === a.length || lcs[i][j + 1] >= lcs[i + 1][j])) {
+      if (!b[j].startsWith('// ')) out.push(`  + in file:  line ${j + 1}: ${b[j].trim()}`);
+      j++;
+    } else {
+      if (!a[i].startsWith('// ')) out.push(`  - compiled: line ${i + 1}: ${a[i].trim()}`);
+      i++;
+    }
+  }
   return out.length > limit ? [...out.slice(0, limit - 1), `  … ${out.length - limit + 1} more changed line(s)`] : out;
 }
 

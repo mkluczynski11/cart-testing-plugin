@@ -123,6 +123,9 @@ export async function run(root: string, slug: string, opts: RunOptions): Promise
   const loaded = got.loaded;
   if (loaded.freeze !== 'frozen') return { verdict: 'SCENARIO_CHANGED', lines: [freezeMessage(loaded.freeze, slug)] };
   let attempt: number | undefined;
+  if (repair === 'driver' && dry) {
+    return { verdict: 'SPEC_INVALID', lines: [`--repair driver needs a live run: a dry run (G0–G2 on the reference cart) never calls the driver, so it cannot show a repair. Run qa-harness run ${slug} --repair driver without --dry.`] };
+  }
   if (repair) {
     const admitted = await withLock(root, slug, () => admitRepair(root, slug, loaded.config.app, repair));
     if (!admitted.ok) return { verdict: admitted.verdict, lines: [admitted.line] };
