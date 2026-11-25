@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import { files } from '../core/config';
 import { buildExample, type ExampleFile } from '../core/example';
 import { formatMoney, fromDecimal } from '../core/money';
+import { describeRule, describeSources } from '../core/pricing';
 import { parseScenarioText, scenarioHash, setStatusLine } from '../core/scenario';
 import { loadScenario, rel, type CommandResult } from './common';
 
@@ -14,9 +15,11 @@ export function example(root: string, slug: string, confirm: boolean): CommandRe
   const ex: ExampleFile = buildExample(s, pricing, fmt);
   const money = (d: string) => formatMoney(fromDecimal(d, fmt.currency), fmt);
   const lines = [
-    `Example for ${s.id} on stub products, not the application's: ${s.aliases.map((a) => `${a} = ${ex.stub[a].name} ${money(ex.stub[a].price)}${Object.keys(ex.stub[a].attrs).length ? ` ${JSON.stringify(ex.stub[a].attrs)}` : ''}`).join('; ')}.`,
+    `Example for ${s.id} on stub products, not the application's: ${s.aliases.map((a) => [`${a} = ${ex.stub[a].name}`, money(ex.stub[a].price), ...Object.entries(ex.stub[a].attrs).map(([k, v]) => `${k} ${v}`)].join(', ')).join('; ')}.`,
     ...ex.expected.map((r) => `${r.step.padEnd(4)} ${r.action.padEnd(14)} ${r.cart.padEnd(16)} ${r.checkpoint ? money(r.total) : '(no checkpoint)'}${Object.keys(r.adjustments).length ? ` after ${Object.entries(r.adjustments).map(([k, v]) => `${k} ${money(v)}`).join(', ')}` : ''}`),
-    ...(ex.rules.length ? [`Rules: ${ex.rules.join('; ')}.`] : ['No pricing rules apply.']),
+    ...(pricing.rules.length
+      ? [`Rules: ${pricing.rules.map((r, i) => describeRule(r, i, money)).join('; ')}.`, `Source: ${describeSources(pricing.rules)}.`]
+      : ['No pricing rules apply.']),
     ...ex.gaps.map((g) => `Scenario gap: ${g}.`),
   ];
   if (confirm) {

@@ -133,16 +133,46 @@ export function maxQtyFor(constraints: PurchaseConstraint[], name: string): numb
   return limits.length ? Math.min(...limits) : undefined;
 }
 
-/** The rule text a person reads in the example and the report. */
-export function describeRule(rule: PricingRule): string {
-  const amount = 'fixed' in rule.amount ? `${rule.amount.fixed} off`
-    : `${rule.amount.rate}% of the ${rule.amount.percentOf === 'subtotal' ? 'subtotal' : 'running value'} off`;
+/** A share in words (design 11.1): one half, one third, one quarter as a fraction, any other as a percentage. */
+export function describeShare(above: string): string {
+  const r = parseRatio(above);
+  if (r.p * 2n === r.q) return 'half';
+  if (r.p * 3n === r.q) return 'a third';
+  if (r.p * 4n === r.q) return 'a quarter';
+  const [whole, frac = ''] = above.split('.');
+  const digits = whole + frac.padEnd(2, '0');
+  const int = digits.slice(0, whole.length + 2).replace(/^0+(?=\d)/, '');
+  const rest = digits.slice(whole.length + 2).replace(/0+$/, '');
+  return `${int}${rest ? `.${rest}` : ''}%`;
+}
+
+/**
+ * The rule text a person reads in the confirmation and the report. `index` is the rule's place in the file: the first
+ * rule's running value is the subtotal, so its percentage needs no base; `money` formats an amount of the rules file.
+ */
+export function describeRule(rule: PricingRule, index = 0, money: (decimal: string) => string = (d) => d): string {
+  const amount = 'fixed' in rule.amount ? `${money(rule.amount.fixed)} off`
+    : index === 0 ? `${rule.amount.rate}% off`
+    : rule.amount.percentOf === 'subtotal' ? `${rule.amount.rate}% of the subtotal off`
+    : `${rule.amount.rate}% off the amount after the rules before it`;
   const where = (f: AttrFilter) => Object.entries(f).map(([k, v]) => `${k} ${v.join(' or ')}`).join(' and ');
   const when = 'always' in rule.when ? 'always'
-    : 'shareOfUnits' in rule.when ? `when more than ${rule.when.shareOfUnits.above} of the units have ${where(rule.when.shareOfUnits.where)}`
-    : 'hasUnits' in rule.when ? `when at least ${rule.when.hasUnits.atLeast} unit(s) have ${where(rule.when.hasUnits.where)}`
-    : `when the subtotal is at least ${rule.when.subtotalAtLeast}`;
+    : 'shareOfUnits' in rule.when ? `when more than ${describeShare(rule.when.shareOfUnits.above)} of the units have ${where(rule.when.shareOfUnits.where)}`
+    : 'hasUnits' in rule.when ? `when at least ${rule.when.hasUnits.atLeast} ${rule.when.hasUnits.atLeast === 1 ? 'unit has' : 'units have'} ${where(rule.when.hasUnits.where)}`
+    : `when the subtotal is at least ${money(rule.when.subtotalAtLeast)}`;
   return `${rule.id}: ${amount} ${when}`;
+}
+
+/** Where a rule comes from, in words, without the file reference (that stays in the rules file). */
+export function describeSource(p: Provenance): string {
+  const from = p.source === 'observed' ? 'observed on the live site' : p.source === 'code' ? 'read in the application\'s code' : 'stated by the tester';
+  const live = p.live === 'unconfirmed' ? 'not confirmed on the live site' : p.source === 'observed' ? 'confirmed' : 'confirmed on the live site';
+  return `${from}, ${live}`;
+}
+
+/** The "Source:" text of the confirmation: one rule without its id, several rules each with theirs. */
+export function describeSources(rules: PricingRule[]): string {
+  return rules.length === 1 ? describeSource(rules[0].provenance) : rules.map((r) => `${r.id} ${describeSource(r.provenance)}`).join('; ');
 }
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);

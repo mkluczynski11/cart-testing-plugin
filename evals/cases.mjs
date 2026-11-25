@@ -193,6 +193,16 @@ export const CASES = [
         return first.includes(before) || `line before "Confirm?": ${before}`;
       }],
       ['the scenario is a draft and no test exists', (f) => (onlyScenario(f).data.status === 'draft' && tests(f).length === 0) || `status ${onlyScenario(f).data.status}, tests: ${tests(f).join(', ') || 'none'}`],
+      ['no question before "Confirm?" (the total is the Total row)', (f) => answerLines(f).slice(0, -1).filter((l) => /\?\s*$/.test(l)).length === 0 || `question: ${answerLines(f).slice(0, -1).find((l) => /\?\s*$/.test(l))}`],
+      ['"Plugin\'s choice" names the total row', (f) => /Plugin's choice[\s\S]*total[\s\S]*row/i.test(f.answer) || 'the choice of the total row is not stated'],
+    ],
+  },
+  {
+    id: 'R3', title: 'a request for the amount before the discount asks one question (not in design 14.1)', maxTurns: 12,
+    prompt: '/qa:new-test "Add two different products to the cart. Change the quantity of one, then remove the other. Check the price before the discount after each change."',
+    checks: [
+      ['the answer ends with a question', (f) => endsWithQuestion(f.answer) || 'last line is not a question'],
+      ['no scenario or test file', (f) => (specs(f).length === 0 && tests(f).length === 0) || `files: ${[...specs(f), ...tests(f)].join(', ')}`],
     ],
   },
   {

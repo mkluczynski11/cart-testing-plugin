@@ -2,7 +2,7 @@
 // Implements design 8.2 and order N, section 6.1 (stub names and prices, attribute search, gaps).
 import { describeState, describeStep, type ConfirmedHashes, type Scenario } from './scenario';
 import { applyAction, price, type LedgerSnapshot, type QtyState } from './ledger';
-import { decimalText, fromDecimal, times, type AmountFormat } from './money';
+import { decimalText, formatMoney, fromDecimal, times, type AmountFormat } from './money';
 import { describeRule, ruleAttrs, type PricingModule } from './pricing';
 import type { CatalogItem } from './reference-cart';
 
@@ -157,7 +157,7 @@ export function buildExample(s: Scenario, pricing: PricingModule, fmt: AmountFor
     currency: fmt.currency,
     note: 'Stub products and prices, not the application\'s: they show how the rules behave. Real prices are read during the live run.',
     stub: stubs,
-    rules: pricing.rules.map(describeRule),
+    rules: pricing.rules.map((r, i) => describeRule(r, i, (d) => formatMoney(fromDecimal(d, fmt.currency), fmt))),
     expected,
     gaps,
   };

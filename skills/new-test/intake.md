@@ -20,8 +20,9 @@ quantity and remove (a `set` step for cart attributes is not built yet). I have 
 | Meaning of actions and objects | map the words | "increase the quantity of the second and remove the first" → `setQty` on B, `remove` on A, not the reverse |
 | Meaning of actions and objects | map the words | "add two units, then two more of the same" → `add A 2`, `add A 2`, `cart_after: { A: 4 }`; no `setQty` |
 | Meaning of actions and objects | map the words | "check the total after each change" → `check: each-step`; "only at the end" → `check: last-step` |
+| Meaning of actions and objects | map the words, do not ask | "check the total" or "the correct total", with or without a rule → the row the rules file labels as the total (`summary.total`), after every rule in force; say so under "Plugin's choice" |
 | A change of the requirement | ask one question, write nothing | "check that the cart works" (no steps, no expectation): ask what the shopper does and what to check |
-| A change of the requirement | ask | "check the total" when a rule applies, without saying before or after the discount |
+| A change of the requirement | ask | the request names another amount than the total ("the subtotal", "the price before the discount", "without the discount"), or contradicts itself ("the total, before the discount") |
 | A change of the requirement | ask | "remove one of them" when which one changes what the test proves (e.g. only one of them meets a rule's condition) |
 | An out-of-scope feature | refuse, write nothing | "use a coupon", "log in", "go to checkout" |
 
@@ -37,7 +38,8 @@ come only from the `example` output; rule wording only from the rules file. In t
 ```text
 Scenario: <slug>
 <alias> = <how it is picked, in words>, …
-Plugin's choice: <every choice you made yourself: which product changes, quantities, which is removed, checkpoints>
+Plugin's choice: <every choice you made yourself: which product changes, quantities, which is removed, checkpoints>;
+"the total" is the row labelled "<summary.total label of the rules file>"<, after <rule ids>, when a rule applies>
 
 Step  Shopper's action            Cart after the step
 S1    adds A, 1 unit              A×1
@@ -46,16 +48,17 @@ S3    changes quantity of A to 3  A×3, B×1
 S4    removes B                   A×3
 The cart state and the total are checked after <every step | the steps named>.
 
-Example on stub prices (<stub of each alias as `example` printed it>):
+Example on stub prices:
+<each alias as `example` printed it, one per line: "A = Product A, $10.00, co2_rating A">
 S1 $10.00 · S2 $30.00 · S3 $50.00 · S4 $30.00
-Rules: <each rule as `example` printed it>, or "no pricing rule applies".
-Source of each rule: <provenance from the rules file: code | tester | observed; confirmed live or not>.
+Rules: <each rule as `example` printed it after "Rules:">, or "no pricing rule applies".
+Source: <the text `example` printed after "Source:">.
 
-Assumptions: guest, empty cart, no geolocation, prices from the <product page | API>,
-the total is the row labelled "<summary.total label of the rules file>".
+Assumptions: guest, empty cart, no geolocation, prices from the <product page | API>.
 <the first line of `qa-harness defects check <slug>`, verbatim: "The test will be checked against …">
 Confirm? (ok / correction)
 ```
 
-The example rows above show the layout only; never copy their amounts. With `--yes` replace the last line by
+The example rows above show the layout only; never copy their amounts. Never put a file reference of the rules
+file's `provenance.ref` into the confirmation: the tester's repo does not have that file. With `--yes` replace the last line by
 "Confirmed by --yes."

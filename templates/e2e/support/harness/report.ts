@@ -6,7 +6,8 @@ import * as path from 'node:path';
 import type { CheckpointRecord } from '../core/checkpoint';
 import type { RunRecord } from '../core/classification';
 import { files, formatOf, loadConfig, packageRoot } from '../core/config';
-import { describeRule, type PricingModule } from '../core/pricing';
+import { formatMoney, fromDecimal } from '../core/money';
+import { describeRule, describeSource, type PricingModule } from '../core/pricing';
 import { readScenarioFile } from '../core/scenario';
 import type { Verdict } from '../core/verdicts';
 import { loadPricing, rel, type CommandResult } from './common';
@@ -156,10 +157,10 @@ export function buildReport(root: string, slug: string, runDir: string, screens:
   out.push('', '## Scenario gaps', '');
   out.push(...((ver?.gaps ?? []).length ? (ver?.gaps ?? []).map((x) => `- ${x}`) : ['None: every default defect is applicable in this scenario.']));
   out.push('', '## Rules used', '');
-  for (const r of pricing.rules) {
+  pricing.rules.forEach((r, i) => {
     const inForce = cps.filter((c) => c.expected.adjustments.some((a) => a.rule === r.id)).map((c) => c.step);
-    out.push(`- ${describeRule(r)} · source: ${r.provenance.source} (${r.provenance.ref}) · live: ${r.provenance.live} · ${inForce.length ? `in force at ${inForce.join(', ')}` : 'not in force'} in this run.`);
-  }
+    out.push(`- ${describeRule(r, i, (d) => formatMoney(fromDecimal(d, fmt.currency), fmt))} · source: ${describeSource(r.provenance)} · ${inForce.length ? `in force at ${inForce.join(', ')}` : 'not in force'} in this run.`);
+  });
   out.push(`- Total row label ${pricing.summary.total.label}, subtotal row label ${pricing.summary.subtotal.label} · source: ${pricing.summary.provenance.source} (${pricing.summary.provenance.ref}).`);
   out.push('', '## How to rerun and how to read a failure', '');
   out.push(`Rerun: \`${rerunCommand(root, slug)}\``, '');
