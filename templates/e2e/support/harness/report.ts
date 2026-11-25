@@ -8,9 +8,10 @@ import type { RunRecord } from '../core/classification';
 import { files, formatOf, loadConfig, packageRoot } from '../core/config';
 import { formatMoney, fromDecimal } from '../core/money';
 import { describeRule, describeSource, type PricingModule } from '../core/pricing';
-import { readScenarioFile } from '../core/scenario';
+import { fileHash, readScenarioFile } from '../core/scenario';
 import type { Verdict } from '../core/verdicts';
 import { loadPricing, rel, type CommandResult } from './common';
+import { readAttempts } from './attempts';
 import { intentReview, runReviewVerdict } from './intent';
 import { withLock } from './run-dir';
 
@@ -66,19 +67,14 @@ function scopeLine(cps: CheckpointRecord[]): string {
     : `The total was read from the row ${rows}. In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart; only the label-based control skew-total shows that the driver reads the total.`;
 }
 
-/** The two review lines of report.md: the intent review of the scenario and the report review of this run. */
-function reviewLines(root: string, slug: string, runDir: string): string[] {
+/** The intent review row of the verification table: its verdict and file, or why it does not count. */
+function intentCell(root: string, slug: string, repo: (p: string) => string): string {
   const intent = intentReview(root, slug);
-  const out: string[] = [];
-  if (intent.state === 'current') out.push(`- Intent review: \`${intent.file}\`, verdict ${intent.verdict}, for the confirmed scenario (sha256 ${intent.confirmed?.slice(0, 12)}…).`);
-  else if (intent.state === 'stale') out.push(`- Intent review: \`${intent.file}\`, verdict ${intent.verdict}, is STALE: it reviews scenario ${intent.reviewed?.slice(0, 12)}…, the confirmed scenario is ${intent.confirmed?.slice(0, 12)}….`);
-  else if (intent.state === 'unreadable') out.push(`- Intent review: \`${intent.file}\` has no scenario_sha256 or verdict line; it does not count.`);
-  else out.push(`- **Not available:** the intent review (\`${intent.file}\` ${intent.state === 'missing' ? 'does not exist' : 'needs a confirmed scenario'}; test-verifier writes it).`);
-  const review = runReviewVerdict(runDir);
-  out.push(review
-    ? `- Report review: \`review.md\` of this run, verdict ${review}.`
-    : '- **Not available:** the report review (`review.md`, written by test-verifier after `qa-harness verify`); none is part of this run.');
-  return out;
+  const file = `\`${repo(path.relative(root, path.join(root, intent.file.replace(/^e2e\//, ''))))}\``;
+  if (intent.state === 'current') return `${intent.verdict}, ${file}, for the confirmed scenario`;
+  if (intent.state === 'stale') return `STALE: ${file} (${intent.verdict}) reviews scenario ${intent.reviewed?.slice(0, 12)}…, the confirmed one is ${intent.confirmed?.slice(0, 12)}…`;
+  if (intent.state === 'unreadable') return `does not count: ${file} has no scenario_sha256 or verdict line`;
+  return `not available (${file} ${intent.state === 'missing' ? 'does not exist' : 'needs a confirmed scenario'}; test-verifier writes it)`;
 }
 
 /** The table of every defect of the run, both G2 passes, read from verification.json (10.2–10.5, 11.4). */
@@ -98,91 +94,226 @@ function defectTable(ver: Verification | undefined): string[] {
   return out;
 }
 
+/** "<d> of <n> detected at the right step, <k> not applicable" for one G2 pass. */
+function defectCount(rows: DefectEntry[] | undefined, none: string): string {
+  if (!rows?.length) return none;
+  const applicable = rows.filter((d) => d.result !== 'not-applicable');
+  return `${applicable.filter((d) => d.result === 'detected').length} of ${applicable.length} detected at the right step, ${rows.length - applicable.length} not applicable`;
+}
+
 export type ReportOptions = { asEvidence?: boolean };
 
-/** report.md: verdict, products, steps, evidence and its absence, scope, gaps, rules, rerun (11.2, 11.4). */
+/** The driver operations a scenario uses: the ones `qa-harness need` checks (design 9.1). */
+export function scenarioActions(steps: Array<{ do: string }>, priceSource?: string): string[] {
+  const kinds = new Set(steps.map((x) => x.do));
+  return ['candidates', 'productFacts', 'readCart', ...(kinds.has('add') ? ['addProduct'] : []), ...(kinds.has('setQty') ? ['setQuantity'] : []),
+    ...(kinds.has('remove') ? ['remove'] : []), ...(priceSource === 'api' ? ['apiPrice'] : [])];
+}
+
+/** The starter pack record that setup writes: the sha256 of every file it installed from the plugin. */
+export const starterPackFile = (root: string) => path.join(root, 'app', 'starter-pack.json');
+
+/** Where the driver came from and whether this flow changed it, from the run records and setup's record (order G). */
+function driverOrigin(root: string, slug: string, app: string, runDir: string, ver: Verification | undefined): { origin: string; change: string } {
+  const name = path.basename(files.driver(root, app));
+  const runs = files.runs(root, slug);
+  const id = path.basename(runDir);
+  const earlier = (fs.existsSync(runs) ? fs.readdirSync(runs) : []).filter((d) => d <= id).sort()
+    .map((d) => ({ id: d, ver: readJson<Verification>(path.join(runs, d, 'verification.json')) })).filter((r) => r.ver);
+  const first = earlier[0];
+  const firstSha = first?.ver?.driverSha256 ?? null;
+  const nowSha = ver?.driverSha256 ?? (fs.existsSync(files.driver(root, app)) ? fileHash(files.driver(root, app)) : null);
+  const pack = readJson<{ app: string; files: Record<string, string> }>(starterPackFile(root))?.files?.[name];
+  if (!nowSha) return { origin: 'no driver exists yet', change: '`qa-harness need` names what it must provide.' };
+  let origin = firstSha === null && first && first.id !== id ? 'built in this flow: the first run of this scenario found no driver'
+    : pack && pack === (firstSha ?? nowSha) ? `the plugin's starter pack for ${app}, as setup installed it`
+    : pack ? `the plugin's starter pack for ${app}, changed before this flow`
+    : "written before this flow; it is not a file of the plugin's starter pack";
+  const repairs = readAttempts(root, slug).filter((a) => a.target === 'driver' && a.runId && a.runId <= id);
+  if (repairs.length) origin += `; repaired in this flow (${repairs.map((a) => `repair attempt ${a.attempt}, run \`${a.runId}\`, ${a.verdict}`).join('; ')})`;
+  const change = !first || firstSha === nowSha
+    ? `This flow did not change it (sha256 ${nowSha.slice(0, 12)}…).`
+    : `This flow changed it: sha256 ${firstSha ? `${firstSha.slice(0, 12)}…` : 'none (no driver)'} at run \`${first.id}\`, ${nowSha.slice(0, 12)}… at this run.`;
+  return { origin, change };
+}
+
+/** A step not run, in the words the checkpoints use, with the alias for the product. */
+const actionWords = (s: { do: string; product: string; qty?: number }) => (s.do === 'add' ? `add ${s.product}, ${s.qty} unit${s.qty === 1 ? '' : 's'}`
+  : s.do === 'setQty' ? `set quantity of ${s.product} to ${s.qty}` : `remove ${s.product}`);
+
+const PRECONDITIONS: Record<string, string> = { 'empty-cart': 'empty cart', guest: 'guest', 'no-geolocation': 'no geolocation' };
+
+/** The heading of the form: the verdict and what it means for the tester (design 11.2, 11.3). */
+function headline(verdict: Verdict, live: boolean, g4: unknown, review: string | undefined, asEvidence: boolean): { title: string; status: string } {
+  if (asEvidence) return { title: 'evidence of a mismatch, not a verified test', status: 'not verified (promoted with --as-evidence)' };
+  if (verdict === 'PASS') {
+    if (!live) return { title: 'dry gates only, not run live', status: 'not verified (dry run)' };
+    if (g4 === 'PASS' && review === 'VERIFIED') return { title: 'test verified', status: 'verified' };
+    if (g4 === 'PASS') return { title: 'live controls caught, report review not available', status: 'not verified (no report review)' };
+    return { title: 'live run only, not verified', status: 'not verified (live controls not run)' };
+  }
+  const words: Partial<Record<Verdict, string>> = {
+    ORACLE_MISMATCH: 'amounts differ', UNMODELED_ADJUSTMENT: 'an adjustment no rule describes',
+    INFRA_FAIL: 'could not be executed', PRECONDITION_FAIL: 'could not be executed',
+  };
+  return { title: words[verdict] ?? 'no verified test', status: 'not verified' };
+}
+
+/**
+ * report.md (design 11.2, 11.4; order G): the readback form first — the verdict, the test case, every step with
+ * expected and actual apart, what backs the verdict, the gaps, the rules, the page driver, the files and the rerun
+ * lines — then the details: every defect, every live control, the scope and how to read a failure. On a red run
+ * the failing step comes directly under the verdict. The readback is this file from its "## " line to the end of
+ * "Run it again", copied verbatim.
+ */
 export function buildReport(root: string, slug: string, runDir: string, screens: string, opts: ReportOptions = {}): string {
   const run = readJson<RunRecord>(path.join(runDir, 'run.json'));
   const ver = readJson<Verification>(path.join(runDir, 'verification.json'));
   const config = loadConfig(root);
   const fmt = formatOf(config);
+  const money = (d: string) => formatMoney(fromDecimal(d, fmt.currency), fmt);
   const pricing: PricingModule = loadPricing(root, config.app);
-  const scenario = readScenarioFile(root, slug).data as { title: string; request: string; steps: Array<{ do: string; product: string }> };
+  const scenario = readScenarioFile(root, slug).data as { title: string; request: string; preconditions?: string[]; price_source?: string; steps: Array<{ id: string; do: string; product: string; qty?: number }> };
   const aliases = [...new Set(scenario.steps.filter((s) => s.do === 'add').map((s) => s.product))];
   const verdict = ver?.verdict ?? run?.verdict ?? 'NO_TESTS_RUN';
-  const repeats = run?.repeats ?? [];
+  const live = ver ? ver.gates.G3 !== undefined : run?.meta.mode === 'live' && (run?.repeats.length ?? 0) > 0;
+  const repeats = live ? run?.repeats ?? [] : [];
   const passCount = repeats.filter((r) => r.result === 'pass').length;
   const shown = repeats.find((r) => r.result === 'fail') ?? repeats[0];
   const cps = shown?.checkpoints ?? [];
+  const review = runReviewVerdict(runDir);
+  const head = headline(verdict, live, ver?.gates.G4, review, !!opts.asEvidence);
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: root, encoding: 'utf8' });
+  const repo = (p: string) => (top.status === 0 ? path.relative(top.stdout.trim(), path.join(root, p)) : path.join(path.basename(root), p));
+  const code = (p: string) => `\`${repo(p)}${p.endsWith('/') ? '/' : ''}\``;
+  const shot = (file: string) => (screens ? path.join('reports', slug, screens, file) : path.relative(root, path.join(runDir, file)));
+  const reportFile = screens ? path.join('reports', slug, 'report.md') : path.relative(root, path.join(runDir, 'report.md'));
+  const cpIds = (run?.meta as { checkpoints?: string[] } | undefined)?.checkpoints ?? scenario.steps.map((s) => s.id);
+  const total = (c: CheckpointRecord) => (c.displayed && 'total' in c.displayed && c.displayed.total ? c.displayed.total : undefined);
+  const expectedCell = (c: CheckpointRecord) => {
+    const [exp, comp] = c.expected.composition.split(' = ');
+    return comp && comp.includes('−') ? `${exp} = ${comp.replace(/^subtotal /, '')}` : exp;
+  };
   const out: string[] = [];
   if (opts.asEvidence) out.push(`**Evidence of a mismatch, not a verified test:** run \`${path.basename(runDir)}\` ended ${verdict} and was promoted with --as-evidence (design 8.5).`, '');
-  out.push(`# ${scenario.title}`, '');
-  out.push(`**${verdict}${repeats.length ? ` ${passCount}/${repeats.length}` : ''}** · scenario \`${slug}\` · run \`${path.basename(runDir)}\`${run?.meta.timestamp ? ` · ${run.meta.timestamp}` : ''} · ${config.baseURL} · Chromium, ${config.locale}`, '');
-  out.push(`The tester asked: "${scenario.request.replace(/\s+/g, ' ').trim()}"`, '');
-  out.push('## Products', '');
-  const products = new Map(repeats.flatMap((r) => r.checkpoints).flatMap((c) => c.ledger).map((l) => [l.name, l]));
-  if (products.size) {
-    out.push('| Alias | Product | Unit price (read at the add) | Attributes |', '| --- | --- | --- | --- |');
-    [...products.values()].forEach((p, i) => out.push(`| ${aliases[i] ?? '—'} | ${p.name} | ${p.unitPrice} | ${Object.entries(p.attrs).map(([k, v]) => `${k} ${v}`).join(', ') || '—'} |`));
-  } else out.push('No product was chosen in this run.');
-  out.push('', `## Steps (repeat ${shown?.n ?? '—'} of ${repeats.length})`, '');
-  if (cps.length) {
-    out.push('| Step | Shopper\'s action | Expected | How it is made up | Displayed (raw text) | Row read | Result | Screenshot |', '| --- | --- | --- | --- | --- | --- | --- | --- |');
-    for (const c of cps) {
-      const t = total(c);
-      const [exp, comp] = c.expected.composition.split(' = ');
-      out.push(`| ${c.step} | ${c.action} | ${exp} | ${comp ?? ''} | ${t ? `"${t.rawText}"` : 'no total shown'} | ${t?.label ? `"${t.label}"` : '—'} | ${c.result === 'pass' ? 'match' : `**${c.verdict}** (${c.layer})`} | ${c.screenshot ? `[${c.step}](${screens}${c.step}.png)` : '—'} |`);
-    }
-  } else out.push('No checkpoint was judged in this run.');
+  out.push(`# ${scenario.title}`, '', `## ${verdict} · ${head.title}`, '');
+
+  // On a red run: the failing step and its evidence first.
+  const failedCp = cps.find((c) => c.result !== 'pass');
   const failure = repeats.find((r) => r.error)?.error;
-  if (failure) {
-    out.push('', '## What failed', '', '```text', failure.message, '```', '');
-    out.push(`Failed at ${failure.step ?? 'the start (before the first step)'}${failure.url ? ` on ${failure.url}` : ''}${failure.rawTotal ? `; the last total shown was "${failure.rawTotal}"` : ''}${failure.rawText ? `; the application said: "${failure.rawText}"` : ''}.`);
-  }
-  out.push('', '## Evidence', '');
-  const g = ver?.gates ?? {};
-  const applicable = (ver?.defects ?? []).filter((d) => d.result !== 'not-applicable');
-  const detected = applicable.filter((d) => d.result === 'detected');
-  out.push(`- Static check G0, reference cart G1 and defects G2: ${g.dry ?? 'not run'}; defects ${detected.length}/${applicable.length} applicable, ${detected.length === applicable.length ? 'each detected at the expected checkpoint' : 'NOT all detected where expected'} (on the example's stub prices).`);
-  if (ver?.livePass) out.push(`- G2 repeated on the products of this run (${ver.livePass.products}): ${ver.livePass.defects.filter((d) => d.result === 'detected').length}/${ver.livePass.defects.filter((d) => d.result !== 'not-applicable').length} applicable defects detected where expected.`);
-  out.push(`- Live run G3: ${g.G3 ?? 'not run'}${repeats.length ? `, ${passCount}/${repeats.length} repeats passed` : ''}; the test is ${ver?.testOrigin === 'edited' ? 'EDITED BY HAND' : 'the untouched compilation of the confirmed scenario'}.`);
-  if (ver?.controls?.length) {
-    out.push(`- Live controls G4: ${g.G4 ?? 'not run'}.`, '', '| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |', '| --- | --- | --- | --- | --- | --- | --- |');
-    for (const c of ver.controls) out.push(`| ${c.control} | ${c.result} | ${c.activated === null ? '—' : c.activated ? 'yes' : 'no'} | ${readableTarget(c.target)} | ${c.shownAtRead ?? '—'} | ${c.reactedAt ?? '—'} | ${c.expected}${c.note ? ` (${c.note})` : ''} |`);
+  if (verdict !== 'PASS' && (failedCp || failure)) {
+    out.push('### Failing step', '');
+    if (failedCp) {
+      const t = total(failedCp);
+      out.push(`${failedCp.step}, ${failedCp.action}: expected ${failedCp.expected.composition}; displayed ${t ? `"${t.rawText}" in the row "${t.label}"` : 'no total'}; ${failedCp.verdict ?? 'red'} at layer ${failedCp.layer ?? '—'}${failedCp.screenshot ? `; screenshot ${code(shot(failedCp.screenshot))}` : ''}.`);
+    }
+    if (failure) {
+      out.push('', '```text', failure.message, '```', '');
+      out.push(`Failed at ${failure.step ?? 'the start (before the first step)'}${failure.url ? ` on ${failure.url}` : ''}${failure.rawTotal ? `; the last total shown was "${failure.rawTotal}"` : ''}${failure.rawText ? `; the application said: "${failure.rawText}"` : ''}.`);
+    }
     out.push('');
-  } else out.push('- **Not available:** live controls G4 were not run (`qa-harness verify` runs them after a green G3).');
-  out.push(...reviewLines(root, slug, runDir));
-  out.push('', '## Defects', '', ...defectTable(ver));
-  if (cps.length) out.push('', '## Scope', '', scopeLine(cps));
-  out.push('', '## Scenario gaps', '');
-  out.push(...((ver?.gaps ?? []).length ? (ver?.gaps ?? []).map((x) => `- ${x}`) : ['None: every default defect is applicable in this scenario.']));
-  out.push('', '## Rules used', '');
+  }
+
+  // The test case.
+  const products = new Map(repeats.flatMap((r) => r.checkpoints).flatMap((c) => c.ledger).map((l) => [l.name, l]));
+  const example = readJson<{ stub: Record<string, { name: string; price: string; attrs: Record<string, string> }> }>(files.example(root, slug));
+  const attrs = (a: Record<string, string>) => Object.entries(a).map(([k, v]) => `${k} ${v}`);
+  const testData = products.size
+    ? `${[...products.values()].map((p, i) => [`${aliases[i] ?? '—'} = ${p.name}`, p.unitPrice, ...attrs(p.attrs)].join(', ')).join(' · ')} (read from the product pages in this run)`
+    : example ? `${aliases.map((a) => [`${a} = ${example.stub[a]?.name}`, money(example.stub[a]?.price ?? '0'), ...attrs(example.stub[a]?.attrs ?? {})].join(', ')).join(' · ')} (stub products of the example; no live run)`
+    : 'no product was chosen';
+  const when = run?.meta.timestamp ? `${run.meta.timestamp.slice(0, 10)} ${run.meta.timestamp.slice(11, 16)} UTC` : '—';
+  const browser = run?.meta.browser ? run.meta.browser[0].toUpperCase() + run.meta.browser.slice(1) : 'Chromium';
+  out.push('| | |', '| --- | --- |');
+  out.push(`| Test | ${code(path.join('tests', `${slug}.spec.ts`))} |`);
+  out.push(`| Objective | ${scenario.request.replace(/\s+/g, ' ').trim().replace(/\|/g, '\\|')} |`);
+  out.push(`| Status | ${verdict}${live ? `, ${passCount} of ${repeats.length} repeats` : ''} · ${head.status} |`);
+  out.push(`| Environment | ${run?.meta.baseURL ?? config.baseURL} · ${browser} · ${run?.meta.locale ?? config.locale} · ${when} · run \`${path.basename(runDir)}\` |`);
+  out.push(`| Preconditions | ${(scenario.preconditions ?? []).map((p) => PRECONDITIONS[p] ?? p).join(', ') || 'none'} |`);
+  out.push(`| Test data | ${testData} |`);
+
+  // Every step: expected and actual apart, a status and evidence per step.
+  out.push('', '### Steps', '', '| # | Shopper\'s action | Expected total | Actual (as displayed) | Status | Evidence |', '| --- | --- | --- | --- | --- | --- |');
+  for (const id of cpIds) {
+    const c = cps.find((x) => x.step === id);
+    const step = scenario.steps.find((s) => s.id === id);
+    if (!c) { out.push(`| ${id} | ${step ? actionWords(step) : '—'} | — | — | not run | — |`); continue; }
+    const t = total(c);
+    out.push(`| ${c.step} | ${c.action} | ${expectedCell(c)} | ${t ? `"${t.rawText}"` : 'no total shown'} | ${c.result === 'pass' ? 'pass' : 'fail'} | ${c.screenshot ? code(shot(c.screenshot)) : '—'} |`);
+  }
+  if (live && repeats.length > 1) out.push('', `Repeat ${shown?.n ?? 1} of ${repeats.length} is shown; every repeat is in \`run.json\`.`);
+
+  // What backs the verdict.
+  const g = ver?.gates ?? {};
+  const controls = ver?.controls ?? [];
+  const liveControls = controls.length ? `${controls.filter((c) => c.result === 'caught').length} of ${controls.length} caught`
+    : !live ? 'not run (dry run)' : verdict !== 'PASS' ? 'not run (the live run is red)' : 'not run (`qa-harness verify` runs them after a green live run)';
+  out.push('', '### Verification of the test', '', '| Check | Result |', '| --- | --- |');
+  out.push(`| Intent review | ${intentCell(root, slug, repo)} |`);
+  out.push(`| Static check, reference cart | ${g.dry ?? 'not run'} (gates G0, G1) |`);
+  out.push(`| Defects on stub prices | ${defectCount(ver?.defects, 'not run')} |`);
+  out.push(`| Defects on the prices of this run | ${defectCount(ver?.livePass?.defects, live ? 'not run (no green live run)' : 'not run (dry run)')} |`);
+  out.push(`| Live run | ${live ? `${passCount} of ${repeats.length} repeats passed; the test is ${ver?.testOrigin === 'edited' ? 'EDITED BY HAND' : 'the untouched compilation of the confirmed scenario'}` : 'not run (dry run)'} |`);
+  out.push(`| Live controls | ${liveControls} |`);
+  out.push(`| Report review | ${review ? `${review}, \`review.md\` of this run` : 'not available (test-verifier writes `review.md` after `qa-harness verify`)'} |`);
+
+  // Scenario gaps of the pass the counts come from.
+  const gapRows = (ver?.livePass?.defects ?? ver?.defects ?? []).filter((d) => d.result === 'not-applicable');
+  out.push('', '### Not covered by this scenario', '', ...(gapRows.length ? gapRows.map((d) => `- ${d.defect}: ${d.hint ?? 'no hint recorded'}`) : ['Nothing.']));
+
+  // The rules, worded as in the confirmation.
+  out.push('', '### Pricing rules', '');
+  if (!pricing.rules.length) out.push('None: the rules file has no pricing rule.');
   pricing.rules.forEach((r, i) => {
     const inForce = cps.filter((c) => c.expected.adjustments.some((a) => a.rule === r.id)).map((c) => c.step);
-    out.push(`- ${describeRule(r, i, (d) => formatMoney(fromDecimal(d, fmt.currency), fmt))} · source: ${describeSource(r.provenance)} · ${inForce.length ? `in force at ${inForce.join(', ')}` : 'not in force'} in this run.`);
+    out.push(`- ${describeRule(r, i, money)} · source: ${describeSource(r.provenance)} · ${!cps.length ? 'no live step was run' : inForce.length ? `in force at ${inForce.join(', ')} in this run` : 'not in force in this run'}.`);
   });
-  out.push(`- Total row label ${pricing.summary.total.label}, subtotal row label ${pricing.summary.subtotal.label} · source: ${pricing.summary.provenance.source} (${pricing.summary.provenance.ref}).`);
-  out.push('', '## How to rerun and how to read a failure', '');
-  out.push(`Rerun: \`${rerunCommand(root, slug)}\``, '');
+
+  // The page driver.
+  const driverFile = path.join('app', `${config.app}.driver.ts`);
+  const d = driverOrigin(root, slug, config.app, runDir, ver);
+  const rows = [...new Set(cps.map((c) => total(c)?.label).filter(Boolean))].map((r) => `"${r}"`).join(', ');
+  out.push('', '### Page driver', '');
+  out.push(`${code(driverFile)}: ${d.origin}. ${d.change} Operations this scenario used: ${scenarioActions(scenario.steps, scenario.price_source).join(', ')}. ${rows ? `The total was read from the row ${rows}.` : 'No total was read in this run.'}`);
+  out.push('', 'The page driver is the one file that knows the shop\'s pages: the test calls it to find products, add them, change quantities, remove them and read the cart, so the test holds no locator.');
+
+  // Files and how to run it again.
+  out.push('', '### Files', '', '| File | Content |', '| --- | --- |');
+  out.push(`| ${code(path.join('tests', `${slug}.spec.ts`))} | the test |`);
+  out.push(`| ${code(path.join('specs', `${slug}.md`))} | the confirmed scenario |`);
+  out.push(`| ${code(path.join('specs', `${slug}.intent.md`))} | the intent review |`);
+  out.push(`| ${code(reportFile)} | the full report, every defect and control |`);
+  out.push(`| ${code(screens ? path.join('reports', slug, 'screens/') : path.relative(root, runDir) + '/')} | one screenshot per step |`);
+  out.push(`| ${code(driverFile)}, \`.pricing.ts\`, \`.map.md\` | page driver, pricing rules, locator evidence |`);
+  const rerun = rerunCommand(root, slug);
+  const plain = rerun.replace(/npm run qa -- run \S+( --root (\S+))?$/, (_m, _r, dir: string | undefined) => `npx playwright test ${dir ? `${dir}/` : ''}tests/${slug}.spec.ts`);
+  out.push('', '### Run it again', '', `\`${rerun}\` (${config.repeat} repeat${config.repeat === 1 ? '' : 's'}, with the report)`, `\`${plain}\` (plain Playwright)`);
+
+  // The details.
+  out.push('', '### Defects', '', ...defectTable(ver));
+  if (controls.length) {
+    out.push('', '### Live controls', '', '| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |', '| --- | --- | --- | --- | --- | --- | --- |');
+    for (const c of controls) out.push(`| ${c.control} | ${c.result} | ${c.activated === null ? '—' : c.activated ? 'yes' : 'no'} | ${readableTarget(c.target)} | ${c.shownAtRead ?? '—'} | ${c.reactedAt ?? '—'} | ${c.expected}${c.note ? ` (${c.note})` : ''} |`);
+  }
+  if (cps.length) {
+    out.push('', '### Scope', '', scopeLine(cps));
+    out.push('', '### Rows read', '', '| # | Expected, how it is made up | Row read |', '| --- | --- | --- |');
+    for (const c of cps) out.push(`| ${c.step} | ${c.expected.composition} | ${total(c)?.label ? `"${total(c)?.label}"` : '—'} |`);
+  }
+  out.push('', '### Reading a failure', '');
   out.push('A red checkpoint names the step, the action, the expected amount with how it is made up, the raw text the page displayed and the row it came from, the difference, and the first layer that disagreed (state, labels, lines, unit price, line total, adjustments, subtotal, total). `ORACLE_MISMATCH` means the amounts differ: an application bug or a missing rule. `UNMODELED_ADJUSTMENT` means the cart shows an adjustment no rule describes. `LOCATOR_FAIL` means the driver did not find an element, got no acknowledgment, or read a field with another label. `INFRA_FAIL` means the environment failed. The full data is in `run.json` and `verification.json`; the Playwright HTML report of the run stays outside the repo in `runs/<runId>/html/`.');
-  out.push('', `Amounts are in ${fmt.currency}; expected amounts are exact values rounded to the cent, displayed amounts are the page's own text.`);
+  out.push('', `Amounts are in ${fmt.currency}; expected amounts are exact values rounded to the cent, displayed amounts are the page's own text. Total row label ${pricing.summary.total.label}, subtotal row label ${pricing.summary.subtotal.label} · source: ${describeSource(pricing.summary.provenance)}.`);
   return out.join('\n') + '\n';
 }
 
-/** The readback of design 11.2: at most 15 lines. */
-export function readback(root: string, slug: string, runDir: string): string[] {
-  const run = readJson<RunRecord>(path.join(runDir, 'run.json'));
-  const ver = readJson<Verification>(path.join(runDir, 'verification.json'));
-  const repeats = run?.repeats ?? [];
-  const cps = (repeats.find((r) => r.result === 'fail') ?? repeats[0])?.checkpoints ?? [];
-  const lines = [`${ver?.verdict ?? run?.verdict} ${repeats.filter((r) => r.result === 'pass').length}/${repeats.length} · run ${path.basename(runDir)}`];
-  for (const c of cps.slice(0, 8)) {
-    const t = total(c);
-    lines.push(`${c.step.padEnd(4)} ${c.action.padEnd(38)} ${c.expected.composition.split(' = ')[0].padEnd(9)} ${t ? `"${t.rawText}"`.padEnd(10) : 'none'.padEnd(10)} ${c.result === 'pass' ? 'match' : c.verdict}`);
-  }
-  if (ver?.gaps.length) lines.push(`Scenario gaps: ${ver.gaps.length} (see report.md)`);
-  lines.push(`Rerun: ${rerunCommand(root, slug)}`);
-  return lines;
+/** What `report` prints (design 11.2): the heading, the steps, and where the readback form is; at most 12 lines. */
+export function readback(root: string, slug: string, runDir: string, reportFile: string): string[] {
+  const text = fs.existsSync(reportFile) ? fs.readFileSync(reportFile, 'utf8') : '';
+  const heading = text.split('\n').find((l) => l.startsWith('## ')) ?? '## (no report)';
+  const status = text.split('\n').find((l) => l.startsWith('| Status | '))?.replace(/^\| Status \| (.*) \|$/, '$1');
+  const steps = text.split('\n').filter((l) => /^\| S\d+ \|/.test(l)).slice(0, 8).map((l) => l.split('|').slice(1, 6).map((c) => c.trim()).join(' · '));
+  return [heading, ...(status ? [`Status: ${status}`] : []), ...steps,
+    `Readback: ${path.relative(root, reportFile)}, from "${heading}" to the end of "Run it again".`, `Rerun: ${rerunCommand(root, slug)}`];
 }
 
 /** The newest run directory of a scenario. */
@@ -260,12 +391,12 @@ export async function report(root: string, slug: string, promoteId: string | und
     if (refusal) return refusal;
     const runDir = path.join(files.runs(root, slug), promoteId);
     const placed = await promote(root, slug, promoteId, { asEvidence });
-    const lines = readback(root, slug, runDir);
+    const lines = readback(root, slug, runDir, path.join(files.reports(root, slug), 'report.md'));
     const head = asEvidence ? [`Promoted as evidence of a mismatch, not a verified test (--as-evidence).`] : [];
     return { verdict: runVerdict(runDir), lines: [...head, ...lines.slice(0, 11 - head.length), `Promoted run ${promoteId} to ${rel(root, files.reports(root, slug))}/: ${placed.join(', ')}.`] };
   }
   const runDir = latestRun(root, slug);
   if (!runDir) return { verdict: 'NO_TESTS_RUN', lines: [`${slug} has no run yet; run qa-harness run ${slug} first.`] };
   fs.writeFileSync(path.join(runDir, 'report.md'), buildReport(root, slug, runDir, ''));
-  return { verdict: runVerdict(runDir), lines: [...readback(root, slug, runDir), `Wrote ${rel(root, path.join(runDir, 'report.md'))}.`] };
+  return { verdict: runVerdict(runDir), lines: [...readback(root, slug, runDir, path.join(runDir, 'report.md')), `Wrote ${rel(root, path.join(runDir, 'report.md'))}.`] };
 }

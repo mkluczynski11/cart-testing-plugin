@@ -44,7 +44,7 @@ test('report.md lists every defect with origin, why, and result and first red of
   fs.writeFileSync(path.join(dir, 'run.json'), JSON.stringify({ meta: { runId: id, mode: 'live' }, verdict: 'PASS', repeats: [], errors: [] }));
   const text = buildReport(root, SLUG, dir, 'screens/');
   const cells = (defect: string) => text.split('\n').find((l) => l.startsWith(`| ${defect} |`))?.split('|').slice(1, -1).map((c) => c.trim());
-  expect(text).toMatch(/^## Defects$/m);
+  expect(text).toMatch(/^### Defects$/m);
   expect(cells('lost-add')).toEqual(['lost-add', 'default', 'The add is acknowledged and changes nothing.', 'detected', 'S1', 'detected', 'S1']);
   expect(cells('risk-stale-decrease')).toEqual(['risk-stale-decrease', 'tester', 'The total does not refresh after a decrease.', 'detected-late', 'S4', 'detected', 'S3']);
   expect(cells('gen-skew-subtotal')).toEqual(['gen-skew-subtotal', 'generated', 'The subtotal is one cent high.', 'missed', '—', 'not-applicable', '—']);

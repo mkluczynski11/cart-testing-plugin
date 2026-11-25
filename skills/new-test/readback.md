@@ -1,53 +1,67 @@
 # new-test: the readback (design 11.2, 11.3)
 
-Filled only from command output and report files, in the language of the request. Order fixed: verdict, products,
-step table, evidence, scope, gaps, rules, rerun command. Never write an amount, a verdict or a step result that the
-harness did not print.
+One form for every run, in Markdown, filled only from command output and report files. The harness writes the form
+at the top of `report.md`: the verdict, the test case, every step with expected and actual apart, what backs the
+verdict, the gaps, the rules, the page driver, the files and the rerun lines. Never write an amount, a verdict, a
+path or a step result that the harness did not print.
 
-## Green and verified
+## The form
 
-Only after `test-verifier` returned `VERIFIED` and `qa-harness report <slug> --promote <runId>` ended `PASS`.
-
-```text
-PASS <n>/<n> · test verified
-Products: <from `verify` or `run`: "products: …" line>
-
-Step  Shopper's action                    Expected  Displayed  Result
-<one row per checkpoint, copied from the `report --promote` output>
-
-Evidence: intent review <without remarks | its finding>; defects <detected>/<applicable> applicable, each in the right
-place; live controls <caught>/<total>; report review <without remarks | its finding>.
-Scope: <the scope sentence of e2e/reports/<slug>/report.md>
-Scenario gap: <each not-applicable defect of the same G2 pass as the counts, with its hint> | none
-Rules used: <rule id · source · live status, from report.md> | none
-Rerun: <the "Rerun:" line of the `report --promote` output, verbatim>
-Files: e2e/specs/<slug>.md, e2e/specs/<slug>.intent.md, e2e/tests/<slug>.spec.ts, e2e/reports/<slug>/
-```
-
-Counts and gaps (design 10.2: the readback's numbers come from the second G2 pass, on the products of the live run):
-"defects" from `verification.json` `livePass.defects[]` (or `defects[]` when there is no `livePass`): applicable =
-`result` other than `not-applicable`, detected = `result: detected`. "Scenario gap" lists the entries of that same array
-with `result: not-applicable`, each with its `hint`; never the stub pass's gaps next to the live pass's counts. "live
-controls" from `controls[]` (`result: caught`). The table rows and "Rerun" are copied, not retyped.
-
-## Dry (`--dry`)
+The readback is the part of `report.md` from its first line that starts with `## ` to the last line of the section
+"### Run it again", copied verbatim, in Markdown (not in a code block). `qa-harness report` prints the path and the
+heading in its "Readback:" line. Translate only the words of the headings and of the first column when the request
+is not in English; amounts, quotes, paths, verdicts and commands stay as they are.
 
 ```text
-DRY <verdict of `run --dry`> · stopped after the dry gates (--dry)
-Scenario: e2e/specs/<slug>.md (confirmed) · intent review: <verdict> · test: e2e/tests/<slug>.spec.ts (compiled)
-G0–G2: <the G0, G1, G2 lines of `run --dry`>
-Scenario gap: <the gap lines> | none
-Not run: driver check, live run, live controls, report review.
+## PASS · test verified
+| | |
+| --- | --- |
+| Test | `e2e/tests/<slug>.spec.ts` |
+| Objective | the tester's request, verbatim |
+| Status | PASS, 3 of 3 repeats · verified |
+| Environment | <baseURL> · Chromium · <locale> · <UTC date> · run `<runId>` |
+| Preconditions | empty cart, guest, no geolocation |
+| Test data | A = <name>, <price>, <attributes> · B = … (read from the product pages in this run) |
+
+### Steps
+| # | Shopper's action | Expected total | Actual (as displayed) | Status | Evidence |
+### Verification of the test
+| Check | Result |
+### Not covered by this scenario
+### Pricing rules
+### Page driver
+### Files
+### Run it again
 ```
 
-## The other endings (design 11.3)
+Statuses in the Steps table are `pass`, `fail`, and `not run` for the steps after a failure. On a red run the section
+"### Failing step" stands directly under the verdict, before the table of the test case. After the form you may add at
+most two sentences of your own, without a number: what the tester could do next (a follow-up scenario for a line of
+"Not covered", the decision a red run asks for).
 
-| Ending | Verdicts | What the answer contains |
+## Which `report.md`
+
+| Ending | The file |
+| --- | --- |
+| Green and verified (`test-verifier` returned `VERIFIED`, `report <slug> --promote <runId>` ended `PASS`) | `e2e/reports/<slug>/report.md` |
+| `--dry` (stopped after step 5) | `report.md` in the run directory that `qa-harness run <slug> --dry` printed after "Evidence:"; heading `## PASS · dry gates only, not run live` |
+| A red live run (`ORACLE_MISMATCH`, `UNMODELED_ADJUSTMENT`, `INFRA_FAIL`, `PRECONDITION_FAIL`, `LOCATOR_FAIL`, `FLAKY`, `UNDETERMINED`) | `qa-harness report <slug>` writes it into the newest run directory and prints the "Readback:" line |
+| A verdict of `test-verifier` other than `VERIFIED` | the same, for the run `qa-harness verify` created |
+
+## What the endings add (design 11.3)
+
+The form keeps its headings; each ending adds, after the form, only what `routing.md` asks of it:
+
+| Ending | Verdicts | Added after the form |
 | --- | --- | --- |
-| Amounts differ | `ORACLE_MISMATCH` | "MISMATCH at <step> · amounts differ", then the evidence that exists (intent review, dry gates, the label of the field read) and the mismatch lines `run` printed (expected with composition, displayed raw text and row, difference); "the controls on the live site were not run, because the run is red"; "to decide: an application bug or a missing rule"; the run directory |
-| Unknown adjustment | `UNMODELED_ADJUSTMENT` | the adjustment's label and amount as displayed, and one question: which rule produces it (condition and amount, in one sentence) |
-| Could not be executed | `INFRA_FAIL`, `PRECONDITION_FAIL` | the cause with the raw message as `run` printed it; a retry later or a change to the scenario |
+| Amounts differ | `ORACLE_MISMATCH` | "the controls on the live site were not run, because the run is red"; "to decide: an application bug or a missing rule" |
+| Unknown adjustment | `UNMODELED_ADJUSTMENT` | one question: which rule produces the adjustment shown under "Failing step" (condition and amount, in one sentence) |
+| Could not be executed | `INFRA_FAIL`, `PRECONDITION_FAIL` | a retry later, or a change to the scenario |
 | No verified test | `LIMIT_REACHED`, `RETRY_REFUSED`, `UNDETERMINED`, `NO_TESTS_RUN`, a red dry gate on a compiled test | "could not deliver a verified test", the reason, the last verdict, the run directory |
+
+A flow that stopped before any run (a refused repair, `LIMIT_REACHED` before the run) has no `report.md` of its own:
+answer with the heading `## <verdict> · no verified test`, the lines the harness printed, and the run directory of the
+last run when there is one.
 
 A question instead of an ending: an ambiguous request, `NEEDS_TESTER`, `FILE_CONFLICT`. A refusal: an out-of-scope
 request, before anything is written.

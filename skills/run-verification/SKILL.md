@@ -41,8 +41,9 @@ run directory that `qa-harness verify <slug>` creates: `run.json`, `verification
    scenario step by step (calls, order, products, quantities, checkpoints); every difference is a finding for the
    tester, naming the step (e.g. "no checkTotal after S3").
 8. G5, the report: at every checkpoint `report.md` names the action in the tester's words, shows the expected value
-   with its composition and the displayed raw text with the row's label, and says which evidence exists and which
-   does not. A missing element is a finding for the tester.
+   (with its composition where a rule is in force; "Rows read" has it for every step) and the displayed raw text, the
+   row the total was read from ("Page driver", "Rows read"), and says which evidence exists and which does not. A
+   missing element is a finding for the tester.
 9. Write `review.md` into that run directory in the format of `contracts` (`reviews.md`).
 
 ## Output and verdict

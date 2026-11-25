@@ -1,6 +1,7 @@
 // qa-harness init: installs the e2e/ template into the tester's repo, writes qa.config.json, installs dependencies, runs selftest.
 // Implements design 5.3 (setup steps 2-5), 8.6 (configuration) and order D notes 10-11 (exclusion list, starter pack).
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -108,6 +109,12 @@ let packConfig = {};
 if (fs.existsSync(path.join(pack, 'app'))) {
   const c = copyTree(path.join(pack, 'app'), path.join(e2e, 'app'), 'app');
   lines.push(`Starter pack for "${opts.app}": ${c.copied} file(s) copied into e2e/app/, ${c.kept} existing kept.`);
+  // The record report.md reads to say where the driver came from (order G): the sha256 of every installed pack file.
+  const sha = (f) => createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+  const installed = Object.fromEntries(fs.readdirSync(path.join(pack, 'app'))
+    .filter((f) => f !== 'starter-pack.json' && fs.existsSync(path.join(e2e, 'app', f)) && sha(path.join(pack, 'app', f)) === sha(path.join(e2e, 'app', f)))
+    .map((f) => [f, sha(path.join(e2e, 'app', f))]));
+  fs.writeFileSync(path.join(e2e, 'app', 'starter-pack.json'), JSON.stringify({ app: opts.app, files: installed }, null, 2) + '\n');
   if (fs.existsSync(path.join(pack, 'qa.config.json'))) packConfig = JSON.parse(fs.readFileSync(path.join(pack, 'qa.config.json'), 'utf8'));
 } else {
   lines.push(`The plugin has no starter pack for "${opts.app}"; app-mapper builds the driver from the page on the first scenario.`);

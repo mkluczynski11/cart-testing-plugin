@@ -78,7 +78,7 @@ checkpoint.
 | --- | --- | --- |
 | `runs/<runId>/run.json` | harness | `meta` (hashes, `testOrigin`, `baseURL`), `verdict`, `repeats[].checkpoints[]` with `action`, `expected` (composition), `displayed` (`rawText`, row `label`), `result`, `error` |
 | `runs/<runId>/verification.json` | harness | `gates`, `defects[]` (`expected`, `firstRed`, `result`), `gaps[]`, `controls[]` with the four facts (`activated`, `target`, `shownAtRead`, `reactedAt`), `testOrigin`, hashes, `verdict` |
-| `runs/<runId>/report.md` | harness | the readable report of the run |
+| `runs/<runId>/report.md` | harness (every run, also `--dry`) | the readable report of the run: the readback form at the top (verdict, test case, steps, verification, gaps, rules, page driver, files, rerun lines), then every defect, every live control, the scope and the rows read |
 | `runs/<runId>/review.md` | `test-verifier` | the run review above |
 | `runs/<runId>/S1.png …`, `html/`, `artifacts/` | harness | screenshots, Playwright HTML report, traces of failed repeats |
 | `report.md`, `run.json`, `verification.json`, `review.md`, `screens/` | `qa-harness report --promote` only | the promoted run, tracked in git |

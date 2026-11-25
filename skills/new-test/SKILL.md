@@ -64,14 +64,15 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
 3b. **Additional defects.** Only with `--defects extended` or `"defects": "extended"` in the config: call
    `qa:defect-designer` with `slug`, the request verbatim and `root: e2e`; it keeps the tester entry of step 3.
 4. **Compilation.** `qa-harness compile <slug>`, only after `qa-harness intent <slug>` ended `PASS`.
-5. **Dry gates.** `qa-harness run <slug> --dry`. With `--dry`: stop here and give the dry readback.
+5. **Dry gates.** `qa-harness run <slug> --dry`. With `--dry`: stop here and give the readback from the `report.md`
+   of that run directory (`readback.md`).
 6. **Driver.** `qa-harness need <slug>`. `PASS`: skip. Otherwise call `qa:app-mapper` with `mode: build`, `slug`,
    the missing actions exactly as `need` printed them and `root: e2e`. Its last line is `VERDICT: PASS`,
    `NEEDS_TESTER` (ask its question, stop) or `UNDETERMINED` (stop). Then `qa-harness need <slug>` again.
 7. **Live run.** `qa-harness run <slug>` (after a driver repair: `qa-harness run <slug> --repair driver`).
 8. **Verification.** Call `qa:test-verifier` with `mode: run` / `slug: <slug>` / `request (verbatim): …` / `root: e2e`.
    `VERIFIED` with a run id: `qa-harness report <slug> --promote <runId>`. Any other verdict: `routing.md`.
-9. **Readback.** By `readback.md`, filled only from command output and the files it names.
+9. **Readback.** By `readback.md`: the form at the top of `report.md`, copied verbatim, never retyped.
 
 ## Resuming
 

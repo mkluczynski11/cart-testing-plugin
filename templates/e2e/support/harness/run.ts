@@ -147,6 +147,7 @@ export async function gatesUpToG3(loaded: Loaded, dir: string, dry: boolean): Pr
   const gates: Record<string, unknown> = { dry: d.verdict };
   if (d.verdict !== 'PASS' || dry) {
     writeVerification(loaded, dir, gates, d, d.verdict);
+    finishRun(loaded, dir, d.verdict);
     lines.push(...d.gaps.slice(0, 4).map((g) => `Scenario gap: ${g}`));
     return { verdict: d.verdict, lines, data: { rows: d.rows }, dryGates: d };
   }
