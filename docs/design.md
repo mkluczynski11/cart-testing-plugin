@@ -1580,7 +1580,7 @@ Places where the code now differs from sections 1–17 on purpose (orders D, F a
 | `setup` arguments | 5.3 | `/qa:setup <app> <base-url> [--defects …] [--test-id-attribute …] [--locale …] [--currency …]`; questions only for a missing name or address. |
 | `tsc` in `doctor` | 6.1 | `doctor` type-checks with the root's own TypeScript when installed and reports the first message about the driver or the rules file as `LINT_FAIL`; the rules file is also checked against the vocabulary of 9.2 when it is loaded (`LINT_FAIL` naming the rule and the key). |
 | Classification of driver calls | 6.1, 6.3 | every driver call has a limit of 3 × `actionMs`; Playwright's locator timeout or a call over the limit is `LOCATOR_FAIL`, another exception that is not a library error `UNDETERMINED`, network and browser failures `INFRA_FAIL`; the record names the step and the method. |
-| Conditions that are not harness bugs | 6.1, 6.3 | a held lock (`INFRA_FAIL`), a root without `qa.config.json` (`SPEC_INVALID`) and a file in the way of `compile` (`FILE_CONFLICT`) each end with their own sentence. |
+| Conditions that are not harness bugs | 6.1, 6.3 | a held lock (`INFRA_FAIL`), a root without `qa.config.json` (`SPEC_INVALID`), a missing rules file (`SPEC_INVALID`, naming `app/<app>.pricing.ts`) and a file in the way of `compile` (`FILE_CONFLICT`) each end with their own sentence. |
 | Repair episodes | R9 | `--repair driver` needs a live run; a repair run that ends `PASS` closes the episode, so the counter starts again. |
 | `run.json` | 8.5 | `meta.gitDirty` records uncommitted changes next to `meta.gitSha`. |
 | Agents' positive verdict | 4, 6.3 | `app-mapper` and `defect-designer` end with `PASS`. |

@@ -21,7 +21,7 @@
   "support/core/verdicts.ts": "0a23a5d0744d1d6988005d58edd07fec6621b2baa71cd54a9d58672d908e6795",
   "support/harness/attempts.ts": "78c9e48003fe02919d9cac0b0e9ea4a4a16120d3dec54d9ec0fa52756b6b1b5f",
   "support/harness/cli.ts": "1d047d2393e9db3de35599eb60ef75c3a9bdc1a3cc86d09db0251221e0542ddd",
-  "support/harness/common.ts": "b5ab6ab3e33df6af4c9247e2316b5dd9e1a2cbc6938f0316ba05edfd5d64edf9",
+  "support/harness/common.ts": "4361c03dbbaacf14ddb4f8c66fc7906307152f937b6c72cf6dfcef1426109505",
   "support/harness/compile.ts": "3c882b97ddc27f6f0f18f2a62fef58bc5ecad97f50da279d24012feba049f799",
   "support/harness/control-app/control-discount.md": "3e5e4d43051710e60fee1a24c2562280066406f979efd3e024bf8c990710880a",
   "support/harness/control-app/control-equal.md": "8d11e971a0e7664d83090a6e415a002b451bddc130ffae1ea0709741ca8fa7e5",

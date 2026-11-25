@@ -45,10 +45,10 @@ not classify prints "The harness failed unexpectedly" and ends `INFRA_FAIL`. Opt
 | `example <slug>` | `--confirm` | main | the stubs, the example totals per step, the rules; with `--confirm` the frozen hashes | `PASS`, `SPEC_INVALID` |
 | `compile <slug>` | `--force` | main | the test file written, unchanged, or the difference to a hand edit | `PASS`, `FILE_CONFLICT`, `SPEC_INVALID` |
 | `intent <slug>` | — | main, test-verifier | `scenario_sha256: <hash>`, the review file, `state:` (`missing`, `stale`, `unreadable`, `not-confirmed`, `current <VERDICT>`) | `PASS`, `SPEC_INVALID` |
-| `need <slug>` | — | main, app-mapper | missing actions, product attributes, request bindings | `PASS`, `LINT_FAIL` |
+| `need <slug>` | — | main, app-mapper | missing actions, product attributes, request bindings | `PASS`, `LINT_FAIL`, `SPEC_INVALID` |
 | `defects list <slug>` | — | defect-designer | the default defects with operator and why, then the admitted ones | `PASS`, `SPEC_INVALID` |
 | `defects check <slug>` | `--extended` | main, defect-designer | the count of defects by origin and where the list will be; admitted and rejected entries | `PASS`, `SPEC_INVALID` |
-| `run <slug>` | `--dry`, `--repair driver\|test` | main | the run id, gate lines G0–G3, G2 on the live products, scenario gaps, the run directory | any verdict of gates G0–G3, `SCENARIO_CHANGED`, `RETRY_REFUSED`, `LIMIT_REACHED` |
+| `run <slug>` | `--dry`, `--repair driver\|test` | main | the run id, gate lines G0–G3, G2 on the live products, scenario gaps, the run directory | any verdict of gates G0–G3, `SPEC_INVALID`, `SCENARIO_CHANGED`, `RETRY_REFUSED`, `LIMIT_REACHED` |
 | `verify <slug>` | — | test-verifier | the run id, G0–G3 lines, one line per live control | any verdict of gates G0–G4 |
 | `report <slug>` | `--promote <runId>`, `--as-evidence` | main | the files promoted, or why not; the rerun line | the verdict of the reported run, `NO_TESTS_RUN` |
 
@@ -263,8 +263,8 @@ the date. app-mapper reads it before opening the browser and updates it with eve
 ### Creating a driver
 
 1. `/qa:setup <app> <base-url>`. Without a starter pack `init` prints that app-mapper builds the driver from the page
-   on the first scenario. No command creates `app/<app>.pricing.ts`: the tester writes it. `doctor` names it until it
-   exists.
+   on the first scenario. No command creates `app/<app>.pricing.ts`: the tester writes it. Until it exists `doctor`
+   names it (`LINT_FAIL`) and `example` ends `SPEC_INVALID` naming it.
 2. `/qa:new-test "<request>"`. After the dry gates (step 5), `qa-harness need <slug>` lists the actions, attributes
    and bindings the driver lacks.
 3. app-mapper (`mode: build`, skill `map-app-flow`) reads the map, opens each page with the plugin's browser, takes a

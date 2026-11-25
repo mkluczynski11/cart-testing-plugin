@@ -94,3 +94,19 @@ test("doctor type-checks the rules file with the root's own tsc and reports the 
   fs.writeFileSync(files.pricing(root, 'reference'), rulesFile("{ subtotalAtLeast: '50.00' }", "export const broken: number = 'text';"));
   expect(doctor(root, false).lines.some((l) => /^LINT_FAIL: .*reference\.pricing\.ts.*TS2322/.test(l))).toBe(true);
 });
+
+test('example with no rules file is SPEC_INVALID and names the missing file relative to the root', () => {
+  const root = workspace('unit-no-rules', [REF], { app: 'newshop' });
+  let verdict = 'none';
+  let text = '';
+  try {
+    const r = example(root, REF, false);
+    verdict = r.verdict;
+    text = r.lines.join('\n');
+  } catch (e) {
+    verdict = e instanceof QaError ? e.verdict : 'plain error';
+    text = (e as Error).message;
+  }
+  expect({ verdict, names: text.includes('app/newshop.pricing.ts does not exist'), absolute: text.includes(root) })
+    .toEqual({ verdict: 'SPEC_INVALID', names: true, absolute: false });
+});

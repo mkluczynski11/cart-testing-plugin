@@ -19,7 +19,7 @@ export const rel = (root: string, p: string) => path.relative(root, p) || '.';
 /** Load app/<app>.pricing.ts of a root. The harness runs under tsx, so a .ts file can be required. */
 export function loadPricing(root: string, app: string): PricingModule {
   const file = files.pricing(root, app);
-  if (!fs.existsSync(file)) throw new Error(`${file} does not exist; write the app's rules file first (design 9.2).`);
+  if (!fs.existsSync(file)) throw new ConditionError(`${path.relative(root, file)} does not exist; write the app's rules file first (design 9.2).`, 'SPEC_INVALID');
   // A dynamic require: the rules file is found by the app name in qa.config.json.
   return checkedRules(require(file) as unknown, path.relative(root, file));
 }
