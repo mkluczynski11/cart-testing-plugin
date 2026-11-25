@@ -40,8 +40,8 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
 1. **Intake** (`intake.md`). Split the request into clauses; map each action to `add`, `setQty` or `remove`; refuse
    an action outside the grammar or the scope, naming the missing feature, before writing anything. When the request
    leaves open something that changes what the test proves, write nothing and ask: your answer is at most three
-   lines and its last line is one question. Pick products and
-   quantities by the pairs in `intake.md`. Choose a slug: short, lowercase, hyphens, unique in `e2e/specs/`.
+   lines and its last line is one question. Pick products and quantities by the pairs in `intake.md`. Choose a slug:
+   short, lowercase, hyphens, unique in `e2e/specs/`.
 2. **Scenario.** Write `e2e/specs/<slug>.md` with `status: draft`, `request` verbatim, `cart_after` after every step,
    `check: each-step` unless the request names other checkpoints. Run `qa-harness example <slug>`. On `SPEC_INVALID`
    fix the rules it names and run it again; if a fix would change the meaning, ask the tester instead. Two fixes at

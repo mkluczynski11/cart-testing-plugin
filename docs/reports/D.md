@@ -474,9 +474,16 @@ output was not kept.
 | G-a2 | stage 5 a, second fixture: `/qa:triage control-equal` | opus + sonnet (`app-mapper`) | 6 | 51 s | $0.34 |
 | G-b | stage 5 b: `/qa:new-test control-equal` (resume) | opus + sonnet (`app-mapper`) | 15 | 247 s | $1.24 |
 | G-c | stage 5 c: `/qa:triage control-discount` | default (opus) | 4 | 37 s | $0.29 |
-| G-d | final: `/qa:new-test "<three units, lower to one, remove>" --yes` on the control app | see below | | | |
+| G-d | final: `/qa:new-test "Add three units of the first product, lower it to one unit, then remove it. Check the total after each step." --yes` on the control app | default (opus) | 18 | 182 s | $1.11 |
 
 No session ended with a usage-limit message.
+
+Final check G-d (after the readback fix, on the control application, no live site): a fresh request through the
+whole flow ended **`VERIFIED`** and promoted (`PASS 1/1 · test verified`; S1 `add Teekanne, 3 units` "67,23 €" with the
+`rabatt` rule in force, S2 "24,90 €", S3 the empty cart "0,00 €"; "defects 9/9 applicable detected" counted from the
+live pass; scope: "At S1 it differed from the subtotal and from every line total"). One flaw left: the readback's gap
+list mixes the stub pass ("rule rabatt is never in force in this scenario", true only on stub prices) with the live
+pass; `readback.md` should take the gaps from the same pass as the counts.
 
 ## Requests to the harness
 
@@ -529,7 +536,8 @@ No session ended with a usage-limit message.
 7. **`setup` and questions (5.3, order note 8).** `setup` takes its answers as arguments and asks only for a missing
    application name or address; a starter pack also supplies its config defaults (stage 2).
 8. **Readback numbers (10.2 vs 11.2).** The readback's defect counts come from the second G2 pass; the first version
-   of `readback.md` counted the first pass (F2 and F3 show "12/12"); corrected after stage 4, exercised in G-d.
+   of `readback.md` counted the first pass (F2 and F3 show "12/12"); corrected after stage 4, exercised in G-d, where
+   the gap list still came from the first pass (see "Final check G-d").
 9. **The browser's origins (R11, 15.4).** Exact origins only; a launcher reads `qa.config.json` and an optional
    `browserAllowedOrigins` (request 4).
 
@@ -571,10 +579,10 @@ Live invocations against https://practicesoftwaretesting.com: 6 of 10, all in st
 `run`, F3 `verify`, clone `run`, clone `verify`); all ended `PASS`. Plain HTTPS requests to the npm registry
 (`doctor` before setup, `npx` of the MCP server) are not counted.
 
-Nested-session cost in all: about $11 (mechanics and probes ≈ $0.6, evals $5.05, stage 4 $2.97, stage 5 $2.50, plus G-d).
+Nested-session cost in all: about $12 (mechanics and probes ≈ $0.6, evals $5.05, stage 4 $2.97, stage 5 $2.50, G-d $1.11).
 
-Plugin size: 10 skills (`SKILL.md` 39–127 lines, plus 5 files next to them), 3 agents, 8 scripts (+ 3 test files and
-4 fixtures), `evals/` 2 files.
+Plugin size: 10 skills (`SKILL.md` 39–127 lines, plus 5 files next to them), 3 agents, 8 scripts (+ 2 test files and
+4 recorded hook inputs), `evals/` 2 files.
 
 ## Built but not exercised
 
