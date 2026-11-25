@@ -1565,3 +1565,22 @@ Two elements of DEP-09 did not make it into the first draft of v0.3 and were not
 | Pricing rules | functions | data; purchase constraints and field labels added |
 | Endings for the tester | 4 | 5; each lists the evidence that exists |
 | Evaluation | A1–A7, B1–B7 | A1–A13, B1–B8, C1–C4, `selftest` with a control page |
+
+## 18. Amendments after v0.3
+
+Places where the code now differs from sections 1–17 on purpose (orders D and F). Sections 1–17 are unchanged.
+
+| Place | Sections | What the code does now |
+| --- | --- | --- |
+| `intent` subcommand | 6.1, 8.5, 10.7 | `qa-harness intent <slug>` is a harness subcommand (main thread and `test-verifier`): `PASS` only for a current `INTENT_OK` review, prints the confirmed hash and a `state:` line; `run` and `verify` record `intentSha256` in `verification.json`; `doctor` reports a stale review of a verified scenario as `VERIFICATION_STALE`. |
+| Promotion guard and `--as-evidence` | 6.1, 8.5 | `report --promote` admits only a live run whose `verification.json` is `PASS` through G4; otherwise it ends with the run's verdict (`NO_TESTS_RUN` for a dry run, no G4 or no record) and changes nothing. `--as-evidence` (the tester's flag) admits a live `ORACLE_MISMATCH` or `UNMODELED_ADJUSTMENT` run, says so in the first line of `report.md` and still ends with that verdict. `report` without `--promote` ends with the verdict of the run it reports. |
+| Starter pack | 5.3, 12.2 | `/qa:setup <app> …` copies `examples/<app>/app/*` when the plugin has a pack for `<app>`, and the pack's `qa.config.json` defaults except `app` and `baseURL`. |
+| `browserAllowedOrigins` | 8.6, R11 | optional list of exact origins in `qa.config.json` that the page-reading browser may open besides `baseURL` (Playwright MCP takes no wildcard); the Toolshop pack sets its API origin. |
+| `new-test --dry` | 5.3, 11 | stops after the dry gates (step 5) with a dry readback; no live run, controls or promotion. |
+| `setup` arguments | 5.3 | `/qa:setup <app> <base-url> [--defects …] [--test-id-attribute …] [--locale …] [--currency …]`; questions only for a missing name or address. |
+| `tsc` in `doctor` | 6.1 | `doctor` type-checks with the root's own TypeScript when installed and reports the first message about the driver or the rules file as `LINT_FAIL`; the rules file is also checked against the vocabulary of 9.2 when it is loaded (`LINT_FAIL` naming the rule and the key). |
+| Classification of driver calls | 6.1, 6.3 | every driver call has a limit of 3 × `actionMs`; Playwright's locator timeout or a call over the limit is `LOCATOR_FAIL`, another exception that is not a library error `UNDETERMINED`, network and browser failures `INFRA_FAIL`; the record names the step and the method. |
+| Conditions that are not harness bugs | 6.1, 6.3 | a held lock (`INFRA_FAIL`), a root without `qa.config.json` (`SPEC_INVALID`) and a file in the way of `compile` (`FILE_CONFLICT`) each end with their own sentence. |
+| Repair episodes | R9 | `--repair driver` needs a live run; a repair run that ends `PASS` closes the episode, so the counter starts again. |
+| `run.json` | 8.5 | `meta.gitDirty` records uncommitted changes next to `meta.gitSha`. |
+| Agents' positive verdict | 4, 6.3 | `app-mapper` and `defect-designer` end with `PASS`. |

@@ -123,5 +123,19 @@ Only the tester's answer changes it, and every change invalidates the confirmed 
 ## Configuration: `qa.config.json`
 
 `app`, `baseURL`, `testIdAttribute`, `locale`, `currency`, `browserDriver`, `priceSource`, `defects`
-(`default` | `extended`), `repeat`, `pickLimit`, `timeouts` (`probeMs`, `actionMs`, `settleMs`, `testMs`). Written by
-`qa-harness init`.
+(`default` | `extended`), `repeat`, `pickLimit`, `timeouts` (`probeMs`, `actionMs`, `settleMs`, `testMs`), and the
+optional `browserAllowedOrigins` (exact origins the page-reading browser may open besides `baseURL`, e.g. the
+application's API). Written by `qa-harness init`; a starter pack supplies its defaults.
+
+## Harness commands the flow relies on
+
+- `qa-harness intent <slug>`: `PASS` only for a current `INTENT_OK` review; prints `scenario_sha256: <hash>` to copy and
+  ends with a `state:` line (`missing`, `stale`, `unreadable`, `not-confirmed`, `current <VERDICT>`). `verify` records
+  that hash in `verification.json` (`intentSha256`), and `doctor` reports a stale review of a verified scenario as
+  `VERIFICATION_STALE`.
+- `qa-harness report <slug> --promote <runId>`: promotes only a live run whose `verification.json` is `PASS` through
+  G4; anything else is refused with the run's own verdict (`NO_TESTS_RUN` for a dry run or one without G4) and the
+  tracked files stay as they were. `--as-evidence` (the tester's choice only) keeps an `ORACLE_MISMATCH` or
+  `UNMODELED_ADJUSTMENT` live run as evidence and still ends with that verdict.
+- A failed driver call in `run`/`verify` names the step and the method: `LOCATOR_FAIL` for a locator timeout or a call
+  over 3 × `actionMs`, `UNDETERMINED` for any other exception, `INFRA_FAIL` for the environment.

@@ -11,6 +11,7 @@ import type { Verdict } from '../core/verdicts';
 import { loadPricing, rel, type CommandResult } from './common';
 import { lintDriver } from './lint';
 import { manifestChanges, writeManifest } from './manifest';
+import { intentReview } from './intent';
 import { inspectDriver } from './need';
 
 const ORDER: Verdict[] = ['INFRA_FAIL', 'HARNESS_MODIFIED', 'SPEC_INVALID', 'SCENARIO_CHANGED', 'VERIFICATION_STALE', 'LINT_FAIL'];
@@ -88,6 +89,10 @@ export function doctor(root: string, write: boolean): CommandResult {
       const stale = [v.testSha256 !== fileHash(test) && 'the test', v.driverSha256 !== (fs.existsSync(driver) ? fileHash(driver) : null) && 'the driver', v.rulesSha256 !== rulesSha && 'the rules file'].filter(Boolean);
       if (stale.length) found.push({ verdict: 'VERIFICATION_STALE', line: `${slug}: ${stale.join(', ')} changed after verification; run qa-harness verify ${slug}.` });
     }
+    const intent = intentReview(root, slug);
+    if (intent.state === 'stale' && fs.existsSync(verification)) {
+      found.push({ verdict: 'VERIFICATION_STALE', line: `${slug}: the intent review reviews scenario ${intent.reviewed?.slice(0, 12)}…, the confirmed scenario is ${intent.confirmed?.slice(0, 12)}…; test-verifier reviews it again (step 3a), then verify.` });
+    } else if (intent.state === 'stale') notes.push(`${slug}: the intent review is stale (qa-harness intent ${slug}).`);
     if (origin === 'edited by hand') notes.push(`${slug}: the test was edited by hand; compile ${slug} shows the difference, and the report says so.`);
     else if (state === 'frozen' || state === 'not-confirmed') ok.push(`${slug}: ${state === 'frozen' ? 'confirmed' : 'draft'}, test ${origin}`);
   }

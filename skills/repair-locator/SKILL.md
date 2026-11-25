@@ -27,7 +27,7 @@ the map. The run directory is evidence: read it, never change it.
 
 ## Output
 
-The changed driver and map; the answer of the agent card with `VERDICT: REPAIRED`.
+The changed driver and map; the answer of the agent card with `VERDICT: PASS`.
 
 ## Stop
 

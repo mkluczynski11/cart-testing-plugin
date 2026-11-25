@@ -17,6 +17,7 @@ import { decimalText, parseAmount } from '../core/money';
 import type { RunRecord } from '../core/classification';
 import { runPlaywright } from './playwright-runner';
 import { createRunDir, withLock } from './run-dir';
+import { intentOkHash } from './intent';
 
 /** One line per checkpoint of a repeat: expected, displayed raw text and result. */
 export function checkpointLines(run: RunRecord, n = 0): string[] {
@@ -84,6 +85,7 @@ export function writeVerification(loaded: Loaded, dir: string, gates: Record<str
     testSha256: fileHash(files.test(loaded.root, loaded.slug)),
     driverSha256: fs.existsSync(driver) ? fileHash(driver) : null,
     testOrigin: dry.handEdited ? 'edited' : 'compiled',
+    intentSha256: intentOkHash(loaded.root, loaded.slug),
     gates,
     defects: dry.rows,
     gaps: dry.gaps,

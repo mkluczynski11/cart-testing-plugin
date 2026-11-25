@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // qa-harness on the Bash tool's PATH: finds the tester's e2e root and runs the harness installed there.
-// Implements design 6.1 (same behaviour from the repo root and from e2e/), order D notes 8-11 (init, doctor before setup) and note 3 (intent).
+// Implements design 6.1 (same behaviour from the repo root and from e2e/) and order D notes 8-11 (init, doctor before setup);
+// every other subcommand, `intent` included, is the harness's own (design 18).
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -60,11 +61,6 @@ const root = findRoot(process.cwd());
 if (!root) {
   if (command === 'doctor') await doctorBeforeSetup();
   else finish([`No e2e/ directory here or in a parent: setup has not run, so "${command ?? ''}" has nothing to work on; run /qa:setup <app> <base-url> first.`], 'INFRA_FAIL');
-}
-
-if (command === 'intent') {
-  const r = spawnSync(process.execPath, [path.join(pluginRoot, 'scripts', 'intent.mjs'), root, ...args.slice(1)], { stdio: 'inherit' });
-  process.exit(r.status ?? 1);
 }
 
 const tsx = path.join(root, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');

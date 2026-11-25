@@ -18,16 +18,17 @@ Step  Shopper's action                    Expected  Displayed  Result
 Evidence: intent review <without remarks | its finding>; defects <detected>/<applicable> applicable, each in the right
 place; live controls <caught>/<total>; report review <without remarks | its finding>.
 Scope: <the scope sentence of e2e/reports/<slug>/report.md>
-Scenario gap: <each gap of verification.json, with its hint> | none
+Scenario gap: <each not-applicable defect of the same G2 pass as the counts, with its hint> | none
 Rules used: <rule id · source · live status, from report.md> | none
 Rerun: <the "Rerun:" line of the `report --promote` output, verbatim>
 Files: e2e/specs/<slug>.md, e2e/specs/<slug>.intent.md, e2e/tests/<slug>.spec.ts, e2e/reports/<slug>/
 ```
 
-Counts (design 10.2: the readback's numbers come from the second G2 pass, on the products of the live run): "defects"
-from `verification.json` `livePass.defects[]` (or `defects[]` when there is no `livePass`): applicable = `result` other
-than `not-applicable`, detected = `result: detected`; "live controls" from `controls[]` (`result: caught`). The table
-rows and "Rerun" are copied, not retyped.
+Counts and gaps (design 10.2: the readback's numbers come from the second G2 pass, on the products of the live run):
+"defects" from `verification.json` `livePass.defects[]` (or `defects[]` when there is no `livePass`): applicable =
+`result` other than `not-applicable`, detected = `result: detected`. "Scenario gap" lists the entries of that same array
+with `result: not-applicable`, each with its `hint`; never the stub pass's gaps next to the live pass's counts. "live
+controls" from `controls[]` (`result: caught`). The table rows and "Rerun" are copied, not retyped.
 
 ## Dry (`--dry`)
 

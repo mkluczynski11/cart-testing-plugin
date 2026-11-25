@@ -18,6 +18,7 @@ export type QaConfig = {
   repeat: number;
   pickLimit: number;
   timeouts: { probeMs: number; actionMs: number; settleMs: number; testMs: number };
+  browserAllowedOrigins: string[];  // further origins the page-reading browser may open, e.g. the API of the application
 };
 
 const CURRENCIES: CurrencyCode[] = ['USD', 'EUR'];
@@ -58,7 +59,20 @@ export function loadConfig(root: string = qaRoot()): QaConfig {
     repeat: raw.repeat ?? 3,
     pickLimit: raw.pickLimit ?? 30,
     timeouts: { probeMs: 5000, actionMs: 10000, settleMs: 3000, testMs: 90000, ...(raw.timeouts ?? {}) },
+    browserAllowedOrigins: browserOrigins(file, raw.browserAllowedOrigins),
   };
+}
+
+/** browserAllowedOrigins: a list of exact origins (Playwright MCP takes no wildcard). */
+function browserOrigins(file: string, value: unknown): string[] {
+  if (value === undefined) return [];
+  const list = Array.isArray(value) ? value : [value];
+  for (const o of list) {
+    let origin: string | undefined;
+    try { origin = typeof o === 'string' ? new URL(o).origin : undefined; } catch { origin = undefined; }
+    if (origin !== o) throw new ConditionError(`${file}: browserAllowedOrigins must be a list of origins such as "https://api.shop.example" (scheme, host and port, no path); ${JSON.stringify(o)} is not one.`, 'SPEC_INVALID');
+  }
+  return list as string[];
 }
 
 export function formatOf(config: QaConfig): AmountFormat {

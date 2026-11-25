@@ -9,6 +9,7 @@ import { compile } from './compile';
 import { defectsCommand } from './defects';
 import { doctor } from './doctor';
 import { example } from './example';
+import { intentCommand } from './intent';
 import { need } from './need';
 import { report } from './report';
 import { run } from './run';
@@ -20,6 +21,7 @@ const HELP: Array<[string, string]> = [
   ['selftest', "run the harness's own test without the live application"],
   ['example <slug> [--confirm]', 'validate the scenario and compute the example; --confirm freezes it'],
   ['compile <slug> [--force]', 'emit tests/<slug>.spec.ts from the confirmed scenario'],
+  ['intent <slug>', 'is there a current intent review? prints the confirmed hash'],
   ['need <slug>', 'name the actions, attributes and bindings the driver is missing'],
   ['defects list|check <slug>', 'list the default defects; admit or reject specs/<slug>.defects.json'],
   ['run <slug> [--dry] [--repair driver|test]', 'gates G0–G2 on the reference cart, or G0–G3 live'],
@@ -77,6 +79,7 @@ async function main(argv: string[]): Promise<CommandResult> {
       if (repair !== undefined && repair !== 'driver' && repair !== 'test') return usage('--repair takes driver or test.');
       return run(root, s, { dry, repair });
     }
+    case 'intent': { const s = needSlug(); return s ? intentCommand(root, s) : usage('intent needs one scenario slug.'); }
     case 'verify': { const s = needSlug(); return s ? verify(root, s) : usage('verify needs one scenario slug.'); }
     case 'report': {
       const s = needSlug();

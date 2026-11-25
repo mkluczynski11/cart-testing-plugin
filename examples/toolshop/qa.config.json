@@ -9,5 +9,6 @@
   "defects": "default",
   "repeat": 3,
   "pickLimit": 30,
-  "timeouts": { "probeMs": 5000, "actionMs": 10000, "settleMs": 1000, "testMs": 90000 }
+  "timeouts": { "probeMs": 5000, "actionMs": 10000, "settleMs": 1000, "testMs": 90000 },
+  "browserAllowedOrigins": ["https://api.practicesoftwaretesting.com"]
 }

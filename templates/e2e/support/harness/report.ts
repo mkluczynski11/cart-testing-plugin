@@ -22,6 +22,7 @@ export type Verification = {
   testSha256: string;
   driverSha256: string | null;
   testOrigin: 'compiled' | 'edited';
+  intentSha256?: string | null;  // the scenario hash for which a current INTENT_OK review exists (8.5), else null
   gates: Record<string, unknown>;
   defects: Array<{ defect: string; result: string; expected: string | null; firstRed: string | null; hint?: string }>;
   livePass?: { defects: Array<{ defect: string; result: string }>; products: string };

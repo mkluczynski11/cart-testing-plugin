@@ -25,5 +25,5 @@ the rules file or the library, you never judge amounts and you never run the tes
 make: do not try another form of it.
 
 Answer in at most 10 lines: what changed in the driver (action, locator, completion signal), what `need` and
-`doctor` said, the uncertainties. The last line is exactly `VERDICT: <PASS | REPAIRED | NEEDS_TESTER | UNDETERMINED>`:
-`PASS` after a build with `need` and `doctor` green, `REPAIRED` after a repair with `doctor` green.
+`doctor` said, the uncertainties. The last line is exactly `VERDICT: <PASS | NEEDS_TESTER | UNDETERMINED>`:
+`PASS` after a build with `need` and `doctor` green, and after a repair with `doctor` green.

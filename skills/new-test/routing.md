@@ -17,6 +17,7 @@ cause: route to a repair only when the evidence points at the owner; otherwise t
 | `PRECONDITION_FAIL` | `run`, `verify` | a precondition not met: no product, out of stock, a purchase constraint, a refusal by the application | stop; one message to the tester with the application's raw text |
 | `NO_TESTS_RUN` | `run`, `verify` | zero executed tests or an incomplete set of checkpoints without another error | harness bug; never `PASS` |
 | `LOCATOR_FAIL` | gate G3 | an action did not find its element or its acknowledgment, or a read is not an amount or has another label | `app-mapper`, skill `repair-locator` |
+| `LOCATOR_FAIL` from `run` naming a driver method | gate G3 | Playwright's timeout on a locator inside the method, or the method did not return within 3 × `actionMs`; the line names the step and the method | `app-mapper`, skill `repair-locator`, with that method as the failing action |
 | `FLAKY` | gate G3 | a different result across repeats | by the class of the failed repeats; table below |
 | `ORACLE_MISMATCH` | gate G3 | expected differs from displayed | stop; the tester decides: application bug or missing rule |
 | `UNMODELED_ADJUSTMENT` | gate G3 | an adjustment in the cart with no rule | one question to the tester about the rule |
@@ -31,6 +32,8 @@ cause: route to a repair only when the evidence points at the owner; otherwise t
 | `REWORK` | `test-verifier` | a finding with an addressee: `app-mapper`, the scenario or the tester | driver: `app-mapper`, then `run --repair driver`; scenario: back to step 2 with a new confirmation; tester: recompile or repair the manual edit |
 | `NEEDS_TESTER` | `test-verifier`, `app-mapper` | the decision belongs to a human | one question to the tester |
 | `UNDETERMINED` | `run`, `verify`, `triage`, `test-verifier` | the evidence does not settle the cause | stop; escalate to the tester with the collected material |
+| `UNDETERMINED` from `run` naming a driver method | gate G3 | the method threw an exception that is neither a locator timeout nor the environment (a possible driver bug) | stop; the answer quotes the step, the method and the message; never `app-mapper` without the tester |
+| any verdict from `report --promote` | `report` | the run is not a live run verified through G4 (dry, no G4, red, or no `verification.json`); the tracked files are unchanged | promote only the run `test-verifier` named with `VERIFIED`; otherwise "could not deliver a verified test" with that verdict. `--as-evidence` is the tester's flag, never the plugin's |
 
 A 5xx response to a request of a scenario action also gives `INFRA_FAIL`, but the output names the step and the
 request: it may be an application bug rather than the environment.
@@ -50,8 +53,9 @@ Two verdicts have several possible owners; the recorded evidence decides.
 
 Call the Agent tool with `subagent_type: "qa:app-mapper"` and the prompt `mode: repair` / `slug: <slug>` /
 `action: <the failing action from the output>` / `run: <the run directory from the output>` / `root: e2e`. Its last line
-is `REPAIRED`, `NEEDS_TESTER` (ask its question, stop) or `UNDETERMINED` (stop). After `REPAIRED` run
-`qa-harness run <slug> --repair driver`; the harness counts the attempts.
+is `PASS`, `NEEDS_TESTER` (ask its question, stop) or `UNDETERMINED` (stop). After `PASS` run
+`qa-harness run <slug> --repair driver` (a live run; `--dry` is refused, because a dry run never calls the driver); the
+harness counts the attempts, and a repair run that ends `PASS` closes the episode.
 
 ## Stopping rule (R9, design 3.3)
 
