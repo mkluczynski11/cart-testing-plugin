@@ -402,3 +402,250 @@ four lenses, record, select up to 8 with at most 2 per lens, admission, result; 
 | A7 extended defects (`--yes --dry --defects extended`) | PASS | 14 | $0.33 | 61 s | `defect-designer` ran; `specs/<slug>.defects.json` (6 entries, 0 rejected) older than the test file; G2 19 defects, 18 detected, 1 not applicable |
 | R1 `--risk "the total does not refresh after the quantity of a product is decreased"` (own case) | PASS | 16 | $0.30 | 51 s | one `origin: tester` entry admitted by `defects check`; `defect-designer` not started in default mode |
 
+## Final — exit criteria
+
+`date -u`: `Wed Nov 25 03:10:36 UTC 2026`.
+
+| Criterion | Command | Result |
+| --- | --- | --- |
+| Plugin and marketplace valid | `claude plugin validate .` | `✔ Validation passed` (marketplace and plugin; provides 10 skills, 3 agents, 2 hooks, 1 MCP server, `bin/qa-harness`); the separate "plugin directory" checks want a README of 40+ words and a LICENSE (not files of this order) |
+| Unit tests of the scripts | `node --test scripts/` | `ℹ tests 14 · pass 14 · fail 0` |
+| Contract types quoted exactly | `node scripts/check-contracts.mjs` | `ok: skills/contracts/driver.md quotes templates/e2e/support/core/types.ts exactly.` |
+| No application names in skills and agents | `grep -rniE "toolshop\|practicesoftwaretesting\|pliers" skills agents` | no output (exit 1); also none for `co2`, `eco-`, `wood saw` |
+| Clean tree | `git status --short` | clean after the last commit |
+| Stage 2 scratch install | see stage 2 | `VERDICT: PASS`, selftest 12/12 with and without the plugin, no Toolshop name outside `e2e/app/` and `qa.config.json`, no copied `node_modules` |
+| Stage 3 eval table and hook transcripts | see stage 3 | A1–A6, A8–A13 pass; two refusal transcripts |
+| Stage 4 four outcomes, evidence committed | see stage 4 | two `VERIFIED`, one question, clone rerun and verify green; `docs/evidence/d-flow/` |
+| Stage 5 three sessions | see stage 5 | a (second fixture), b, c as expected; a with the first fixture explained |
+
+## Mechanics table (stage 1)
+
+See "Stage 1": every question of the order with its command and answer. The facts later stages built on: plugin
+skills run headlessly through `claude -p "/qa:<skill> <args>"`, also with `disable-model-invocation: true`; `bin/` is
+on the Bash tool's `PATH`; hooks receive no `agent_type` in the main thread and `qa:<agent>` in a plugin agent
+(foreground or background); `skills: [qa:<skill>]` preloads a skill of the same plugin; `effort` is accepted;
+`${CLAUDE_PROJECT_DIR}` reaches an MCP server's `args`; `claude plugin eval` exists but its sandbox has no plugin
+`bin/` on `PATH`, so it cannot run `qa-harness`.
+
+## Eval table (level A, latest run of each case)
+
+| Case | Result | Turns | Cost | Time |
+| --- | --- | --- | --- | --- |
+| A1 triggering | PASS | 8 | $0.15 | 19 s |
+| A2 no triggering | PASS | 1 | $0.07 | 5 s |
+| A3 ambiguity | PASS | 4 | $0.11 | 8 s |
+| A4 reference scenario, dry (with `.mcp.json`) | PASS | 13 | $0.26 | 40 s |
+| A5 verifier catches a hole | PASS | 5 | $0.19 | 39 s |
+| A6 guard | PASS | 3 | $0.08 | 6 s |
+| A7 extended defects | PASS | 14 | $0.33 | 61 s |
+| A8 out-of-scope request | PASS | 6 | $0.13 | 8 s |
+| A9 protection of a manual edit | PASS | 3 | $0.26 | 40 s |
+| A10 environment failure | PASS | 6 | $0.28 | 51 s |
+| A11 paraphrase, swapped objects | PASS | 4 | $0.27 | 44 s |
+| A12 adding versus setting | PASS | 13 | $0.25 | 40 s |
+| A13 intent review catches a swapped object | PASS | 2 | $0.13 | 17 s |
+| R1 `--risk` (own case) | PASS | 16 | $0.30 | 51 s |
+
+Every run, including the failed ones and what changed because of them: `docs/eval-log.md` (26 sessions, $5.05).
+
+## Nested sessions
+
+All headless (`claude -p … --permission-mode auto --max-turns n --output-format json`, never
+`--dangerously-skip-permissions`). Cost is `total_cost_usd` (list-price estimate, all models of the session). "—" = the
+output was not kept.
+
+| # | Purpose | Model | Turns | Duration | Cost |
+| --- | --- | --- | --- | --- | --- |
+| M1 | stage 1: skill with arguments, `bin/`, `agent_type`, `skills` naming, MCP args (mech plugin) | sonnet (+haiku agents) | 4 | 14.5 s | $0.12 |
+| M2 | stage 1: `claude plugin eval` probe, one grader | sonnet | 4 | 5 s | $0.07 |
+| M3 | stage 1: `claude plugin eval` probe, diagnostic graders, kept trace | sonnet | 4 | 5 s | $0.05 |
+| H0 | stage 3: does the qa guard fire (main thread runs `qa-harness verify`) | haiku | 2 | 4.9 s | $0.004 |
+| M4 | stage 3: `agent_type` inside a background plugin agent | sonnet (+haiku) | 1 | 1.4 s | $0.11 |
+| H1 | stage 3: hook transcript, first attempt (agent declined by itself) | sonnet | 2 | 10.8 s | $0.11 |
+| H2 | stage 3: hook transcript, `test-verifier` Write of a test and `compile` refused | sonnet | 2 | 14.5 s | $0.11 |
+| P1–P4 | stage 3: one Write each: worktree/auto, worktree/acceptEdits, outside/auto, outside dot-dir/auto | haiku | 1–2 | — | $0.004 each (P1, P2 measured; P3, P4 —) |
+| H3 | stage 3: record main-thread hook inputs (mech logger) | haiku | — | — | — |
+| E1–E26 | level A cases (rows of `docs/eval-log.md`) | sonnet | 1–16 | 5–61 s | $5.05 in all |
+| F1 | stage 4: `/qa:setup toolshop https://practicesoftwaretesting.com` | default (opus) | 3 | 65 s | $0.23 |
+| F2 | stage 4: `/qa:new-test "<reference>" --yes` | default (opus) | 20 | 235 s | $1.16 |
+| F3 | stage 4: `/qa:new-test "<three products>" --yes` | default (opus) | 18 | 298 s | $1.32 |
+| F4 | stage 4: `/qa:new-test "Check that the cart works."` | default (opus) | 3 | 11 s | $0.26 |
+| G-a | stage 5 a, first fixture: `/qa:triage control-equal` | default (opus) | 14 | 90 s | $0.63 |
+| G-a2 | stage 5 a, second fixture: `/qa:triage control-equal` | opus + sonnet (`app-mapper`) | 6 | 51 s | $0.34 |
+| G-b | stage 5 b: `/qa:new-test control-equal` (resume) | opus + sonnet (`app-mapper`) | 15 | 247 s | $1.24 |
+| G-c | stage 5 c: `/qa:triage control-discount` | default (opus) | 4 | 37 s | $0.29 |
+| G-d | final: `/qa:new-test "<three units, lower to one, remove>" --yes` on the control app | see below | | | |
+
+No session ended with a usage-limit message.
+
+## Requests to the harness
+
+1. **`doctor` reads `specs/*.intent.md` as scenarios.** In a repo with `specs/control-equal.intent.md` it prints
+   `ok: control-equal.intent: draft, test not compiled`. Scenario discovery should skip `*.intent.md` (and
+   `*.example.json`, `*.defects.json` already are not `.md`).
+2. **The intent review is invisible to the harness.** Design 8.5 says `verification.json` records "the hash of the
+   scenario for which an intent review exists", and 6.3 makes `VERIFIED` depend on it; nothing in `support/` reads
+   `specs/<slug>.intent.md`. The plugin added `qa-harness intent <slug>` on its side (`scripts/intent.mjs`); `verify`
+   should record `intentSha256` and `doctor` should report a stale review, so CI sees it too.
+3. **`report.md` after promotion says the reviews are not available.** The promoted `report.md` of a verified run
+   still has "Not available: the intent review and the report review are written by an agent …; none is part of this
+   run", although `review.md` is promoted next to it and `specs/<slug>.intent.md` exists. `buildReport` should name
+   both when they exist.
+4. **The browser's allowed origins.** `--allowed-origins` of Playwright MCP takes exact origins only (no subdomain
+   wildcard), and an application's API often lives on another origin. The plugin's launcher reads an optional
+   `browserAllowedOrigins` array from `qa.config.json`; design 8.6 should list the field.
+5. **Readback headline.** `report --promote` prints `PASS 3/3 · run <runId>`; design 11.2 wants
+   `PASS 3/3 · test verified` after `VERIFIED`. The skill rewrites the headline; the harness could take a flag.
+6. **A missing element in a driver action is `INFRA_FAIL` unless the driver wraps it.** The control driver
+   (`support/harness/control-app/control.driver.ts`) calls `fill`/`click` on its locators without catching
+   Playwright's timeout; the harness then classifies the raw `TimeoutError` as `INFRA_FAIL` (stage 5, case a, first
+   fixture: `locator.fill: Timeout 5000ms exceeded` on a missing `line-quantity`, probe healthy). Design 6.1 calls that
+   `LOCATOR_FAIL`. Either the classification should map a Playwright `TimeoutError` from a locator call to
+   `LOCATOR_FAIL` when the probe passed, or the control driver should wrap `act()` like the Toolshop driver does.
+7. **A line of the `UNMODELED_ADJUSTMENT` message.** In stage 5 case c the displayed rows add up (Zwischensumme
+   74,70 €, Rabatt -7,47 €, Summe 67,23 €), yet the failure record of `run.json` ends with
+   `also: total: the total is not the subtotal minus the adjustments`. With no rule for the row the total layer seems
+   to subtract the modelled adjustments (none) instead of the displayed ones; the line misleads the reader of an
+   unmodelled adjustment.
+
+## Where the design was ambiguous or wrong, and what was chosen
+
+1. **The intent review and the hash (6.3, 8.5, 10.7).** `VERIFIED` requires an intent review for the current scenario
+   hash, but nothing deterministic checks it. Chosen: `qa-harness intent <slug>` on the plugin side (request 2).
+2. **"Yes, until confirmation" for the main thread (7.3).** A hook cannot know the tester's confirmation; 7.5 already
+   says the main thread is protected only within R4–R7 and R14. Chosen: the main thread may write scenarios, rules,
+   drivers and tests through the tools; the hashes (R5–R7) catch the change. It may not write `support/**`,
+   `specs/*.intent.md` or anything under `reports/**`.
+3. **R2 and the main thread (6.1, 7.2).** 7.2 restricts plugin agents; the "Who invokes it" column also names who runs
+   `verify` and `defects list`. Chosen: the guard applies the column to the main thread too (`verify` belongs to
+   `test-verifier`, `defects list` to `defect-designer`); every other command of the main thread passes.
+4. **A positive verdict for `app-mapper` and `defect-designer`.** The dictionary has `NEEDS_TESTER` for `app-mapper`
+   and nothing for success. Chosen: `PASS` (build, `need` and `doctor` green; defects admitted) and `REPAIRED` (repair,
+   `doctor` green). `REPAIRED` is a new word; `PASS` would also do.
+5. **Five repeats in triage (5.3)** versus `repeat` in the config (3): triage runs `run` once more instead of adding a
+   flag to the harness.
+6. **Unattended confirmation (3.3).** `--yes` skips the question but the confirmation is still shown; without `--yes`
+   the skill ends its turn after the question, so a headless session without `--yes` stops there by design.
+7. **`setup` and questions (5.3, order note 8).** `setup` takes its answers as arguments and asks only for a missing
+   application name or address; a starter pack also supplies its config defaults (stage 2).
+8. **Readback numbers (10.2 vs 11.2).** The readback's defect counts come from the second G2 pass; the first version
+   of `readback.md` counted the first pass (F2 and F3 show "12/12"); corrected after stage 4, exercised in G-d.
+9. **The browser's origins (R11, 15.4).** Exact origins only; a launcher reads `qa.config.json` and an optional
+   `browserAllowedOrigins` (request 4).
+
+## Open questions
+
+Decided on the spot, as close to the design as possible.
+
+1. **Scratch repos outside the worktree.** Nested sessions could not use the Write tool in repos under
+   `.worktrees/d-plugin/.sandbox/` (stage 3 finding); they ran under the session's scratch directory instead, with the
+   order's command line unchanged. Should the order's `.sandbox/` rule change, or the machine's managed policy?
+2. **Who owns the intent check.** `qa-harness intent` lives in the plugin (`scripts/intent.mjs`); should the harness
+   take it over (request 2), so CI sees a stale intent review?
+3. **Guards only refuse.** A version that answered `allow` for a role's own paths was refused by this session's own
+   permission check as undermining oversight and reverted. In environments where the auto-mode check cannot judge
+   Write, the tester must grant edits under `e2e/` themselves.
+4. **`REPAIRED` vs `PASS`** for `app-mapper` (ambiguity 4).
+5. **`browserAllowedOrigins`.** Toolshop's API is on another origin; `app-mapper` on the live Toolshop would need
+   `"browserAllowedOrigins": ["https://api.practicesoftwaretesting.com"]` in `qa.config.json` (not tried: the starter
+   pack made `app-mapper` unnecessary on the live site).
+6. **The main thread may not run `qa-harness verify`.** Is that the reading of the "Who invokes it" column the design
+   wants (ambiguity 3)?
+
+## Measurements
+
+Wall-clock by `date -u` at the start of each stage:
+
+| Stage | From | To | Minutes |
+| --- | --- | --- | --- |
+| 0 workspace, docs | 02:12:45 | 02:16:49 | 4 |
+| 1 mechanics | 02:16:49 | 02:19:03 | 2 |
+| 2 shell and setup | 02:19:03 | 02:23:52 | 5 |
+| 3 flow up to the verdict, evals | 02:23:52 | 02:49:17 | 25 |
+| 4 live flow (started at minute 37) | 02:49:17 | 03:02:39 | 13 |
+| 5 app-mapper and triage | 03:02:39 | 03:09:36 | 7 (fixtures prepared during stage 4) |
+| 6 defect-designer, A7 | 03:05:52 | 03:09:36 | overlapping stage 5 |
+| final report | 03:10:36 | see the last commit | |
+
+Live invocations against https://practicesoftwaretesting.com: 6 of 10, all in stage 4 (F2 `run`, F2 `verify`, F3
+`run`, F3 `verify`, clone `run`, clone `verify`); all ended `PASS`. Plain HTTPS requests to the npm registry
+(`doctor` before setup, `npx` of the MCP server) are not counted.
+
+Nested-session cost in all: about $11 (mechanics and probes ≈ $0.6, evals $5.05, stage 4 $2.97, stage 5 $2.50, plus G-d).
+
+Plugin size: 10 skills (`SKILL.md` 39–127 lines, plus 5 files next to them), 3 agents, 8 scripts (+ 3 test files and
+4 fixtures), `evals/` 2 files.
+
+## Built but not exercised
+
+Every skill and agent ran at least once in a session (`setup` F1; `new-test` F2, F3, evals; `verify` A5; `triage` A6,
+G-a, G-a2, G-c; `contracts` read by all; `review-intent` F2, F3, A13; `run-verification` F2, F3, A5, G-b;
+`map-app-flow` G-b; `repair-locator` G-a2; `design-defects` A7). Not exercised by any session of this order:
+
+- **Hook rules** (unit tests only): `guard-paths` refusals for the main thread (`support/core/**`,
+  `support/harness/**`, `specs/*.intent.md`, `reports/**`), for `app-mapper` writing outside the driver and map, for
+  `defect-designer` writing outside its file; `NotebookEdit`; `guard-bash` for `npm run qa -- <sub>` forms and for
+  `defect-designer`'s subcommands. Exercised in sessions: `test-verifier` Write refused (H2), `test-verifier`
+  `compile` refused (H2), main thread `verify` refused (H0), agents' non-harness Bash refused (G-a2, G-b, and the
+  verifier in G-b), `--help` refused (F2, fixed).
+- **Verdict reactions**: `CONFORMANCE_FAIL`, `DEFECT_MISSED`, `PRECONDITION_FAIL`, `NO_TESTS_RUN`, `FLAKY` (all three
+  routes), `ORACLE_MISMATCH` from a run (A6 was answered by triage's step 0 without a run), `CONTROL_MISSED` (all three
+  routes), `HARNESS_MODIFIED`, `SCENARIO_CHANGED` from `doctor`, `VERIFICATION_STALE`, `RETRY_REFUSED`,
+  `LIMIT_REACHED`, `NEEDS_TESTER` from `test-verifier` or `app-mapper`, `REWORK` addressed to `app-mapper`, a second
+  intent `REWORK` round, the bug-report draft of triage, the flaky distribution of triage. Exercised: `SPEC_INVALID`
+  (intent missing), `INTENT_OK`, `REWORK` to the scenario (A13) and to the tester (A5), `FILE_CONFLICT` (A9),
+  `INFRA_FAIL` (A10, G-a), `LOCATOR_FAIL` (G-a2), `UNMODELED_ADJUSTMENT` (G-c), `LINT_FAIL` from `need` (G-b),
+  `DEFECT_LATE` (A5), `PASS`, `VERIFIED` (F2, F3, G-b).
+- **Paths of the flow**: the confirmation question without `--yes` and the answer "ok" in a second turn; resumption
+  after `INFRA_FAIL` or a turn limit (never needed); resumption at step 9 from promoted files; step 3b and `--risk` in a
+  live flow (only dry); `init` over an existing `e2e/` (update path) in a session; the MCP launcher before setup;
+  `browserAllowedOrigins`; installation from the marketplace (owner's step).
+
+## Hand-over for the final session
+
+From an empty repo, as a tester (the owner installs the plugin first: `claude plugin marketplace add <repo>` and
+`claude plugin install qa@cart-testing`, not run here):
+
+```text
+$ git init my-shop-tests && cd my-shop-tests && claude
+> /qa:setup toolshop https://practicesoftwaretesting.com
+```
+
+prints (F1, about 65 s): `qa-harness init` ended `VERDICT: PASS`; `e2e/` created with 75 template files; starter pack
+installed (3 files in `e2e/app/`); config `data-test`, en-US, USD, default defects; dependencies, Chromium, selftest
+12/12; next command; commit `e2e/`.
+
+```text
+> /qa:new-test "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
+```
+
+without `--yes` it shows the confirmation of 11.1 (products, the plugin's choices, the step table, the example on stub
+prices, the rule and its source, the assumptions) and asks "Confirm? (ok / correction)"; after `ok` it runs the intent
+review, compiles, runs the dry gates, the live run (3 repeats) and the verification (G0–G4, 4 live controls), promotes
+the run and prints the readback of 11.2 (F2, about 4 minutes, $1.16): "PASS 3/3 · test verified", products, the step
+table with expected and displayed amounts, evidence, scope, scenario gaps, rules, the rerun line
+`cd e2e && npm run qa -- run <slug>`, the files. With `--yes` it does the same without the question.
+
+```text
+$ git add e2e && git commit -m "verified cart test"
+$ cd e2e && npm run qa -- run <slug>          # rerun without the plugin (23 s, PASS 3/3)
+$ npm run qa -- verify <slug>                 # G0–G4 without the plugin (58 s, 4/4 controls)
+```
+
+`examples/toolshop/` can be built from `docs/evidence/d-flow/` (the scenarios, intent reviews, examples, compiled
+tests and promoted reports of F2 and F3).
+
+Known not to work or not verified:
+
+- In this environment the Write tool of a nested session is refused under `.worktrees/d-plugin/.sandbox/`; sessions
+  must run in a repo outside the worktree (open question 1).
+- A driver whose actions throw Playwright's own timeout turns a missing element into `INFRA_FAIL` (request 6); the
+  contract tells `app-mapper` to throw `LocatorError`, the control driver does not.
+- `doctor` lists `*.intent.md` as draft scenarios (request 1); `report.md` says the reviews are not available although
+  they are promoted (request 3).
+- `app-mapper` on a site whose API is on another origin needs `browserAllowedOrigins` (open question 5).
+- The first session after installation downloads `@playwright/mcp@0.0.86` through `npx -y`; time not measured.
+- Plugin evals: `claude plugin eval` cannot run the harness cases; `node evals/run.mjs <cases> --root <dir outside the
+  worktree> [--jobs n]` runs them (it builds `<dir>/eval-base` once with `qa-harness init`, about 65 s).
+- The README (40+ words for the directory checks) and a LICENSE are not part of this order.
+
