@@ -611,3 +611,18 @@ VERDICT: NO_TESTS_RUN
    total always equalled the subtotal or a line total ("the live run alone cannot tell those fields apart"); only
    `skew-total` (caught at S1 in every verification) shows the driver reads the "Total" row. With the eco rule in force
    (`wood-saw-qty-remove-other`), "At S1, S3, S4 it differed from the subtotal and from every line total".
+
+## Measurements
+
+| Stage | From (UTC) | To | Minutes |
+| --- | --- | --- | --- |
+| 0 workspace, baseline | 09:38:19 | 09:39:39 | 1.5 |
+| 1 promotion and the report's verdict | 09:39:39 | 09:44:36 | 5 |
+| 2 classification and conditions | 09:44:36 | 09:51:34 | 7 |
+| 3 tests per survivor (replay 09:55–10:13 in the background) | 09:51:34 | 10:13 | 22 (5 of own work) |
+| 4 remaining fixes | 09:55:41 | 09:59:30 | 4 |
+| 5 plugin side (evals 10:03–10:15 in the background) | 10:00:07 | 10:17:31 | 17 |
+| 6 live regression and examples | 10:03:45 | 10:29 | 25 |
+| exit criteria, report, F10 proof, replay on the final tree | 10:29 | 10:46 | 17 |
+
+Ended `Wed Nov 25 10:46 UTC 2026`, minute 68 of the 150-minute box; no stage was cut.
