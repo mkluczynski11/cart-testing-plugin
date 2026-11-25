@@ -5,6 +5,7 @@ import { files } from '../core/config';
 import { freezeMessage } from '../core/scenario';
 import { classify } from './classify';
 import { loadScenario, rel, type CommandResult, type Loaded } from './common';
+import { gateG1 } from './gates';
 import { runPlaywright, type PlaywrightRun } from './playwright-runner';
 import { createRunDir } from './run-dir';
 
@@ -34,13 +35,17 @@ export async function liveGate(loaded: Loaded, runDir: string): Promise<{ run: P
   return { run, verdict: c.verdict, lines };
 }
 
-export async function run(root: string, slug: string): Promise<CommandResult> {
+export async function run(root: string, slug: string, dry: boolean): Promise<CommandResult> {
   const got = loadScenario(root, slug);
   if (!got.ok) return got.result;
   const loaded = got.loaded;
   if (loaded.freeze !== 'frozen') return { verdict: 'SCENARIO_CHANGED', lines: [freezeMessage(loaded.freeze, slug)] };
   if (!fs.existsSync(files.test(root, slug))) return { verdict: 'FILE_CONFLICT', lines: [`${rel(root, files.test(root, slug))} does not exist; run qa-harness compile ${slug}.`] };
   const { runId, dir } = createRunDir(root, slug);
+  const lines = [`Run ${runId} of ${slug}${dry ? ' (dry)' : ''}`];
+  const g1 = await gateG1(loaded, `${dir}/dry/g1`);
+  lines.push(...g1.lines);
+  if (g1.verdict !== 'PASS' || dry) return { verdict: g1.verdict, lines: [...lines, `Evidence: ${rel(root, dir)}/`], data: { runId } };
   const g3 = await liveGate(loaded, dir);
-  return { verdict: g3.verdict, lines: [`Run ${runId} of ${slug}`, ...g3.lines, `Evidence: ${rel(root, dir)}/`], data: { runId } };
+  return { verdict: g3.verdict, lines: [...lines, ...g3.lines, `Evidence: ${rel(root, dir)}/`], data: { runId } };
 }

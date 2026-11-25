@@ -43,13 +43,14 @@ async function main(argv: string[]): Promise<CommandResult> {
   if (has('--help') || args.length === 0) return { ...usage('qa-harness subcommands:'), verdict: 'PASS' };
   const confirm = has('--confirm');
   const force = has('--force');
+  const dry = has('--dry');
   const [command, slug, ...rest] = args;
   const needSlug = () => (slug && SLUG.test(slug) && rest.length === 0 ? slug : undefined);
   switch (command) {
     case 'selftest': return selftest();
     case 'example': { const s = needSlug(); return s ? example(root, s, confirm) : usage('example needs one scenario slug.'); }
     case 'compile': { const s = needSlug(); return s ? compile(root, s, force) : usage('compile needs one scenario slug.'); }
-    case 'run': { const s = needSlug(); return s ? run(root, s) : usage('run needs one scenario slug.'); }
+    case 'run': { const s = needSlug(); return s ? run(root, s, dry) : usage('run needs one scenario slug.'); }
     default: return usage(`Unknown subcommand "${command}".`);
   }
 }
