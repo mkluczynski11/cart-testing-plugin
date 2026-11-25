@@ -1,4 +1,5 @@
 // Unit tests of support/core/live-controls.ts: bindings and the exact price raise of drift-price (design 10.6).
+// The in-page part of skew-total is exercised by the control-page row of selftest.
 import { expect, test } from '@playwright/test';
 import { bindingOf, raiseAt } from '../support/core/live-controls';
 import { EUR, USD } from './helpers';

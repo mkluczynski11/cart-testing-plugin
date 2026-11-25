@@ -1,4 +1,5 @@
 // Unit tests of support/core/checkpoint.ts: every layer of design 9.1 judged both ways, and the message.
+// Each test names one layer, a green or a red case, and asserts one thing.
 import { expect, test } from '@playwright/test';
 import { checkpointVerdict, formatMismatch, judge, type CheckContext } from '../support/core/checkpoint';
 import { Ledger } from '../support/core/ledger';

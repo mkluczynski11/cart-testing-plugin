@@ -5,7 +5,7 @@ Site: https://practicesoftwaretesting.com, page title "Practice Software Testing
 Browser: Playwright 1.65.1, Chromium, headless, `locale: 'en-US'`, no geolocation permission, a fresh context per test.
 
 Sources of evidence:
-- `docs/evidence/driver-lab/`: the driver lab (`scratch/driver-lab/driver.live.spec.ts`), final run
+- `docs/evidence/driver-lab/`: the driver lab (written in order B as `scratch/driver-lab/driver.live.spec.ts`, now `examples/toolshop/lab/driver.live.spec.ts`), final run
   `npx playwright test --repeat-each 3` (18/18 passed). JSON and screenshots are from the last repeat; all
   three repeats are in `runs.jsonl`, and the console output is in `repeat-each-3.log`.
 - `docs/evidence/explore/`: screenshots from the manual exploration in a browser before the driver existed.

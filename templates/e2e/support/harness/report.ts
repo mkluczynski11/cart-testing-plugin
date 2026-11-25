@@ -42,6 +42,11 @@ export function rerunCommand(root: string, slug: string): string {
   return root === pkg ? base : `${base} --root ${path.relative(pkg, root)}`;
 }
 
+/** A control's target for a table cell: the row label without its DOM fragment, the request without ids. */
+function readableTarget(target: string): string {
+  return target.replace(/: <[\s\S]*$/, ' (its DOM fragment is in verification.json)').replace(/, first [A-Z]+ \S+$/, '').replace(/\|/g, '\\|');
+}
+
 /** Does the run tell the total apart from the subtotal and from a single line? (10.6, scope of the evidence) */
 function scopeLine(cps: CheckpointRecord[]): string {
   const rows = [...new Set(cps.map((c) => total(c)?.label).filter(Boolean))].map((r) => `"${r}"`).join(', ') || 'none';
@@ -51,8 +56,8 @@ function scopeLine(cps: CheckpointRecord[]): string {
     return t !== undefined && t !== c.expected.subtotal && !lines.includes(t);
   }).map((c) => c.step);
   return apart.length
-    ? `The total was read from the row ${rows}; at ${apart.join(', ')} it differed from the subtotal and from every line total.`
-    : `The total was read from the row ${rows}; in this run it never differed from both the subtotal and every line total, so only the label-based control (skew-total) shows that the fields are told apart.`;
+    ? `The total was read from the row ${rows}. At ${apart.join(', ')} it differed from the subtotal and from every line total, so a driver reading another field would have failed there.`
+    : `The total was read from the row ${rows}. In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart; only the label-based control skew-total shows that the driver reads the total.`;
 }
 
 /** report.md: verdict, products, steps, evidence and its absence, scope, gaps, rules, rerun (11.2, 11.4). */
@@ -102,7 +107,7 @@ export function buildReport(root: string, slug: string, runDir: string, screens:
   out.push(`- Live run G3: ${g.G3 ?? 'not run'}${repeats.length ? `, ${passCount}/${repeats.length} repeats passed` : ''}; the test is ${ver?.testOrigin === 'edited' ? 'EDITED BY HAND' : 'the untouched compilation of the confirmed scenario'}.`);
   if (ver?.controls?.length) {
     out.push(`- Live controls G4: ${g.G4 ?? 'not run'}.`, '', '| Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |', '| --- | --- | --- | --- | --- | --- | --- |');
-    for (const c of ver.controls) out.push(`| ${c.control} | ${c.result} | ${c.activated === null ? '—' : c.activated ? 'yes' : 'no'} | ${c.target.replace(/\|/g, '\\|')} | ${c.shownAtRead ?? '—'} | ${c.reactedAt ?? '—'} | ${c.expected}${c.note ? ` (${c.note})` : ''} |`);
+    for (const c of ver.controls) out.push(`| ${c.control} | ${c.result} | ${c.activated === null ? '—' : c.activated ? 'yes' : 'no'} | ${readableTarget(c.target)} | ${c.shownAtRead ?? '—'} | ${c.reactedAt ?? '—'} | ${c.expected}${c.note ? ` (${c.note})` : ''} |`);
     out.push('');
   } else out.push('- **Not available:** live controls G4 were not run (`qa-harness verify` runs them after a green G3).');
   out.push('- **Not available:** the intent review and the report review are written by an agent, not by the harness; none is part of this run.');

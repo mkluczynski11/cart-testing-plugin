@@ -1,4 +1,5 @@
 // Helpers for the unit tests: scenarios from YAML text, the reference rules and amount formats.
+// Not a test file: Playwright collects only *.spec.ts from unit/.
 import { amountFormat } from '../support/core/money';
 import type { PricingModule, PricingRule } from '../support/core/pricing';
 import { parseScenarioText, type Scenario } from '../support/core/scenario';

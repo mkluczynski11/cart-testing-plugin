@@ -1,4 +1,5 @@
 // Unit tests of support/harness/lint.ts: the static gate G0 (design 7.4, order N 6.3), both ways.
+// The compiled golden test is the green case; each red case adds one forbidden pattern.
 import { expect, test } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

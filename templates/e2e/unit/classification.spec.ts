@@ -1,4 +1,5 @@
 // Unit tests of support/core/classification.ts: the classification order of design 6.1.
+// Each test is one crafted set of repeats and the verdict it must give.
 import { expect, test } from '@playwright/test';
 import type { CheckpointRecord } from '../support/core/checkpoint';
 import { classify, type RepeatRecord } from '../support/core/classification';

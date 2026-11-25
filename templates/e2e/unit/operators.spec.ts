@@ -1,4 +1,5 @@
 // Unit tests of support/core/operators.ts and reference-cart.ts: derived defects (design 10.3) and their effects.
+// The reference cart runs the reference scenario on the example stubs.
 import { expect, test } from '@playwright/test';
 import { buildExample, stubCatalog } from '../support/core/example';
 import { deriveDefects, type Defect } from '../support/core/operators';

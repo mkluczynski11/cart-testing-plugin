@@ -117,7 +117,7 @@ export const CONTROL_PAGE: Row = {
       const w = await verify(bad, 'control-equal');
       const skew = ((w.data?.controls ?? []) as Facts).find((c) => c.control === 'skew-total');
       check(w.verdict === 'CONTROL_MISSED' && skew?.evidence === 'active-shown-green', `the wrong driver with equal values: ${w.verdict}, skew-total ${skew?.result} (${skew?.evidence}) | ${w.lines.slice(1, 5).join(' | ')}`);
-      const d = await run(bad, 'control-discount', false);
+      const d = await run(bad, 'control-discount', { dry: false });
       const rec = JSON.parse(fs.readFileSync(path.join(files.runs(bad, 'control-discount'), d.data?.runId as string, 'run.json'), 'utf8')) as { repeats: Array<{ checkpoints: Array<{ layer?: string }> }> };
       check(d.verdict === 'LOCATOR_FAIL' && rec.repeats[0]?.checkpoints[0]?.layer === 'labels', `the wrong driver with a discount: ${d.verdict}, layer ${rec.repeats[0]?.checkpoints[0]?.layer}`);
       return 'correct driver passes G3 and G4 (4/4 controls); wrong driver passes G3 on equal values, G4 CONTROL_MISSED "control active, test green"; with a discount LOCATOR_FAIL at the label layer';
@@ -215,7 +215,7 @@ const ROWS: Row[] = [
       const notes: string[] = [];
       for (const slug of [REF, 'swapped-objects', 'green-threshold']) {
         prepare(root, slug);
-        const r = await run(root, slug, true);
+        const r = await run(root, slug, { dry: true });
         expectVerdict(r, 'PASS', `run ${slug} --dry`);
         const rows = r.data?.rows as Array<{ result: string }>;
         notes.push(`${slug} ${rows.filter((x) => x.result === 'detected').length}/${rows.length}`);
@@ -254,7 +254,7 @@ const ROWS: Row[] = [
       const root = workspace('classification', [REF, 'green-threshold']);
       prepare(root, REF);
       prepare(root, 'green-threshold');
-      expectVerdict(await run(root, REF, false), 'INFRA_FAIL', 'a live run against an unreachable address');
+      expectVerdict(await run(root, REF, { dry: false }), 'INFRA_FAIL', 'a live run against an unreachable address');
       const green = loadedOf(root, 'green-threshold');
       const outOfStock = exampleCatalog(green).map((c, i) => (i === 0 ? { ...c, inStock: false } : c));
       const pre = classify(await dryRun(green, path.join(root, 'pre'), { catalog: outOfStock }), green.scenario.checkpoints);
@@ -276,7 +276,7 @@ const ROWS: Row[] = [
     run: async () => {
       const root = workspace('parallelism', [REF]);
       prepare(root, REF);
-      const [a, b] = await Promise.all([run(root, REF, true), run(root, REF, true)]);
+      const [a, b] = await Promise.all([run(root, REF, { dry: true }), run(root, REF, { dry: true })]);
       const ids = [a.data?.runId, b.data?.runId] as string[];
       check(a.verdict === 'PASS' && b.verdict === 'PASS', `parallel dry runs ended ${a.verdict} and ${b.verdict}`);
       check(ids[0] !== ids[1], 'two runs got the same run directory');

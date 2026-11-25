@@ -176,7 +176,8 @@ export function formatMismatch(stepId: string, action: string, findings: Finding
     ...(head.diff ? [`  diff:      ${head.diff}`] : []),
     `  layer:     ${cause.layer} · ${cause.detail}`,
   ];
-  if (findings.length > 1) lines.push(`  also:      ${findings.filter((f) => f !== head && f !== cause).map((f) => `${f.layer}: ${f.detail}`).join('; ') || 'nothing else'}`);
+  const others = findings.filter((f) => f !== head && f !== cause);
+  if (others.length) lines.push(`  also:      ${others.map((f) => `${f.layer}: ${f.detail}`).join('; ')}`);
   return lines.join('\n');
 }
 

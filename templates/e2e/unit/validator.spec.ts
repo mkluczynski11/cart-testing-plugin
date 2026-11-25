@@ -1,4 +1,5 @@
 // Unit tests of support/core/validator.ts: each rule V1–V8 of design 8.1 is broken once, and holds.
+// Every rule is broken once by a minimal change to the reference scenario.
 import { expect, test } from '@playwright/test';
 import { validateScenario, type RuleId } from '../support/core/validator';
 import { dataOf, REFERENCE, STEPS, yaml } from './helpers';

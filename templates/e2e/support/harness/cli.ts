@@ -30,7 +30,7 @@ const HELP: Array<[string, string]> = [
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 function usage(problem: string): CommandResult {
-  return { verdict: 'SPEC_INVALID', lines: [problem, 'usage: qa-harness <subcommand> [--root <dir>]', ...HELP.map(([c, d]) => `  ${c.padEnd(30)} ${d}`)] };
+  return { verdict: 'SPEC_INVALID', lines: [problem, 'usage: qa-harness <subcommand> [--root <dir>]', ...HELP.map(([c, d]) => `  ${c.padEnd(42)} ${d}`)] };
 }
 
 async function main(argv: string[]): Promise<CommandResult> {

@@ -1,17 +1,17 @@
 {
   "meta": {
-    "runId": "20261125T012028Z-8ed3",
+    "runId": "20261125T012823Z-d8c5",
     "slug": "cart-total-add-change-remove",
     "scenarioSha256": "8be11fbd3da03858e77291ce6ead958b5e2314386b4d5da52cd278987d83e4be",
     "testSha256": "207ddd82b4c716a72603cd4ad4240e529a065728543eed551172ff20055ede56",
     "testOrigin": "compiled",
-    "timestamp": "2026-11-25T01:20:31Z",
+    "timestamp": "2026-11-25T01:28:25Z",
     "baseURL": "https://practicesoftwaretesting.com",
     "browser": "chromium",
     "locale": "en-US",
     "priceSource": "ui",
     "pluginVersion": "0.1.0",
-    "gitSha": "a1737a6",
+    "gitSha": "843d254",
     "mode": "live",
     "defect": null,
     "checkpoints": [
@@ -76,7 +76,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 878,
+          "elapsedMs": 283,
           "screenshot": "S1.png"
         },
         {
@@ -215,8 +215,8 @@
             }
           },
           "result": "pass",
-          "reads": 26,
-          "elapsedMs": 119,
+          "reads": 24,
+          "elapsedMs": 116,
           "screenshot": "S3.png"
         },
         {
@@ -266,11 +266,11 @@
           },
           "result": "pass",
           "reads": 25,
-          "elapsedMs": 114,
+          "elapsedMs": 112,
           "screenshot": "S4.png"
         }
       ],
-      "durationMs": 5949
+      "durationMs": 5124
     },
     {
       "n": 2,
@@ -325,7 +325,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 372,
+          "elapsedMs": 275,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S1.png"
         },
         {
@@ -395,7 +395,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 237,
+          "elapsedMs": 238,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S2.png"
         },
         {
@@ -464,8 +464,8 @@
             }
           },
           "result": "pass",
-          "reads": 23,
-          "elapsedMs": 117,
+          "reads": 24,
+          "elapsedMs": 116,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S3.png"
         },
         {
@@ -514,12 +514,12 @@
             }
           },
           "result": "pass",
-          "reads": 28,
-          "elapsedMs": 125,
+          "reads": 30,
+          "elapsedMs": 131,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat1/S4.png"
         }
       ],
-      "durationMs": 5406
+      "durationMs": 4878
     },
     {
       "n": 3,
@@ -574,7 +574,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 275,
+          "elapsedMs": 276,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S1.png"
         },
         {
@@ -644,7 +644,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 239,
+          "elapsedMs": 336,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S2.png"
         },
         {
@@ -713,8 +713,8 @@
             }
           },
           "result": "pass",
-          "reads": 21,
-          "elapsedMs": 115,
+          "reads": 24,
+          "elapsedMs": 112,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S3.png"
         },
         {
@@ -763,12 +763,12 @@
             }
           },
           "result": "pass",
-          "reads": 22,
-          "elapsedMs": 114,
+          "reads": 26,
+          "elapsedMs": 112,
           "screenshot": "artifacts/cart-total-add-change-remo-382af--quantity-change-and-remove-live-repeat2/S4.png"
         }
       ],
-      "durationMs": 5292
+      "durationMs": 4886
     }
   ],
   "errors": []

@@ -1,4 +1,5 @@
 // Unit tests of support/core/example.ts: stubs, the attribute search and scenario gaps (order N, 6.1).
+// The reference rules file is the selftest app `reference` (support/harness/fixtures).
 import { expect, test } from '@playwright/test';
 import { buildExample, buildStubs, stubCatalog } from '../support/core/example';
 import { NO_RULES, REFERENCE, scenario, STEPS, USD } from './helpers';

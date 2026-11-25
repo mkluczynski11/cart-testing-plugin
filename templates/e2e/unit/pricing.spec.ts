@@ -1,4 +1,5 @@
 // Unit tests of support/core/pricing.ts: the rule vocabulary of design 9.2 and the operator tweaks.
+// Each test is one condition or one amount of the vocabulary, or one operator tweak.
 import { expect, test } from '@playwright/test';
 import { decimalText, fromDecimal } from '../support/core/money';
 import { applyRules, conditionHolds, type PricingRule } from '../support/core/pricing';

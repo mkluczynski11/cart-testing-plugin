@@ -1,7 +1,6 @@
-// Business rules as data and their evaluation on exact values.
-// Implements design 9.2 (vocabulary, provenance, constraints) and the rule order of 9.3.
-// Rules only reduce the total in v1: every amount is a deduction. A surcharge cannot be written in this
-// vocabulary; such a rule is a candidate for extending the plugin, not for a negative rate.
+// Business rules as data and their evaluation on exact values: design 9.2 (vocabulary, provenance,
+// constraints) and the rule order of 9.3. Rules only reduce the total in v1: every amount is a deduction;
+// a surcharge cannot be written in this vocabulary and is a candidate for extending the plugin, not a negative rate.
 import { compare, fromDecimal, parseRatio, scale, sub, type Ratio } from './money';
 import type { Money } from './types';
 

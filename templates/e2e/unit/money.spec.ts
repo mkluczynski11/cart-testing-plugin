@@ -1,4 +1,5 @@
 // Unit tests of support/core/money.ts: exact amounts, the locale parser and the tolerance (design 9.3).
+// Each test is one format or one rule of the arithmetic; no amount passes through a float.
 import { expect, test } from '@playwright/test';
 import { add, cents, formatCents, fromDecimal, money, parseAmount, roundToCents, truncToCents, withinHalfCent } from '../support/core/money';
 import { EUR, USD } from './helpers';

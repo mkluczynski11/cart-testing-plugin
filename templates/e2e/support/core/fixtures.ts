@@ -1,7 +1,6 @@
 // Playwright fixtures of a compiled test: the shopper on the live application or on the reference cart.
-// Implements design 8.4 (injection, isolation, preconditions) and order N, section 6.8.
-// Project `dry` runs the reference cart and never starts a browser; every other project drives the
-// application through app/<app>.driver.ts in a fresh browser context per test.
+// Implements design 8.4 (injection, isolation, preconditions) and order N, 6.8. Project `dry` never starts a
+// browser; `live` drives app/<app>.driver.ts in a fresh browser and context per test.
 import { test as base, type Browser, type BrowserContext, type Page, type PlaywrightWorkerArgs, type TestInfo } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

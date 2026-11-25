@@ -1,7 +1,6 @@
 // The shopper: performs the compiled test's actions through a driver and keeps the ledger in step.
-// Implements design 8.4 (allowed calls), 9.1 (soft checkpoints) and 6.8 of order N (price source).
-// After a red checkpoint the shopper continues from the expected state; the test fails at its end
-// with the first mismatch as its error, so every checkpoint is judged.
+// Implements design 8.4 (allowed calls), 9.1 (soft checkpoints: after a red one it goes on from the expected
+// state and fails at the end with the first mismatch) and order N, 6.8 (price source).
 import { checkpointVerdict, displayedRecord, expectedRecord, formatMismatch, pollCart, type CheckContext, type CheckpointRecord, type Finding } from './checkpoint';
 import { Ledger } from './ledger';
 import { compare, formatMoney, type AmountFormat } from './money';

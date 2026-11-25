@@ -116,8 +116,8 @@ export function finishRun(loaded: Loaded, dir: string, verdict: Verdict): void {
 
 export type RunOptions = { dry: boolean; repair?: RepairTarget };
 
-export async function run(root: string, slug: string, opts: RunOptions | boolean): Promise<CommandResult> {
-  const { dry, repair } = typeof opts === 'boolean' ? { dry: opts, repair: undefined } : opts;
+export async function run(root: string, slug: string, opts: RunOptions): Promise<CommandResult> {
+  const { dry, repair } = opts;
   const got = loadScenario(root, slug);
   if (!got.ok) return got.result;
   const loaded = got.loaded;

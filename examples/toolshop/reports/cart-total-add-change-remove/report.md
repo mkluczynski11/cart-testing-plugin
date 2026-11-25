@@ -1,6 +1,6 @@
 # Cart total stays correct after add, quantity change and remove
 
-**PASS 3/3** · scenario `cart-total-add-change-remove` · run `20261125T012028Z-8ed3` · 2026-11-25T01:20:31Z · https://practicesoftwaretesting.com · Chromium, en-US
+**PASS 3/3** · scenario `cart-total-add-change-remove` · run `20261125T012823Z-d8c5` · 2026-11-25T01:28:25Z · https://practicesoftwaretesting.com · Chromium, en-US
 
 The tester asked: "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
 
@@ -29,16 +29,16 @@ The tester asked: "Add two different products to the cart. Change the quantity o
 
 | Control | Result | Activated | Element or request changed | Shown at the read | First red | Expected |
 | --- | --- | --- | --- | --- | --- | --- |
-| skew-total | caught | yes | row "Total": <tr _ngcontent-ng-c2879330868=""><td _ngcontent-ng-c2879330868="" class="col-md-5"></td><td _ngcontent-ng-c2879330868="" class="col-md-2"></td><td _ngcontent-ng-c2879330868="" class="col-md-2 text-end"><strong _ngcontent-ng-c2879330868="">Total</strong></td><td _ngcontent-ng-c2879330868="" data-test | "$42.46" (driver read "$14.16", "$26.17", "$54.47", "$42.46") | S1 | every checkpoint with a total red by exactly +$0.01 |
-| drift-price | caught | yes | GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7, first GET /carts/01m884ned9bzgkpz4vcmeawq5w | "$14.16" at S1 | S1 | first red at S1 |
-| lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted, first PUT /carts/01m884nqt32rj8nywyvn93229j/product/quantity | "$26.16" at S3 | S3 | first red at S3 |
-| lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted, first DELETE /carts/01m884nzddt7ft9aa0gxeanjb5/product/01M883FHGXWRBED9KWRWAGA10B | "$54.46" at S4 | S4 | first red at S4 |
+| skew-total | caught | yes | row "Total" (its DOM fragment is in verification.json) | the driver read "$14.16" at S1, "$26.17" at S2, "$54.47" at S3, "$42.46" at S4 | S1 | every checkpoint with a total red by exactly +$0.01 |
+| drift-price | caught | yes | GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7 | total "$14.16" at S1, expected $14.15 | S1 | first red at S1 |
+| lost-update | caught | yes | PUT **/carts/*/product/quantity: 1 request(s) intercepted | total "$26.16" at S3, expected $54.46 | S3 | first red at S3 |
+| lost-remove | caught | yes | DELETE **/carts/*/product/*: 1 request(s) intercepted | total "$54.46" at S4, expected $42.45 | S4 | first red at S4 |
 
 - **Not available:** the intent review and the report review are written by an agent, not by the harness; none is part of this run.
 
 ## Scope
 
-The total was read from the row "Total"; in this run it never differed from both the subtotal and every line total, so only the label-based control (skew-total) shows that the fields are told apart.
+The total was read from the row "Total". In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart; only the label-based control skew-total shows that the driver reads the total.
 
 ## Scenario gaps
 

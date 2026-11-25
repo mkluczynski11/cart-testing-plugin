@@ -1,4 +1,5 @@
 // Unit tests of support/core/compiler.ts: the file shape of design 8.4 and the compile contract of 6.1.
+// The golden file is support/harness/fixtures/golden/reference.spec.txt.
 import { expect, test } from '@playwright/test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';

@@ -1,4 +1,5 @@
 // Unit tests of support/core/shopper.ts and selection.ts: product selection (design 8.3) and soft checkpoints (9.1).
+// The shopper runs on the reference cart without a browser; test.step is replaced by a call.
 import { expect, test } from '@playwright/test';
 import type { CheckpointRecord } from '../support/core/checkpoint';
 import { buildExample, stubCatalog } from '../support/core/example';

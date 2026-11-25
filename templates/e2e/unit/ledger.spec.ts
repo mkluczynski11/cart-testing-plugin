@@ -1,4 +1,5 @@
 // Unit tests of support/core/ledger.ts: the step semantics table of design 8.1 and the priced ledger.
+// Each test is one row of the semantics table or one property of the expected amounts.
 import { expect, test } from '@playwright/test';
 import { applyAction, checkAction, Ledger, type QtyState } from '../support/core/ledger';
 import { decimalText, fromDecimal } from '../support/core/money';

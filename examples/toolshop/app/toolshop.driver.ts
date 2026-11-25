@@ -89,11 +89,25 @@ export function createDriver(page: Page, options: DriverOptions): CartDriver {
   const cardByName = (name: string) =>
     productCards().filter({ has: page.getByTestId('product-name').filter({ hasText: exactText(name) }) });
 
+  /**
+   * Opens the home page and waits for its product listing. The listing request (`QUERY /products`) must be
+   * answered first: no answer is the environment (InfraError), an answer without cards is a locator problem.
+   */
+  async function openListing(action: string): Promise<void> {
+    const listing = page.waitForResponse((r) => new URL(r.url()).pathname === '/products', { timeout: actionMs });
+    listing.catch(() => undefined);
+    await navigate(action, '/');
+    const response = await listing.catch(() => {
+      throw new InfraError(`${action}: the application's API did not answer the product listing within ${actionMs} ms.`);
+    });
+    if (response.status() >= 500) throw new InfraError(`${action}: the product listing answered HTTP ${response.status()}.`);
+    await onLocator(action, productCards().first(), (l) => l.waitFor({ timeout: actionMs }));
+  }
+
   /** Opens a product page the way a shopper does: search for the name, click the matching card. */
   async function openProduct(action: string, name: string): Promise<void> {
-    await navigate(action, '/');
     // The initial listing must be rendered first: a late listing response overwrites search results.
-    await onLocator(action, productCards().first(), (l) => l.waitFor({ timeout: actionMs }));
+    await openListing(action);
     await onLocator(action, page.getByTestId('search-query'), (l) => l.fill(name, { timeout: actionMs }));
     const searched = page.waitForResponse((r) => new URL(r.url()).pathname === '/products/search', { timeout: actionMs });
     searched.catch(() => undefined);
@@ -130,8 +144,7 @@ export function createDriver(page: Page, options: DriverOptions): CartDriver {
       const action = 'candidates';
       for (let pageNo = 1; ; pageNo++) {
         // Re-enter the listing on every page: the caller may have navigated away in between.
-        await navigate(action, '/');
-        await onLocator(action, productCards().first(), (l) => l.waitFor({ timeout: actionMs }));
+        await openListing(action);
         for (let p = 2; p <= pageNo; p++) {
           const button = page.getByRole('button', { name: `Page-${p}`, exact: true });
           if ((await button.count()) === 0) return; // no further page in the listing

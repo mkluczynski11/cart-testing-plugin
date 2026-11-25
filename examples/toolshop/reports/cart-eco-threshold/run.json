@@ -1,17 +1,17 @@
 {
   "meta": {
-    "runId": "20261125T012124Z-9d5f",
+    "runId": "20261125T012915Z-a9a2",
     "slug": "cart-eco-threshold",
     "scenarioSha256": "f5ce2ce0910463f9fe94abdf243fee6651770f4d56c23a64e9ce12281feb5cf1",
     "testSha256": "e99e9ce77966d895c511d4ca595d17054e892398b8a28715862ec6361bca08b9",
     "testOrigin": "compiled",
-    "timestamp": "2026-11-25T01:21:26Z",
+    "timestamp": "2026-11-25T01:29:17Z",
     "baseURL": "https://practicesoftwaretesting.com",
     "browser": "chromium",
     "locale": "en-US",
     "priceSource": "ui",
     "pluginVersion": "0.1.0",
-    "gitSha": "a1737a6",
+    "gitSha": "843d254",
     "mode": "live",
     "defect": null,
     "checkpoints": [
@@ -92,7 +92,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 273,
+          "elapsedMs": 274,
           "screenshot": "S1.png"
         },
         {
@@ -162,7 +162,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 238,
+          "elapsedMs": 237,
           "screenshot": "S2.png"
         },
         {
@@ -248,7 +248,7 @@
           },
           "result": "pass",
           "reads": 22,
-          "elapsedMs": 122,
+          "elapsedMs": 115,
           "screenshot": "S3.png"
         },
         {
@@ -313,12 +313,12 @@
             }
           },
           "result": "pass",
-          "reads": 27,
-          "elapsedMs": 119,
+          "reads": 26,
+          "elapsedMs": 122,
           "screenshot": "S4.png"
         }
       ],
-      "durationMs": 5078
+      "durationMs": 4661
     },
     {
       "n": 2,
@@ -389,7 +389,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 302,
+          "elapsedMs": 277,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S1.png"
         },
         {
@@ -459,7 +459,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 241,
+          "elapsedMs": 341,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S2.png"
         },
         {
@@ -544,8 +544,8 @@
             }
           },
           "result": "pass",
-          "reads": 23,
-          "elapsedMs": 122,
+          "reads": 21,
+          "elapsedMs": 113,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S3.png"
         },
         {
@@ -610,12 +610,12 @@
             }
           },
           "result": "pass",
-          "reads": 22,
-          "elapsedMs": 117,
+          "reads": 20,
+          "elapsedMs": 114,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat1/S4.png"
         }
       ],
-      "durationMs": 5275
+      "durationMs": 4854
     },
     {
       "n": 3,
@@ -686,7 +686,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 395,
+          "elapsedMs": 374,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S1.png"
         },
         {
@@ -756,7 +756,7 @@
           },
           "result": "pass",
           "reads": 1,
-          "elapsedMs": 240,
+          "elapsedMs": 236,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S2.png"
         },
         {
@@ -842,7 +842,7 @@
           },
           "result": "pass",
           "reads": 24,
-          "elapsedMs": 123,
+          "elapsedMs": 115,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S3.png"
         },
         {
@@ -907,12 +907,12 @@
             }
           },
           "result": "pass",
-          "reads": 23,
+          "reads": 26,
           "elapsedMs": 116,
           "screenshot": "artifacts/cart-eco-threshold-Eco-dis-7fdde--quantity-change-and-remove-live-repeat2/S4.png"
         }
       ],
-      "durationMs": 5238
+      "durationMs": 4828
     }
   ],
   "errors": []

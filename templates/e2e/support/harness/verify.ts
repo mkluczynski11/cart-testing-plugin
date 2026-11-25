@@ -49,7 +49,7 @@ export function judgeControl(loaded: Loaded, name: ControlName, run: RunRecord, 
     return {
       control: name, result: caught ? 'caught' : 'missed', activated, evidence,
       target: last ? `row "${last.label}": ${last.rowHtml}` : 'no row with the total label and exactly one amount',
-      shownAtRead: last ? `"${last.shown[last.shown.length - 1]}" (driver read ${withTotal.map((c) => `"${total(c)?.rawText}"`).join(', ')})` : null,
+      shownAtRead: last ? `the driver read ${withTotal.map((c) => `"${total(c)?.rawText}" at ${c.step}`).join(', ')}` : null,
       reactedAt: firstRed, expected: `every checkpoint with a total red by exactly +${formatMoney(fromDecimal('0.01', fmt.currency), fmt)}`,
     };
   }
@@ -64,7 +64,7 @@ export function judgeControl(loaded: Loaded, name: ControlName, run: RunRecord, 
     target: log?.binding
       ? `${log.binding}: ${log.intercepted.length} request(s) intercepted${name === 'drift-price' ? `, the first line's price raised in ${log.raised}` : ''}${log.intercepted[0] ? `, first ${log.intercepted[0]}` : ''}`
       : 'no binding',
-    shownAtRead: at && total(at) ? `"${total(at)?.rawText}" at ${at.step}` : null,
+    shownAtRead: at && total(at) ? `total "${total(at)?.rawText}" at ${at.step}, expected ${at.expected.composition.split(' = ')[0]}` : null,
     reactedAt: firstRed, expected: `first red at ${expectedAt}`,
   };
 }
