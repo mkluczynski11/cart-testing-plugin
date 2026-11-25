@@ -81,3 +81,17 @@ the line in every session; no session showed the confirmation under `--yes`. G2 
 | 50 | round 4 | A7 extended defects, dry | FAIL | 16 | $0.35 | 63 s | 4 of 5 ok; same FAIL | — |
 
 Totals of order E: 12 sessions, $3.71; every check other than the new one passed in all 12.
+
+Follow-up to order E: the defects-line check taken out of A4, A7 and R1; new case R2 (`/qa:new-test "<reference
+request>"` without `--yes`: the answer ends at "Confirm?", the line before it is the first line of
+`qa-harness defects check`, the scenario stays a draft). One run 11:51–11:52 UTC with `node evals/run.mjs --root
+<session scratch>/ev --jobs 4 A4 A7 R1 R2`, sonnet.
+
+| # | UTC | Case | Result | Turns | Cost | Time | Checks | Changed because of it |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 51 | 11:51–11:52 | R2 confirmation without --yes names the defects | PASS | 9 | $0.18 | 21 s | ok the answer ends at "Confirm?"; ok the line before it is the first line of qa-harness defects check; ok the scenario is a draft and no test exists | — |
+| 52 | 11:51–11:52 | A4 reference scenario, dry | FAIL | 14 | $0.29 | 50 s | FAIL intent review current (no intent PASS); FAIL the test comes from qa-harness compile; 4 others ok | — (grader: the transcript logs each tool call again after its result and `evals/run.mjs` keeps the later, empty entry; the session's own `intent` and `compile` ended `PASS`; regraded from the same transcript with the first entry kept: 6 of 6 ok) |
+| 53 | 11:51–11:52 | R1 a tester concern through --risk | PASS | 17 | $0.32 | 57 s | ok tester entry admitted; ok defect-designer did not run; ok G0-G2 green | — |
+| 54 | 11:51–11:52 | A7 extended defects, dry | PASS | 16 | $0.38 | 72 s | ok defect-designer ran; ok defects file before the test; ok every entry admitted; ok G0-G2 green | — |
+
+Totals: 4 sessions, $1.17.

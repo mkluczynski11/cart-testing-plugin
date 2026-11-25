@@ -66,14 +66,12 @@ function transcript(sessionId) {
     if (fs.existsSync(sub)) for (const f of fs.readdirSync(sub)) if (f.endsWith('.jsonl')) files.push(path.join(sub, f));
   }
   const calls = new Map();
-  const texts = [];
   for (const f of files) {
     for (const line of fs.readFileSync(f, 'utf8').split('\n')) {
       let o;
       try { o = JSON.parse(line); } catch { continue; }
       const content = Array.isArray(o?.message?.content) ? o.message.content : [];
       for (const part of content) {
-        if (part.type === 'text' && o.message.role === 'assistant' && !f.includes(`${path.sep}subagents${path.sep}`)) texts.push(part.text);
         if (part.type === 'tool_use') calls.set(part.id, { name: part.name, input: part.input, result: '', file: path.basename(f) });
         if (part.type === 'tool_result' && calls.has(part.tool_use_id)) {
           const text = Array.isArray(part.content) ? part.content.map((x) => x.text ?? '').join('\n') : String(part.content ?? '');
@@ -82,7 +80,7 @@ function transcript(sessionId) {
       }
     }
   }
-  return { calls: [...calls.values()], texts };
+  return [...calls.values()];
 }
 
 function runSession(c, ctx) {
@@ -108,8 +106,8 @@ function runSession(c, ctx) {
 async function runCase(c) {
   const ctx = prepare(c);
   const { code, json, seconds } = await runSession(c, ctx);
-  const { calls, texts } = json.session_id ? transcript(json.session_id) : { calls: [], texts: [] };
-  const facts = { ...ctx, json, calls, texts, answer: String(json.result ?? '') };
+  const calls = json.session_id ? transcript(json.session_id) : [];
+  const facts = { ...ctx, json, calls, answer: String(json.result ?? '') };
   const checks = c.checks.map(([what, fn]) => {
     try { const r = fn(facts); return { what, ok: r === true, note: r === true ? '' : String(r) }; } catch (e) { return { what, ok: false, note: e.message }; }
   });
