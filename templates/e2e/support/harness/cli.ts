@@ -10,6 +10,7 @@ import { defectsCommand } from './defects';
 import { doctor } from './doctor';
 import { example } from './example';
 import { need } from './need';
+import { report } from './report';
 import { run } from './run';
 import { selftest } from './selftest';
 
@@ -20,7 +21,8 @@ const HELP: Array<[string, string]> = [
   ['compile <slug> [--force]', 'emit tests/<slug>.spec.ts from the confirmed scenario'],
   ['need <slug>', 'name the actions, attributes and bindings the driver is missing'],
   ['defects list|check <slug>', 'list the default defects; admit or reject specs/<slug>.defects.json'],
-  ['run <slug> [--dry]', 'gates G0–G2 on the reference cart, or G0–G3 with a live run'],
+  ['run <slug> [--dry] [--repair driver|test]', 'gates G0–G2 on the reference cart, or G0–G3 live'],
+  ['report <slug> [--promote <runId>]', 'write report.md of the latest run; --promote puts a run in the repo'],
 ];
 
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
@@ -47,6 +49,8 @@ async function main(argv: string[]): Promise<CommandResult> {
   if (rootArg) process.env.QA_ROOT = path.resolve(rootArg);
   const root = qaRoot();
   if (has('--help') || args.length === 0) return { ...usage('qa-harness subcommands:'), verdict: 'PASS' };
+  const promote = take('--promote');
+  const repair = take('--repair');
   const confirm = has('--confirm');
   const force = has('--force');
   const dry = has('--dry');
@@ -64,7 +68,13 @@ async function main(argv: string[]): Promise<CommandResult> {
     }
     case 'example': { const s = needSlug(); return s ? example(root, s, confirm) : usage('example needs one scenario slug.'); }
     case 'compile': { const s = needSlug(); return s ? compile(root, s, force) : usage('compile needs one scenario slug.'); }
-    case 'run': { const s = needSlug(); return s ? run(root, s, dry) : usage('run needs one scenario slug.'); }
+    case 'run': {
+      const s = needSlug();
+      if (!s) return usage('run needs one scenario slug.');
+      if (repair !== undefined && repair !== 'driver' && repair !== 'test') return usage('--repair takes driver or test.');
+      return run(root, s, { dry, repair });
+    }
+    case 'report': { const s = needSlug(); return s ? report(root, s, promote) : usage('report needs one scenario slug.'); }
     default: return usage(`Unknown subcommand "${command}".`);
   }
 }

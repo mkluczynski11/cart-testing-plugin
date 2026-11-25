@@ -1,0 +1,77 @@
+{
+  "scenario": "cart-eco-threshold",
+  "currency": "USD",
+  "note": "Stub products and prices, not the application's: they show how the rules behave. Real prices are read during the live run.",
+  "stub": {
+    "A": {
+      "name": "Wood Saw",
+      "price": "10.00",
+      "attrs": {
+        "co2_rating": "A"
+      }
+    },
+    "B": {
+      "name": "Product B",
+      "price": "20.00",
+      "attrs": {
+        "co2_rating": "C"
+      }
+    }
+  },
+  "rules": [
+    "eco-discount: 5% of the running value off when more than 0.5 of the units have co2_rating A or B"
+  ],
+  "expected": [
+    {
+      "step": "S1",
+      "action": "add A 1",
+      "cart": "A×1",
+      "subtotal": "10.00",
+      "adjustments": {
+        "eco-discount": "0.50"
+      },
+      "total": "9.50",
+      "totalExact": "19/2",
+      "checkpoint": true
+    },
+    {
+      "step": "S2",
+      "action": "add B 2",
+      "cart": "A×1, B×2",
+      "subtotal": "50.00",
+      "adjustments": {},
+      "total": "50.00",
+      "totalExact": "50/1",
+      "checkpoint": true
+    },
+    {
+      "step": "S3",
+      "action": "setQty A 3",
+      "cart": "A×3, B×2",
+      "subtotal": "70.00",
+      "adjustments": {
+        "eco-discount": "3.50"
+      },
+      "total": "66.50",
+      "totalExact": "133/2",
+      "checkpoint": true
+    },
+    {
+      "step": "S4",
+      "action": "remove B",
+      "cart": "A×3",
+      "subtotal": "30.00",
+      "adjustments": {
+        "eco-discount": "1.50"
+      },
+      "total": "28.50",
+      "totalExact": "57/2",
+      "checkpoint": true
+    }
+  ],
+  "gaps": [],
+  "confirmed": {
+    "scenarioSha256": "f5ce2ce0910463f9fe94abdf243fee6651770f4d56c23a64e9ce12281feb5cf1",
+    "rulesSha256": "70f0378857ffcfb424e3ade87f132726d36f99ef12eed20d39a2eb933a132274"
+  }
+}

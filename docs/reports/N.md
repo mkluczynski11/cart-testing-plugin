@@ -159,3 +159,97 @@ Deviations and choices:
 - The reference cart displays a rule's row with a literal text derived from its label pattern
   (`/^total\b/i` → `total`); a pattern that is not plain text is rejected with a message. The design does not say
   how the in-memory cart labels its rows.
+
+## Stage 3 — verification without a browser (10.1–10.5, 6.1, 6.3)
+
+Started `Wed Nov 25 00:55:12 UTC 2026`, committed at 01:02 UTC.
+
+Built:
+- `support/core/operators.ts`: the ten operators of 10.3 with the ids and effects of order 6.2; `deriveDefects`
+  gives exactly the thirteen of 10.1 for the reference scenario (unit test). `wrong-target` only for kinds that run
+  while the cart holds two or more lines; rule operators per rule, with `:<id>` when there are several rules.
+  `reference-cart.ts` implements every effect, including `when` (`afterStep`, `direction`).
+- G2 (`support/harness/gates.ts`): both carts are simulated in-process on the same products; the expected place is
+  the first checkpoint where the serialized views differ; then the compiled test runs in Playwright project `dry`
+  with the defect on (6 processes at a time); results `detected`, `detected-late`, `missed`, `not-applicable`;
+  scenario gaps with a hint per operator. `DEFECT_MISSED` outranks `DEFECT_LATE`.
+- Additional defects (`specs/<slug>.defects.json`): `defects list` and `defects check` with the admission rules of
+  order 6.2 and R12 (unknown operator, target absent from the scenario and the rules, twin of an admitted defect at
+  every checkpoint, more than 8). Origins `tester` and `generated` are both accepted; no agent is involved.
+- G0 (`support/harness/lint.ts`) on a syntax tree from **@babel/parser 7.29.15** (new dev dependency): TypeScript
+  7.0.2 has no `createSourceFile` (`typeof ts.createSourceFile === 'undefined'`). Test rules and driver rules of
+  order 6.3; a violation is `LINT_FAIL` with file, line and rule. The Toolshop driver had one finding, a fake URL
+  base `new URL(page.url(), 'http://x')`, now fixed.
+- `verdicts.ts`: the full dictionary of 6.3 and the routing table for `CONTROL_MISSED` and `FLAKY` as data.
+  Positive verdicts `PASS`, `INTENT_OK`, `VERIFIED`; `GATES_OK` is gone.
+- `doctor` (Node, Chromium, `MANIFEST.json`, `SCENARIO_CHANGED`, `VERIFICATION_STALE`, the driver's interface at
+  run time and its UI boundary through the G0 driver rules) and `doctor --write-manifest`; `need`.
+- CLI names of 6.1; `confirm` and `gates` are gone; every subcommand ends with at most 15 lines and the verdict;
+  `--help` lists one line per subcommand. `run` probes the application address before the browser (`INFRA_FAIL`).
+- Selftest rows without a browser: money, validator, compiler, product selection, reference cart (three
+  scenarios), equal prices, empty cart, classification, parallelism, integrity.
+
+Check output:
+
+```text
+$ npm run qa -- selftest
+unit tests         PASS  112 passed (721ms)
+money              PASS  16 formats in 2 locales, foreign currency and non-amounts rejected
+validator          PASS  each of V1–V8 gives SPEC_INVALID naming that rule
+compiler           PASS  golden file byte for byte; two compilations equal; a hand edit gives FILE_CONFLICT
+product selection  PASS  needQty 4 for two adds of 2; an unnamed pick skips "Green Lamp", named by a later alias
+reference cart     PASS  healthy carts green; every applicable default defect red where expected (cart-total-add-change-remove 12/13, swapped-objects 12/13, green-threshold 10/11)
+equal prices       PASS  all stubs at $10.00: qty-wrong-line and remove-wrong-line still detected, so lines are compared
+empty cart         PASS  green with a zero total and without a total element; lost-remove red at S2
+classification     PASS  unreachable address INFRA_FAIL; PreconditionError PRECONDITION_FAIL; zero tests NO_TESTS_RUN; action failure after a red checkpoint ORACLE_MISMATCH
+parallelism        PASS  two runs at once: 20261125T010008Z-4a8e and 20261125T010008Z-0bab, each with its own evidence
+integrity          PASS  support/core and support/harness match support/core/MANIFEST.json
+11/11 rows passed in 15.5 s.
+VERDICT: PASS
+
+$ npm run qa:toolshop -- run cart-total-add-change-remove --dry
+Run 20261125T010058Z-08d2 of cart-total-add-change-remove (dry: gates G0–G2 on the reference cart)
+G0 ok: no forbidden pattern; the test is the untouched compilation of the confirmed scenario
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+G2 13 defects: 12 detected where expected, 0 late, 0 missed, 1 not applicable
+Scenario gap: round-down is not applicable: No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation.
+Evidence: reports/cart-total-add-change-remove/runs/20261125T010058Z-08d2/
+VERDICT: PASS
+```
+
+Negative check (temporary copy of the root in the scratchpad, the checkpoint after S3 removed by hand):
+
+```text
+$ npm run qa -- compile cart-total-add-change-remove --root <copy>
+tests/cart-total-add-change-remove.spec.ts was edited by hand, so nothing was written. Differences:
+  - compiled: await shopper.checkTotal('S3');
+Move the change into the scenario, or run compile with --force to discard the edit.
+VERDICT: FILE_CONFLICT
+$ npm run qa -- run cart-total-add-change-remove --dry --root <copy>
+Run 20261125T005802Z-671e of cart-total-add-change-remove (dry: gates G0–G2 on the reference cart)
+G0 ok: no forbidden pattern; the test is EDITED BY HAND after compilation
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+G2 13 defects: 9 detected where expected, 3 late, 0 missed, 1 not applicable
+   lost-qty detected-late: expected red at S3, first red S4; no checkpoint judges the change before S4
+   qty-wrong-line detected-late: expected red at S3, first red S4; no checkpoint judges the change before S4
+   line-ignores-qty detected-late: expected red at S3, first red S4; no checkpoint judges the change before S4
+Scenario gap: round-down is not applicable: …
+VERDICT: DEFECT_LATE
+```
+
+(The wording of the late line was then changed to "the test has no checkpoint after S3; recompile it from the
+scenario", the diagnosis 10.2 asks for.)
+
+Choices:
+- Completeness (`NO_TESTS_RUN`) counts the `checkTotal` calls of the test file itself, read from its syntax tree,
+  not the scenario's checkpoints: otherwise a hand-edited test with a removed checkpoint would stop at
+  `NO_TESTS_RUN` and never reach the `DEFECT_LATE` that 10.2 describes.
+- A defect run that is red only through an action failure (no red checkpoint) counts as `detected` with a note;
+  this happens with `check: last-step` after `lost-add`, when a later `setQty` finds no line.
+- `defects check` ends `SPEC_INVALID` when any entry is rejected and `PASS` otherwise; a defect that changes no
+  checkpoint is admitted as a scenario gap and is never called a twin of another such defect.
+- `need` and `doctor` end `LINT_FAIL` for a missing action or attribute ("mismatched types in the driver", 6.3);
+  missing request bindings are lower coverage and do not fail `need`.
+- `doctor` checks the driver's interface at run time (methods, `controls`, `provides.attrs`) on a driver created
+  with a page that throws on any access; the static type check is `npm run typecheck:toolshop` (tsc), not part of
+  `doctor`, to keep it fast and independent of a root's tsconfig.

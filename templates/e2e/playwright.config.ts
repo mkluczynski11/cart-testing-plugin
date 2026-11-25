@@ -13,7 +13,7 @@ const live = { baseURL: qa.baseURL, testIdAttribute: qa.testIdAttribute, locale:
 export default defineConfig({
   // A harness run writes its JSON and HTML reports into the run directory; the HTML report never opens.
   reporter: runDir
-    ? [['json', { outputFile: path.join(runDir, 'report.json') }], ['html', { open: 'never', outputFolder: path.join(runDir, 'html') }]]
+    ? [['./support/core/reporter.ts', { runDir, root }], ['html', { open: 'never', outputFolder: path.join(runDir, 'html') }]]
     : [['list']],
   workers: 1,
   fullyParallel: false,

@@ -10,7 +10,7 @@ import { amountFormat, parseAmount, roundToCents } from '../core/money';
 import { ReferenceCart } from '../core/reference-cart';
 import { selectProduct } from '../core/selection';
 import type { CurrencyCode } from '../core/types';
-import { classify } from './classify';
+import { classify } from '../core/classification';
 import type { CommandResult, Loaded } from './common';
 import { loadScenario } from './common';
 import { compile } from './compile';

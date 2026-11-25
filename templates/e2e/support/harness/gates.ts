@@ -10,10 +10,11 @@ import type { DrySetup } from '../core/fixtures';
 import { gapHint, type Defect } from '../core/operators';
 import { ReferenceCart, type CatalogItem } from '../core/reference-cart';
 import type { Verdict } from '../core/verdicts';
-import { classify } from './classify';
+import { classify } from '../core/classification';
 import type { Loaded } from './common';
 import { lintRoot, testCheckpoints } from './lint';
-import { runPlaywright, type PlaywrightRun } from './playwright-runner';
+import type { RunRecord } from '../core/classification';
+import { runPlaywright } from './playwright-runner';
 
 export type GateOutcome = { verdict: Verdict; lines: string[] };
 
@@ -23,7 +24,7 @@ export function judgedByTest(loaded: Loaded): string[] {
 }
 
 /** Run the compiled test once on the reference cart with a dry setup written into `dir`. */
-export function dryRun(loaded: Loaded, dir: string, setup: DrySetup): Promise<PlaywrightRun> {
+export function dryRun(loaded: Loaded, dir: string, setup: DrySetup): Promise<RunRecord> {
   fs.mkdirSync(dir, { recursive: true });
   const setupFile = path.join(dir, 'dry-setup.json');
   fs.writeFileSync(setupFile, JSON.stringify(setup, null, 2));
@@ -42,12 +43,12 @@ function aliasState(c: CheckpointRecord, ex: ExampleFile): Record<string, number
 }
 
 /** G1: green on the healthy reference cart; the ledger trace equals cart_after; totals equal the example. */
-export async function gateG1(loaded: Loaded, dir: string, emptyTotal = false): Promise<GateOutcome & { run: PlaywrightRun }> {
+export async function gateG1(loaded: Loaded, dir: string, emptyTotal = false): Promise<GateOutcome & { run: RunRecord }> {
   const ex = loaded.example as ExampleFile;
   const run = await dryRun(loaded, dir, { catalog: exampleCatalog(loaded), emptyTotal });
   const c = classify(run, judgedByTest(loaded));
   if (c.verdict !== 'PASS') {
-    const why = run.repeats[0]?.failure?.message.split('\n').slice(0, 3).join(' | ') ?? c.reason;
+    const why = run.repeats[0]?.error?.message.split('\n').slice(0, 3).join(' | ') ?? c.reason;
     return { run, verdict: c.verdict, lines: [`G1 red on the healthy reference cart: ${why}`] };
   }
   for (const cp of run.repeats[0].checkpoints) {
@@ -129,7 +130,7 @@ export async function gateG2(loaded: Loaded, dir: string, products: Product[], d
     if (!red) {
       const failed = run.repeats[0] && run.repeats[0].status !== 'passed';
       return failed
-        ? { ...base, result: 'detected', firstRed: null, note: `red by an action failure: ${run.repeats[0].failure?.message.split('\n')[0] ?? run.repeats[0].status}` }
+        ? { ...base, result: 'detected', firstRed: null, note: `red by an action failure: ${run.repeats[0].error?.message.split('\n')[0] ?? run.repeats[0].status}` }
         : { ...base, result: 'missed', firstRed: null };
     }
     return { ...base, result: steps.indexOf(red) > steps.indexOf(expected) ? 'detected-late' : 'detected', firstRed: red };

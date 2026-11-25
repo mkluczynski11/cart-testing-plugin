@@ -1,0 +1,236 @@
+{
+  "runId": "20261125T010538Z-fccb",
+  "slug": "cart-eco-threshold",
+  "scenarioSha256": "f5ce2ce0910463f9fe94abdf243fee6651770f4d56c23a64e9ce12281feb5cf1",
+  "rulesSha256": "70f0378857ffcfb424e3ade87f132726d36f99ef12eed20d39a2eb933a132274",
+  "testSha256": "e99e9ce77966d895c511d4ca595d17054e892398b8a28715862ec6361bca08b9",
+  "driverSha256": "56e9c54d500447a0bd13ac3b263bb3b8cfe630fe2c3b679c6577e37afe9d8d1b",
+  "testOrigin": "compiled",
+  "gates": {
+    "dry": "PASS",
+    "G3": "PASS",
+    "G2live": "PASS"
+  },
+  "defects": [
+    {
+      "defect": "lost-add",
+      "origin": "default",
+      "operator": "no-effect",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "lost-qty",
+      "origin": "default",
+      "operator": "no-effect",
+      "expected": "S3",
+      "result": "detected",
+      "firstRed": "S3"
+    },
+    {
+      "defect": "lost-remove",
+      "origin": "default",
+      "operator": "no-effect",
+      "expected": "S4",
+      "result": "detected",
+      "firstRed": "S4"
+    },
+    {
+      "defect": "qty-wrong-line",
+      "origin": "default",
+      "operator": "wrong-target",
+      "expected": "S3",
+      "result": "detected",
+      "firstRed": "S3"
+    },
+    {
+      "defect": "remove-wrong-line",
+      "origin": "default",
+      "operator": "wrong-target",
+      "expected": "S4",
+      "result": "detected",
+      "firstRed": "S4"
+    },
+    {
+      "defect": "stale-total",
+      "origin": "default",
+      "operator": "stale-value",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "total-off-by-cent",
+      "origin": "default",
+      "operator": "skew-value",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "line-ignores-qty",
+      "origin": "default",
+      "operator": "ignore-factor",
+      "expected": "S2",
+      "result": "detected",
+      "firstRed": "S2"
+    },
+    {
+      "defect": "rule-never",
+      "origin": "default",
+      "operator": "rule-never",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "rule-always",
+      "origin": "default",
+      "operator": "rule-always",
+      "expected": "S2",
+      "result": "detected",
+      "firstRed": "S2"
+    },
+    {
+      "defect": "rule-wrong-rate",
+      "origin": "default",
+      "operator": "rule-rate",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "rule-boundary",
+      "origin": "default",
+      "operator": "rule-boundary",
+      "expected": null,
+      "result": "not-applicable",
+      "firstRed": null,
+      "hint": "Add a step at which the cart sits exactly at the threshold of rule eco-discount."
+    },
+    {
+      "defect": "round-down",
+      "origin": "default",
+      "operator": "round-mode",
+      "expected": null,
+      "result": "not-applicable",
+      "firstRed": null,
+      "hint": "No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation."
+    }
+  ],
+  "gaps": [
+    "rule-boundary is not applicable with the products of this run: Add a step at which the cart sits exactly at the threshold of rule eco-discount."
+  ],
+  "verdict": "PASS",
+  "livePass": {
+    "defects": [
+      {
+        "defect": "lost-add",
+        "origin": "default",
+        "operator": "no-effect",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "lost-qty",
+        "origin": "default",
+        "operator": "no-effect",
+        "expected": "S3",
+        "result": "detected",
+        "firstRed": "S3"
+      },
+      {
+        "defect": "lost-remove",
+        "origin": "default",
+        "operator": "no-effect",
+        "expected": "S4",
+        "result": "detected",
+        "firstRed": "S4"
+      },
+      {
+        "defect": "qty-wrong-line",
+        "origin": "default",
+        "operator": "wrong-target",
+        "expected": "S3",
+        "result": "detected",
+        "firstRed": "S3"
+      },
+      {
+        "defect": "remove-wrong-line",
+        "origin": "default",
+        "operator": "wrong-target",
+        "expected": "S4",
+        "result": "detected",
+        "firstRed": "S4"
+      },
+      {
+        "defect": "stale-total",
+        "origin": "default",
+        "operator": "stale-value",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "total-off-by-cent",
+        "origin": "default",
+        "operator": "skew-value",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "line-ignores-qty",
+        "origin": "default",
+        "operator": "ignore-factor",
+        "expected": "S2",
+        "result": "detected",
+        "firstRed": "S2"
+      },
+      {
+        "defect": "rule-never",
+        "origin": "default",
+        "operator": "rule-never",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "rule-always",
+        "origin": "default",
+        "operator": "rule-always",
+        "expected": "S2",
+        "result": "detected",
+        "firstRed": "S2"
+      },
+      {
+        "defect": "rule-wrong-rate",
+        "origin": "default",
+        "operator": "rule-rate",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "rule-boundary",
+        "origin": "default",
+        "operator": "rule-boundary",
+        "expected": null,
+        "result": "not-applicable",
+        "firstRed": null,
+        "hint": "Add a step at which the cart sits exactly at the threshold of rule eco-discount."
+      },
+      {
+        "defect": "round-down",
+        "origin": "default",
+        "operator": "round-mode",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      }
+    ],
+    "products": "A = Wood Saw 12.18, B = Combination Pliers 14.15"
+  }
+}
