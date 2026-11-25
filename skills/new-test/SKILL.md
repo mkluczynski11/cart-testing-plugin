@@ -46,9 +46,13 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
    `check: each-step` unless the request names other checkpoints. Run `qa-harness example <slug>`. On `SPEC_INVALID`
    fix the rules it names and run it again; if a fix would change the meaning, ask the tester instead. Two fixes at
    most, then stop with the violations.
-3. **Confirmation.** Fill the template of `intake.md` from the `example` output and the rules file, listing every choice
-   you made. Without `--yes`: show it, ask "Confirm? (ok / correction)" and end your turn; on "ok" continue, on a
-   correction go back to step 2. With `--yes`: show it and continue. Then `qa-harness example <slug> --confirm`.
+3. **Confirmation.** With `--risk "<concern>"`: express the concern as one entry with `"origin": "tester"` in
+   `e2e/specs/<slug>.defects.json` (format in contracts). Run `qa-harness defects check <slug>`, with `--extended` when
+   `--defects extended` was given; fix a rejected entry once, or report it as a risk no operator covers. Fill the
+   template of `intake.md` from the `example` output, the first line of `defects check` (verbatim) and the rules file,
+   listing every choice you made. Without `--yes`: show it, ask "Confirm? (ok / correction)" and end your turn; on "ok"
+   continue, on a correction go back to step 2. With `--yes`: show it and continue. Then
+   `qa-harness example <slug> --confirm`.
 3a. **Intent review.** Run `qa-harness intent <slug>`; if it ends `PASS`, the review is current: go on. Otherwise call
    the Agent tool with `subagent_type: "qa:test-verifier"` and this prompt, nothing from the conversation:
    `mode: intent` / `slug: <slug>` / `request (verbatim): <the tester's words>` / `root: e2e`.
@@ -56,9 +60,7 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
    `REWORK`: apply the finding to the scenario, set `status: draft`, and repeat from step 2 with a new confirmation;
    after two `REWORK` rounds stop. `NEEDS_TESTER`: ask its question and stop.
 3b. **Additional defects.** Only with `--defects extended` or `"defects": "extended"` in the config: call
-   `qa:defect-designer` with `slug`, the request verbatim and `root: e2e`. With `--risk "<concern>"`: express the
-   concern as one entry with `"origin": "tester"` in `e2e/specs/<slug>.defects.json` (format in contracts) and run
-   `qa-harness defects check <slug>`; fix a rejected entry once, or report it as a risk no operator covers.
+   `qa:defect-designer` with `slug`, the request verbatim and `root: e2e`; it keeps the tester entry of step 3.
 4. **Compilation.** `qa-harness compile <slug>`, only after `qa-harness intent <slug>` ended `PASS`.
 5. **Dry gates.** `qa-harness run <slug> --dry`. With `--dry`: stop here and give the dry readback.
 6. **Driver.** `qa-harness need <slug>`. `PASS`: skip. Otherwise call `qa:app-mapper` with `mode: build`, `slug`,

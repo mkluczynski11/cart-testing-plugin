@@ -1,6 +1,8 @@
 // qa-harness defects list|check <slug>: the default defects and the admission of additional ones.
 // Implements design 10.3, 10.4 (format, admission check), R12 (declarative, at most 8) and order N, 6.2.
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { files } from '../core/config';
 import { deriveDefects, OPERATORS, type Defect, type DefectTarget, type Operator } from '../core/operators';
 import type { StepKind } from '../core/scenario';
@@ -72,7 +74,22 @@ function checkpointViews(loaded: Loaded, views: string[]): string {
   return JSON.stringify(loaded.scenario.steps.map((s, i) => (loaded.scenario.checkpoints.includes(s.id) ? views[i] : null)));
 }
 
-export async function defectsCommand(root: string, slug: string, mode: 'list' | 'check'): Promise<CommandResult> {
+/** A path as the tester sees it from the top of the repository (e2e/reports/…), else from the current directory. */
+function repoPath(file: string): string {
+  const top = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: path.dirname(path.dirname(path.dirname(file))), encoding: 'utf8' });
+  return path.relative(top.status === 0 ? top.stdout.trim() : process.cwd(), file);
+}
+
+/** The line before "Confirm?" (11.1): how many defects the test will be checked against, by origin, and where the list will be. */
+function checkedAgainst(loaded: Loaded, defaults: Defect[], admitted: Defect[], extended: boolean): string {
+  const of = (origin: string) => admitted.filter((d) => d.origin === origin);
+  const part = (origin: string) => `${of(origin).length} ${origin}${of(origin).length ? ` (${of(origin).map((d) => d.id).join(', ')})` : ''}`;
+  const more = extended ? `, plus at most ${ADDITIONAL_LIMIT} generated defects that qa:defect-designer designs after the intent review` : '';
+  const where = repoPath(path.join(fs.realpathSync(loaded.root), 'reports', loaded.slug, 'report.md'));
+  return `The test will be checked against ${defaults.length + admitted.length} defects: ${defaults.length} default, ${part('tester')}, ${part('generated')}${more}; the full list will be in ${where}.`;
+}
+
+export async function defectsCommand(root: string, slug: string, mode: 'list' | 'check', opts: { extended?: boolean } = {}): Promise<CommandResult> {
   const got = loadScenario(root, slug);
   if (!got.ok) return got.result;
   const loaded = got.loaded;
@@ -89,10 +106,11 @@ export async function defectsCommand(root: string, slug: string, mode: 'list' | 
     };
   }
   const file = rel(root, files.defects(root, slug));
-  if (!admission.admitted.length && !admission.rejected.length) return { verdict: 'PASS', lines: [`${file} does not exist or is empty; only the default defects apply.`] };
+  const summary = checkedAgainst(loaded, deriveDefects(loaded.scenario, loaded.pricing.rules), admission.admitted, Boolean(opts.extended) || loaded.config.defects === 'extended');
+  if (!admission.admitted.length && !admission.rejected.length) return { verdict: 'PASS', lines: [summary, `${file} does not exist or is empty; only the default defects apply.`] };
   return {
     verdict: admission.rejected.length ? 'SPEC_INVALID' : 'PASS',
-    lines: [`${file}: ${admission.admitted.length} admitted, ${admission.rejected.length} rejected.`,
+    lines: [summary, `${file}: ${admission.admitted.length} admitted, ${admission.rejected.length} rejected.`,
       ...admission.admitted.map((d) => `  admitted ${d.id} (${d.origin}, ${d.operator})`),
       ...admission.rejected.map((r) => `  rejected ${r.id}: ${r.reason}`),
       ...(admission.rejected.length ? ['Fix or remove the rejected entries; a concern no operator expresses goes into the report as an uncovered risk.'] : [])],

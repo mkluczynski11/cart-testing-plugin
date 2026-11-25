@@ -104,7 +104,7 @@ export function expectedPlace(loaded: Loaded, healthy: string[], faulty: string[
 }
 
 export type DefectResult = 'detected' | 'detected-late' | 'missed' | 'not-applicable';
-export type DefectRow = { defect: string; origin: string; operator: string; result: DefectResult; expected: string | null; firstRed: string | null; hint?: string; note?: string };
+export type DefectRow = { defect: string; origin: string; operator: string; why?: string; result: DefectResult; expected: string | null; firstRed: string | null; hint?: string; note?: string };
 
 async function pool<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -122,7 +122,7 @@ export async function gateG2(loaded: Loaded, dir: string, products: Product[], d
   const steps = loaded.scenario.steps.map((s) => s.id);
   const catalog = products.map((p) => p.item);
   const rows = await pool(defects.map((d, i) => ({ d, expected: places[i] })), 6, async ({ d, expected }): Promise<DefectRow> => {
-    const base = { defect: d.id, origin: d.origin, operator: d.operator, expected };
+    const base = { defect: d.id, origin: d.origin, operator: d.operator, ...(d.why ? { why: d.why } : {}), expected };
     if (!expected) return { ...base, result: 'not-applicable', firstRed: null, hint: gapHint(d, loaded.scenario) };
     const run = await dryRun(loaded, path.join(dir, d.id.replace(/[^a-z0-9-]/gi, '_')), { catalog, defect: d, emptyTotal });
     const records = run.repeats[0]?.checkpoints ?? [];

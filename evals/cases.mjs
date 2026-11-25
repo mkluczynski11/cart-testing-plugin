@@ -61,6 +61,14 @@ const onlyScenario = (f) => {
   return { slug: s[0].replace(/\.md$/, ''), data: frontMatter(path.join(f.e2e, 'specs', s[0])) };
 };
 const harnessCalls = (f, re) => f.calls.filter((c) => c.name === 'Bash' && re.test(String(c.input?.command ?? '')));
+/** The confirmation shows the first line of `qa-harness defects check`, verbatim (design 11.1, order E stage 1). */
+const defectsLine = (re) => (f) => {
+  const printed = harnessCalls(f, /qa-harness defects check /).flatMap((c) => c.result.split('\n')).filter((l) => /^The test will be checked against /.test(l));
+  if (!printed.length) return 'no defects check printed the line';
+  const hit = printed.find((l) => (f.texts ?? []).join('\n').includes(l));
+  if (!hit) return `not shown: ${printed[0]}`;
+  return re.test(hit) || hit;
+};
 const verdictOf = (call) => [...(call?.result ?? '').matchAll(/VERDICT: ([A-Z_]+)/g)].pop()?.[1];
 const skillUsed = (f, name) => f.calls.some((c) => c.name === 'Skill' && new RegExp(`^(qa:)?${name}$`).test(String(c.input?.skill ?? '')));
 const gitChanged = (f, prefix) => spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', prefix], { cwd: f.repo, encoding: 'utf8' }).stdout.trim();
@@ -117,6 +125,7 @@ export const CASES = [
       ['the test has 4 checkpoints', compiledWithCheckpoints(4)],
       ['G0-G2 green', dryGreen],
       ['the model wrote no test file', noTestWritten],
+      ['the confirmation counts the defects by origin and names report.md', defectsLine(/\d+ default, 0 tester, 0 generated; the full list will be in e2e\/reports\/[a-z0-9-]+\/report\.md\.$/)],
     ],
   },
   {
@@ -161,6 +170,7 @@ export const CASES = [
         return / 0 rejected\./.test(r.stdout) && /VERDICT: PASS/.test(r.stdout) || r.stdout.trim().split('\n').slice(0, 3).join(' | ');
       }],
       ['G0-G2 green with the additional defects', (f) => dryGreen(f)],
+      ['the confirmation names the generated defects still to come', defectsLine(/, plus at most 8 generated defects that qa:defect-designer designs after the intent review; the full list will be in e2e\//)],
     ],
   },
   {
@@ -176,6 +186,7 @@ export const CASES = [
         return (tester.length >= 1 && / 0 rejected\./.test(r.stdout)) || `tester entries ${tester.length}; ${r.stdout.trim().split('\n')[0]}`;
       }],
       ['defect-designer did not run (default mode)', (f) => subagent(f, 'qa:defect-designer') === 0 || 'it ran'],
+      ['the confirmation names the tester defect', defectsLine(/\d+ default, 1 tester \([a-z0-9:-]+\), 0 generated; the full list will be in e2e\//)],
       ['G0-G2 green', (f) => dryGreen(f)],
     ],
   },

@@ -53,6 +53,7 @@ Source of each rule: <provenance from the rules file: code | tester | observed; 
 
 Assumptions: guest, empty cart, no geolocation, prices from the <product page | API>,
 the total is the row labelled "<summary.total label of the rules file>".
+<the first line of `qa-harness defects check <slug>`, verbatim: "The test will be checked against …">
 Confirm? (ok / correction)
 ```
 

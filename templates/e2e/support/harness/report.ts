@@ -13,6 +13,9 @@ import { loadPricing, rel, type CommandResult } from './common';
 import { intentReview, runReviewVerdict } from './intent';
 import { withLock } from './run-dir';
 
+/** One defect's result in one G2 pass, as gateG2 records it (design 10.5). */
+export type DefectEntry = { defect: string; origin?: string; operator?: string; why?: string; result: string; expected: string | null; firstRed: string | null; hint?: string };
+
 /** What verification.json holds (design 8.5); written by run and verify. */
 export type Verification = {
   runId: string;
@@ -24,8 +27,8 @@ export type Verification = {
   testOrigin: 'compiled' | 'edited';
   intentSha256?: string | null;  // the scenario hash for which a current INTENT_OK review exists (8.5), else null
   gates: Record<string, unknown>;
-  defects: Array<{ defect: string; result: string; expected: string | null; firstRed: string | null; hint?: string }>;
-  livePass?: { defects: Array<{ defect: string; result: string }>; products: string };
+  defects: DefectEntry[];
+  livePass?: { defects: DefectEntry[]; products: string };
   controls?: Array<{ control: string; result: string; activated: boolean | null; target: string; shownAtRead: string | null; reactedAt: string | null; expected: string; note?: string }>;
   gaps: string[];
   verdict: Verdict;
@@ -74,6 +77,23 @@ function reviewLines(root: string, slug: string, runDir: string): string[] {
   out.push(review
     ? `- Report review: \`review.md\` of this run, verdict ${review}.`
     : '- **Not available:** the report review (`review.md`, written by test-verifier after `qa-harness verify`); none is part of this run.');
+  return out;
+}
+
+/** The table of every defect of the run, both G2 passes, read from verification.json (10.2–10.5, 11.4). */
+function defectTable(ver: Verification | undefined): string[] {
+  const stub = ver?.defects ?? [];
+  if (!stub.length) return ['No defect was run: verification.json has no G2 result.'];
+  const live = new Map((ver?.livePass?.defects ?? []).map((d) => [d.defect, d]));
+  const cell = (s: string | undefined | null) => (s ?? '—').replace(/\|/g, '\\|');
+  const out = [
+    `Every defect the test was checked against. Stub prices: the approved example. Live prices: ${ver?.livePass ? `the products of this run (${cell(ver.livePass.products)})` : 'not run (no live run reached G2 again)'}.`, '',
+    '| Defect | Origin | What it plants | Stub prices | First red | Live prices | First red |', '| --- | --- | --- | --- | --- | --- | --- |',
+  ];
+  for (const d of stub) {
+    const l = live.get(d.defect);
+    out.push(`| ${cell(d.defect)} | ${cell(d.origin)} | ${cell(d.why)} | ${d.result} | ${cell(d.firstRed)} | ${l?.result ?? 'not run'} | ${cell(l?.firstRed)} |`);
+  }
   return out;
 }
 
@@ -131,6 +151,7 @@ export function buildReport(root: string, slug: string, runDir: string, screens:
     out.push('');
   } else out.push('- **Not available:** live controls G4 were not run (`qa-harness verify` runs them after a green G3).');
   out.push(...reviewLines(root, slug, runDir));
+  out.push('', '## Defects', '', ...defectTable(ver));
   if (cps.length) out.push('', '## Scope', '', scopeLine(cps));
   out.push('', '## Scenario gaps', '');
   out.push(...((ver?.gaps ?? []).length ? (ver?.gaps ?? []).map((x) => `- ${x}`) : ['None: every default defect is applicable in this scenario.']));

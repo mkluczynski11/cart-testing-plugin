@@ -23,7 +23,7 @@ const HELP: Array<[string, string]> = [
   ['compile <slug> [--force]', 'emit tests/<slug>.spec.ts from the confirmed scenario'],
   ['intent <slug>', 'is there a current intent review? prints the confirmed hash'],
   ['need <slug>', 'name the actions, attributes and bindings the driver is missing'],
-  ['defects list|check <slug>', 'list the default defects; admit or reject specs/<slug>.defects.json'],
+  ['defects list|check <slug> [--extended]', 'list the default defects; admit or reject specs/<slug>.defects.json'],
   ['run <slug> [--dry] [--repair driver|test]', 'gates G0–G2 on the reference cart, or G0–G3 live'],
   ['verify <slug>', 'gates G0–G4: the live run and the live controls, in a new run directory'],
   ['report <slug> [--promote <id> [--as-evidence]]', 'report.md of the latest run; --promote puts a verified run in the repo'],
@@ -60,6 +60,7 @@ async function main(argv: string[]): Promise<CommandResult> {
   const dry = has('--dry');
   const writeManifest = has('--write-manifest');
   const asEvidence = has('--as-evidence');
+  const extended = has('--extended');
   const [command, slug, ...rest] = args;
   const needSlug = () => (slug && SLUG.test(slug) && rest.length === 0 ? slug : undefined);
   switch (command) {
@@ -69,7 +70,7 @@ async function main(argv: string[]): Promise<CommandResult> {
     case 'defects': {
       const s = rest[0];
       if ((slug !== 'list' && slug !== 'check') || !s || !SLUG.test(s) || rest.length !== 1) return usage('defects needs list or check and one scenario slug.');
-      return defectsCommand(root, s, slug);
+      return defectsCommand(root, s, slug, { extended });
     }
     case 'example': { const s = needSlug(); return s ? example(root, s, confirm) : usage('example needs one scenario slug.'); }
     case 'compile': { const s = needSlug(); return s ? compile(root, s, force) : usage('compile needs one scenario slug.'); }
