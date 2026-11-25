@@ -58,6 +58,21 @@ export class InfraError extends QaError {
   constructor(message: string) { super(message); this.name = 'InfraError'; }
 }
 
+/** A driver call failed in a way the evidence does not attribute: not the element, not the environment (6.3). */
+export class UndeterminedError extends QaError {
+  readonly verdict = 'UNDETERMINED' as const;
+  constructor(message: string) { super(message); this.name = 'UndeterminedError'; }
+}
+
+/** A condition the tester or another run caused (a held lock, a root without config, a file in the way, a rules file
+ * outside the vocabulary): its own sentence says what to do; it is not a harness bug. */
+export class ConditionError extends QaError {
+  constructor(message: string, readonly verdict: 'SPEC_INVALID' | 'FILE_CONFLICT' | 'LINT_FAIL' | 'INFRA_FAIL') {
+    super(message);
+    this.name = 'ConditionError';
+  }
+}
+
 /** A checkpoint judged the cart wrong; `verdict` is ORACLE_MISMATCH, UNMODELED_ADJUSTMENT or LOCATOR_FAIL. */
 export class CheckpointError extends QaError {
   constructor(message: string, readonly verdict: 'ORACLE_MISMATCH' | 'UNMODELED_ADJUSTMENT' | 'LOCATOR_FAIL', readonly step: string) {

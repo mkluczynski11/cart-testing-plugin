@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { amountFormat, type AmountFormat } from './money';
 import type { CurrencyCode } from './types';
+import { ConditionError } from './verdicts';
 
 export type QaConfig = {
   app: string;
@@ -38,11 +39,13 @@ export function configPath(root: string): string {
 /** Read qa.config.json of a root, filling the defaults of design 8.6. */
 export function loadConfig(root: string = qaRoot()): QaConfig {
   const file = configPath(root);
-  if (!fs.existsSync(file)) throw new Error(`${file} does not exist; every e2e root needs a qa.config.json.`);
+  if (!fs.existsSync(file)) {
+    throw new ConditionError(`${root} is not an e2e root: it has no qa.config.json. Point --root at the directory that holds qa.config.json (e2e/ after /qa:setup), or run the command from there.`, 'SPEC_INVALID');
+  }
   const raw = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<QaConfig>;
   const currency = raw.currency ?? 'USD';
-  if (!CURRENCIES.includes(currency)) throw new Error(`${file}: currency ${String(currency)} is not supported; use ${CURRENCIES.join(' or ')}.`);
-  if (!raw.app) throw new Error(`${file}: field "app" is required; name the application, e.g. "my-shop".`);
+  if (!CURRENCIES.includes(currency)) throw new ConditionError(`${file}: currency ${String(currency)} is not supported; use ${CURRENCIES.join(' or ')}.`, 'SPEC_INVALID');
+  if (!raw.app) throw new ConditionError(`${file}: field "app" is required; name the application, e.g. "my-shop".`, 'SPEC_INVALID');
   return {
     app: raw.app,
     baseURL: raw.baseURL ?? '',

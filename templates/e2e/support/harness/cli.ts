@@ -3,7 +3,7 @@
 // then "VERDICT: <name>", and exits 0 only for PASS. Implements design 6.1.
 import * as path from 'node:path';
 import { qaRoot } from '../core/config';
-import { POSITIVE, type Verdict } from '../core/verdicts';
+import { POSITIVE, QaError, type Verdict } from '../core/verdicts';
 import { capLines, type CommandResult } from './common';
 import { compile } from './compile';
 import { defectsCommand } from './defects';
@@ -95,6 +95,12 @@ main(process.argv.slice(2))
     process.exitCode = POSITIVE.has(r.verdict) ? 0 : 1;
   })
   .catch((e: unknown) => {
+    if (e instanceof QaError) {
+      for (const l of capLines(e.message.split('\n'), 'see the run directory')) console.log(l);
+      console.log(`VERDICT: ${e.verdict}`);
+      process.exitCode = 1;
+      return;
+    }
     console.log(`The harness failed unexpectedly: ${(e as Error)?.message ?? String(e)}`);
     console.log('Rerun the command; if it fails again, report it as a harness bug with this output.');
     const v: Verdict = 'INFRA_FAIL';

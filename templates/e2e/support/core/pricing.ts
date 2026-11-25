@@ -144,3 +144,82 @@ export function describeRule(rule: PricingRule): string {
     : `when the subtotal is at least ${rule.when.subtotalAtLeast}`;
   return `${rule.id}: ${amount} ${when}`;
 }
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const isStr = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
+const DECIMAL = /^\d+(\.\d+)?$/;
+
+function unknownKeys(obj: Record<string, unknown>, allowed: string[], where: string): string[] {
+  return Object.keys(obj).filter((k) => !allowed.includes(k)).map((k) => `${where}: unknown key "${k}"; allowed are ${allowed.join(', ')}`);
+}
+
+function provenanceProblems(p: unknown, where: string): string[] {
+  if (!isObj(p)) return [`${where}: provenance is missing`];
+  const out = unknownKeys(p, ['source', 'ref', 'live'], `${where} provenance`);
+  if (!['code', 'tester', 'observed'].includes(p.source as string)) out.push(`${where}: provenance.source must be code, tester or observed`);
+  if (!isStr(p.ref)) out.push(`${where}: provenance.ref must name the source`);
+  if (!['confirmed', 'unconfirmed'].includes(p.live as string)) out.push(`${where}: provenance.live must be confirmed or unconfirmed`);
+  return out;
+}
+
+const filterOk = (w: unknown) => isObj(w) && Object.values(w).every((v) => Array.isArray(v) && v.every(isStr));
+
+function conditionProblems(when: unknown, where: string): string[] {
+  const KEYS = ['always', 'shareOfUnits', 'hasUnits', 'subtotalAtLeast'];
+  if (!isObj(when)) return [`${where}: when is missing; use one of ${KEYS.join(', ')}`];
+  const keys = Object.keys(when);
+  const unknown = keys.filter((k) => !KEYS.includes(k));
+  if (unknown.length) return [`${where}: unknown condition key "${unknown[0]}" in when; the vocabulary of design 9.2 is ${KEYS.join(', ')}`];
+  if (keys.length !== 1) return [`${where}: when holds ${keys.length} conditions; write exactly one of ${KEYS.join(', ')}`];
+  const c = when[keys[0]];
+  if (keys[0] === 'always') return c === true ? [] : [`${where}: when.always must be true`];
+  if (keys[0] === 'subtotalAtLeast') return isStr(c) && DECIMAL.test(c) ? [] : [`${where}: when.subtotalAtLeast must be a decimal string such as "50.00"`];
+  if (!isObj(c)) return [`${where}: when.${keys[0]} must be an object`];
+  if (keys[0] === 'shareOfUnits') {
+    return [...unknownKeys(c, ['where', 'above'], `${where} when.shareOfUnits`), ...(filterOk(c.where) ? [] : [`${where}: when.shareOfUnits.where must map attributes to lists of values`]),
+      ...(isStr(c.above) && DECIMAL.test(c.above) ? [] : [`${where}: when.shareOfUnits.above must be a decimal ratio such as "0.5"`])];
+  }
+  return [...unknownKeys(c, ['where', 'atLeast'], `${where} when.hasUnits`), ...(filterOk(c.where) ? [] : [`${where}: when.hasUnits.where must map attributes to lists of values`]),
+    ...(Number.isInteger(c.atLeast) && (c.atLeast as number) >= 1 ? [] : [`${where}: when.hasUnits.atLeast must be a whole number of at least 1`])];
+}
+
+function amountProblems(amount: unknown, where: string): string[] {
+  if (!isObj(amount)) return [`${where}: amount is missing; use { percentOf, rate } or { fixed }`];
+  if ('fixed' in amount) return [...unknownKeys(amount, ['fixed'], `${where} amount`), ...(isStr(amount.fixed) && DECIMAL.test(amount.fixed) ? [] : [`${where}: amount.fixed must be a decimal string`])];
+  return [...unknownKeys(amount, ['percentOf', 'rate'], `${where} amount`),
+    ...(['subtotal', 'running'].includes(amount.percentOf as string) ? [] : [`${where}: amount.percentOf must be subtotal or running`]),
+    ...(isStr(amount.rate) && DECIMAL.test(amount.rate) ? [] : [`${where}: amount.rate must be a decimal string such as "5"`])];
+}
+
+/** Everything in a loaded rules file that is outside the vocabulary of design 9.2; empty when the file is usable. */
+export function rulesProblems(module: unknown): string[] {
+  if (!isObj(module)) return ['the file exports nothing'];
+  const out: string[] = [];
+  const summary = module.summary;
+  if (!isObj(summary) || !isObj(summary.total) || !(summary.total.label instanceof RegExp) || !isObj(summary.subtotal) || !(summary.subtotal.label instanceof RegExp)) {
+    out.push('summary must give total.label and subtotal.label as regular expressions');
+  } else out.push(...provenanceProblems(summary.provenance, 'summary'));
+  if (!Array.isArray(module.rules)) out.push('rules must be an array (it may be empty)');
+  else {
+    module.rules.forEach((r: unknown, i: number) => {
+      const where = `rule ${isObj(r) && isStr(r.id) ? r.id : `#${i + 1}`}`;
+      if (!isObj(r)) { out.push(`${where}: not an object`); return; }
+      out.push(...unknownKeys(r, ['id', 'label', 'when', 'amount', 'provenance'], where));
+      if (!isStr(r.id)) out.push(`${where}: id is missing`);
+      if (!(r.label instanceof RegExp)) out.push(`${where}: label must be a regular expression`);
+      out.push(...conditionProblems(r.when, where), ...amountProblems(r.amount, where), ...provenanceProblems(r.provenance, where));
+    });
+  }
+  if (!Array.isArray(module.constraints)) out.push('constraints must be an array (it may be empty)');
+  else {
+    module.constraints.forEach((c: unknown, i: number) => {
+      const where = `constraint ${isObj(c) && isStr(c.id) ? c.id : `#${i + 1}`}`;
+      if (!isObj(c)) { out.push(`${where}: not an object`); return; }
+      out.push(...unknownKeys(c, ['id', 'maxQty', 'match', 'provenance'], where));
+      if (!Number.isInteger(c.maxQty) || (c.maxQty as number) < 1) out.push(`${where}: maxQty must be a whole number of at least 1`);
+      if (c.match !== undefined && !(isObj(c.match) && isStr(c.match.name))) out.push(`${where}: match must be { name }`);
+      out.push(...provenanceProblems(c.provenance, where));
+    });
+  }
+  return out;
+}

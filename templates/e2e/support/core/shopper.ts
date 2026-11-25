@@ -6,6 +6,7 @@ import { Ledger } from './ledger';
 import { compare, formatMoney, type AmountFormat } from './money';
 import type { PricingModule } from './pricing';
 import type { PriceSource } from './scenario';
+import { guardDriver } from './driver-guard';
 import { selectProduct } from './selection';
 import type { CartDriver, Money, ProductPick, ProductRef } from './types';
 import { CheckpointError, InfraError, PreconditionError, QaError, verdictOf, type Verdict } from './verdicts';
@@ -23,6 +24,8 @@ export type ShopperOptions = {
   settleMs: number;
   priceSource: PriceSource;
   checkpoints: string[];                                             // expected checkpoint ids, in order
+  steps?: string[];                                                  // step ids in order: the n-th action is steps[n-1]
+  actionMs?: number;                                                 // limits every driver call (driver-guard.ts)
   step: (title: string, body: () => Promise<void>) => Promise<void>; // test.step
   record: (r: CheckpointRecord) => Promise<void>;                    // checkpoint attachment
   fail: (f: FailureRecord) => Promise<void>;                         // failure attachment
@@ -44,8 +47,11 @@ export class Shopper {
   private finished = false;
   private readonly apiChecks: Array<{ name: string; page: Money; api: Money }> = [];
   private readonly judged: string[] = [];
+  private readonly driver: CartDriver;
+  private actions = 0;
 
   constructor(private readonly o: ShopperOptions) {
+    this.driver = o.actionMs ? guardDriver(o.driver, o.actionMs) : o.driver;
     this.ledger = new Ledger(o.pricing.rules, o.fmt.currency);
     this.ctx = { pricing: o.pricing, fmt: o.fmt, rulesFile: o.rulesFile };
   }
@@ -53,6 +59,8 @@ export class Shopper {
   /** Run an action. Before a red checkpoint its error ends the test; after one, the first mismatch does. */
   private async act<T>(action: string, body: () => Promise<T>): Promise<T> {
     this.lastAction = action;
+    const step = this.o.steps?.[this.actions] ?? this.lastStep;
+    this.actions++;
     try {
       return await body();
     } catch (e) {
@@ -62,7 +70,7 @@ export class Shopper {
         await this.o.fail({ step: this.firstRed.step, kind: this.firstRed.verdict, message: `${this.firstRed.message}\n  then:      ${action} failed: ${message.split('\n')[0]}` });
         throw this.firstRed;
       }
-      await this.o.fail({ step: this.lastStep, kind: verdictOf(e), message, rawText: e instanceof PreconditionError ? e.rawText : undefined });
+      await this.o.fail({ step, kind: verdictOf(e), message: step ? `${step} · ${action}: ${message}` : message, rawText: e instanceof PreconditionError ? e.rawText : undefined });
       throw e instanceof QaError ? e : new InfraError(`${action} failed outside the driver's contract: ${message}`);
     }
   }
@@ -73,7 +81,7 @@ export class Shopper {
     return this.act(actionText('add', label, qty), async () => {
       let name: string;
       if ('pick' in target) {
-        const facts = await selectProduct(this.o.driver, target, {
+        const facts = await selectProduct(this.driver, target, {
           reserved: target.pick === 'by-name' ? [] : this.o.reserved,
           pickLimit: this.o.pickLimit,
           constraints: this.o.pricing.constraints,
@@ -85,31 +93,31 @@ export class Shopper {
         name = target.name;
         if (!this.ledger.isBound(name)) throw new InfraError(`the test adds "${name}" again before it was picked; recompile the test.`);
       }
-      await this.o.driver.addProduct(name, qty);
+      await this.driver.addProduct(name, qty);
       this.ledger.apply({ do: 'add', key: name, qty });
       return { name };
     });
   }
 
   private async apiPrice(name: string, page: Money): Promise<Money> {
-    if (!this.o.driver.apiPrice) {
+    if (!this.driver.apiPrice) {
       throw new PreconditionError(`The scenario takes prices from the API (price_source: api), but the driver has no apiPrice; run qa-harness need to see what the driver is missing.`);
     }
-    const api = await this.o.driver.apiPrice(name);
+    const api = await this.driver.apiPrice(name);
     this.apiChecks.push({ name, page, api });
     return api;
   }
 
   async setQuantity(ref: ProductRef, qty: number): Promise<void> {
     await this.act(actionText('setQty', ref.name, qty), async () => {
-      await this.o.driver.setQuantity(ref.name, qty);
+      await this.driver.setQuantity(ref.name, qty);
       this.ledger.apply({ do: 'setQty', key: ref.name, qty });
     });
   }
 
   async remove(ref: ProductRef): Promise<void> {
     await this.act(actionText('remove', ref.name), async () => {
-      await this.o.driver.remove(ref.name);
+      await this.driver.remove(ref.name);
       this.ledger.apply({ do: 'remove', key: ref.name });
     });
   }
@@ -122,10 +130,10 @@ export class Shopper {
     let error: CheckpointError | undefined;
     try {
       await this.o.step(title, async () => {
-        const read = await pollCart(this.o.driver, snap, this.ctx, this.o.settleMs);
+        const read = await pollCart(this.driver, snap, this.ctx, this.o.settleMs);
         if (read.readError) {
           const e = read.readError;
-          await this.o.fail({ step: stepId, kind: verdictOf(e), message: e instanceof Error ? e.message : String(e) });
+          await this.o.fail({ step: stepId, kind: verdictOf(e), message: `${stepId} · reading the cart: ${e instanceof Error ? e.message : String(e)}` });
           throw e instanceof QaError ? e : new InfraError(`reading the cart at ${stepId} failed: ${String(e)}`);
         }
         const findings: Finding[] = [...this.apiFindings(), ...read.findings];

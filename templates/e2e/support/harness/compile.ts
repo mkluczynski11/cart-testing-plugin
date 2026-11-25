@@ -28,7 +28,12 @@ export function compile(root: string, slug: string, force: boolean): CommandResu
   const target = rel(root, file);
   if (!fs.existsSync(file)) {
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, text, { flag: 'wx' });
+    try {
+      fs.writeFileSync(file, text, { flag: 'wx' });
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+      return { verdict: 'FILE_CONFLICT', lines: [`${target} is in the way: a link or a file the harness cannot read, so nothing was written.`, `Remove ${target} and run compile ${slug} again.`], data: { written: false } };
+    }
     return { verdict: 'PASS', lines: [`Wrote ${target}.`], data: { written: true } };
   }
   const existing = fs.readFileSync(file, 'utf8');

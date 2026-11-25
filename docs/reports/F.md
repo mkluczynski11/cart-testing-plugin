@@ -106,3 +106,75 @@ after: 58115ae275b1
 
 Checks: `tsc`, `typecheck:toolshop`, `test:unit` 151 passed, selftest 12/12 `PASS` (53.8 s), `node --test scripts/`,
 `check-contracts`, `claude plugin validate .` all green; manifest regenerated.
+
+## Stage 2 — classification, and conditions that are not harness bugs (V: F4, F3, F2, F1, N4, Q7 · D: requests 1, 6)
+
+`date -u`: `Wed Nov 25 09:44:36 UTC 2026`.
+
+Tests first: `unit/driver-calls.spec.ts` (6) and `unit/conditions.spec.ts` (8). Red before the fix:
+
+```text
+driver-calls (V c2, c3; D request 6), 6 failed:
+  a plain exception in a driver action is UNDETERMINED, naming the step and the method
+    -   "kind": "UNDETERMINED",  "method": true,  "step": "S1",
+    +   "kind": "INFRA_FAIL",    "method": false, "step": null,
+  Playwright's own timeout on a locator inside an action is LOCATOR_FAIL, naming the step and the method
+    +   "kind": "INFRA_FAIL",    "method": false, "step": "S2",
+  a read that never returns is LOCATOR_FAIL at its checkpoint, naming readCart      Test timeout of 5000ms exceeded.
+  an action that never returns is LOCATOR_FAIL, naming the step and the method      Test timeout of 5000ms exceeded.
+  the driver's own InfraError stays INFRA_FAIL                                       +   "step": null,
+  a network error inside a driver call stays INFRA_FAIL                              +   "method": false, "step": null,
+conditions (V hp, h, F3, N4; D request 1), 8 failed:
+  a rules file with an unknown condition is LINT_FAIL naming the rule id and the key   +   "named": false, "verdict": "none",
+  doctor reports an unreadable scenario as one SPEC_INVALID line …                     +   "verdict": "plain error" (doctor threw)
+  doctor does not read specs/<slug>.intent.md as a scenario                            +   "ok: cart-total-add-change-remove.intent: draft, test not compiled",
+  doctor prints a hand-edited test and a changed scenario as findings, not under ok:   +   "ok: cart-total-add-change-remove: confirmed, test edited by hand",
+  a held lock is refused with INFRA_FAIL and a sentence …                              +   "verdict": "plain error",
+  a root without qa.config.json is SPEC_INVALID …                                      +   "says": false, "verdict": "plain error",
+  compile onto a file that is in the way (a dangling link) is FILE_CONFLICT            (threw EEXIST)
+  doctor type-checks the rules file with the root's own tsc …                          Expected: true  Received: false
+```
+
+Fix:
+
+- `support/core/driver-guard.ts` (new): every driver call of the shopper and of the precondition check goes through
+  `driverCall(method, 3 × actionMs, …)`. Playwright's `TimeoutError` and a call over its limit → `LOCATOR_FAIL`
+  ("… The element it waited for did not appear; the driver did not find its element." / "readCart did not return
+  within 150 ms (3 × actionMs) …"); a library error keeps its verdict (method prefixed); a network or closed-browser
+  message → `INFRA_FAIL`; anything else → `UNDETERMINED` ("addProduct threw Error: … The evidence does not say whether
+  the driver or the application is at fault; read addProduct in the driver and the trace of the run."). New class
+  `UndeterminedError` (verdict of 6.3). The limit is 3 × actionMs because one driver call chains up to three waits of
+  actionMs each (navigation, element, acknowledgment); recorded in design 18.
+- The shopper takes the step ids (`steps`), so an action failure names its own step (`S3 · set quantity of … :
+  setQuantity: …`), not the last checkpoint. The probe, browser start, 5xx and the driver's `InfraError` are unchanged;
+  `classify()` still puts the environment first.
+- `ConditionError` (verdict from the dictionary, own sentence); the CLI prints a `QaError` as itself and keeps "The
+  harness failed unexpectedly … harness bug" only for anything else. Held lock → `INFRA_FAIL` "Another run of <slug>
+  holds reports/<slug>/.lock (pid N); wait for it to finish and run the command again, or delete the file if no run
+  is active."; no `qa.config.json` → `SPEC_INVALID` "<dir> is not an e2e root … Point --root at the directory that
+  holds qa.config.json"; a file in the way of `compile` → `FILE_CONFLICT` "… is in the way … Remove … and run compile
+  … again."
+- `rulesProblems()` in `support/core/pricing.ts` checks every rule, the summary and the constraints against 9.2 when
+  the rules file is loaded (harness and fixture); the first problem is `LINT_FAIL` naming the rule id and the key.
+- `doctor`: one `SPEC_INVALID` line per unreadable scenario, the rest still checked; `specs/*.intent.md` skipped; a
+  hand-edited test is a `note:` and a changed scenario only its `SCENARIO_CHANGED` line; `tsc --noEmit --pretty false
+  -p <root>/tsconfig.json` with the root's own TypeScript (resolved from the root; skipped with a `note:` when there is
+  none) reports the first message about the driver or the rules file as `LINT_FAIL: tsc: …`.
+
+After the fix: unit tests `165 passed`. The selftest row "control page" now also rebuilds D's stage 5 first fixture on
+the control application (`line-qty` → `line-quantity` in `setQuantity`, which the control driver does not wrap; D saw
+`INFRA_FAIL` there): `a missing element in setQuantity LOCATOR_FAIL at S3`.
+
+V's scratch roots, by CLI on a copy of `examples/toolshop` (no live run):
+
+```text
+hp  example cart-eco-threshold  → The rules file app/toolshop.pricing.ts is outside the vocabulary of design 9.2: rule eco-discount: unknown condition key "couponCode" in when; the vocabulary of design 9.2 is always, shareOfUnits, hasUnits, subtotalAtLeast. … VERDICT: LINT_FAIL
+h   doctor                      → SPEC_INVALID: specs/h-tabs.md cannot be read (Tabs are not allowed as indentation at line 3, column 1:); fix its YAML front matter.
+                                  … ok: cart-eco-threshold: confirmed, test compiled / ok: cart-total-add-change-remove: confirmed, test compiled … VERDICT: SPEC_INVALID
+lock run --dry --repair driver  → Another run of cart-total-add-change-remove holds reports/cart-total-add-change-remove/.lock (pid 4242); wait for it to finish … VERDICT: INFRA_FAIL
+--root /nonexistent/qa-root doctor → /nonexistent/qa-root is not an e2e root: it has no qa.config.json. Point --root at … VERDICT: SPEC_INVALID
+compile onto a dangling link    → tests/cart-eco-threshold.spec.ts is in the way: … Remove … and run compile cart-eco-threshold again. VERDICT: FILE_CONFLICT (nothing written through the link)
+```
+
+Checks: `tsc`, `typecheck:toolshop`, `test:unit` 165 passed, selftest 12/12 `PASS` (62.1 s), `node --test scripts/`,
+`check-contracts`, `claude plugin validate .` green; manifest regenerated.

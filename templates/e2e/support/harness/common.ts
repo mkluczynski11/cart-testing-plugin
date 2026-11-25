@@ -5,10 +5,10 @@ import * as path from 'node:path';
 import { files, formatOf, loadConfig, type QaConfig } from '../core/config';
 import type { ExampleFile } from '../core/example';
 import type { AmountFormat } from '../core/money';
-import type { PricingModule } from '../core/pricing';
+import { rulesProblems, type PricingModule } from '../core/pricing';
 import { fileHash, freezeState, readScenarioFile, scenarioHash, type FreezeState, type Scenario } from '../core/scenario';
 import { formatViolations, validateScenario } from '../core/validator';
-import type { Verdict } from '../core/verdicts';
+import { ConditionError, type Verdict } from '../core/verdicts';
 
 export type CommandResult = { verdict: Verdict; lines: string[]; data?: Record<string, unknown> };
 
@@ -21,7 +21,16 @@ export function loadPricing(root: string, app: string): PricingModule {
   const file = files.pricing(root, app);
   if (!fs.existsSync(file)) throw new Error(`${file} does not exist; write the app's rules file first (design 9.2).`);
   // A dynamic require: the rules file is found by the app name in qa.config.json.
-  return require(file) as PricingModule;
+  return checkedRules(require(file) as unknown, path.relative(root, file));
+}
+
+/** A loaded rules file inside the vocabulary of design 9.2, or LINT_FAIL naming the rule and the key. */
+export function checkedRules(module: unknown, file: string): PricingModule {
+  const problems = rulesProblems(module);
+  if (problems.length) {
+    throw new ConditionError(`The rules file ${file} is outside the vocabulary of design 9.2: ${problems[0]}${problems.length > 1 ? ` (and ${problems.length - 1} more)` : ''}. Correct the rules file; tsc --noEmit names the same place.`, 'LINT_FAIL');
+  }
+  return module as PricingModule;
 }
 
 export type Loaded = {

@@ -120,7 +120,16 @@ export const CONTROL_PAGE: Row = {
       const d = await run(bad, 'control-discount', { dry: false });
       const rec = JSON.parse(fs.readFileSync(path.join(files.runs(bad, 'control-discount'), d.data?.runId as string, 'run.json'), 'utf8')) as { repeats: Array<{ checkpoints: Array<{ layer?: string }> }> };
       check(d.verdict === 'LOCATOR_FAIL' && rec.repeats[0]?.checkpoints[0]?.layer === 'labels', `the wrong driver with a discount: ${d.verdict}, layer ${rec.repeats[0]?.checkpoints[0]?.layer}`);
-      return 'correct driver passes G3 and G4 (4/4 controls); wrong driver passes G3 on equal values, G4 CONTROL_MISSED "control active, test green"; with a discount LOCATOR_FAIL at the label layer';
+      const broken = controlRoot('control-broken', app.url, false);
+      const driverFile = files.driver(broken, 'control');
+      const source = fs.readFileSync(driverFile, 'utf8');
+      check(source.includes("lineRow(name).getByTestId('line-qty')"), 'selftest fixture edit did not apply: line-qty in setQuantity');
+      fs.writeFileSync(driverFile, source.replace("lineRow(name).getByTestId('line-qty')", "lineRow(name).getByTestId('line-quantity')"));
+      prepare(broken, 'control-equal');
+      const m = await run(broken, 'control-equal', { dry: false });
+      const err = (JSON.parse(fs.readFileSync(path.join(files.runs(broken, 'control-equal'), m.data?.runId as string, 'run.json'), 'utf8')) as { repeats: Array<{ error: { step: string | null; message: string } | null }> }).repeats[0]?.error;
+      check(m.verdict === 'LOCATOR_FAIL' && err?.step === 'S3' && err.message.includes('setQuantity'), `a missing element in an unwrapped action: ${m.verdict} at ${err?.step}: ${err?.message.split('\n')[0]}`);
+      return 'correct driver passes G3 and G4 (4/4 controls); wrong driver passes G3 on equal values, G4 CONTROL_MISSED "control active, test green"; with a discount LOCATOR_FAIL at the label layer; a missing element in setQuantity LOCATOR_FAIL at S3';
     } finally {
       await app.stop();
     }

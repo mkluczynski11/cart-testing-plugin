@@ -6,16 +6,17 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { CheckpointRecord } from './checkpoint';
 import { files, formatOf, loadConfig, type QaConfig } from './config';
+import { guardDriver } from './driver-guard';
 import { stubCatalog, type ExampleFile } from './example';
 import type { Defect } from './operators';
-import type { PricingModule } from './pricing';
+import { rulesProblems, type PricingModule } from './pricing';
 import { CONTROLS, installControl, type ControlName, type NetworkLog } from './live-controls';
 import { ReferenceCart, type CatalogItem } from './reference-cart';
 import { readScenarioFile, scenarioHash, type Precondition, type PriceSource, type Scenario } from './scenario';
 import { Shopper, type FailureRecord } from './shopper';
 import type { CartDriver, DriverFactory } from './types';
 import { formatViolations, validateScenario } from './validator';
-import { InfraError, PreconditionError, verdictOf } from './verdicts';
+import { ConditionError, InfraError, PreconditionError, verdictOf } from './verdicts';
 
 type Options = { preconditions: Precondition[]; priceSource: PriceSource; reserved: string[] };
 type Fixtures = { shopper: Shopper };
@@ -88,6 +89,8 @@ export const test = base.extend<Options & Fixtures>({
     const fmt = formatOf(config);
     const rulesFile = files.pricing(root, config.app);
     const pricing = loadModule<PricingModule>(rulesFile, 'The rules file');
+    const ruleProblems = rulesProblems(pricing);
+    if (ruleProblems.length) throw new ConditionError(`The rules file ${path.relative(root, rulesFile)} is outside the vocabulary of design 9.2: ${ruleProblems[0]}; run qa-harness doctor.`, 'LINT_FAIL');
     const { scenario, sha } = loadScenario(root, slug, pricing);
     const dry = testInfo.project.name === 'dry';
     const setup = dry ? drySetup(root, slug, scenario) : undefined;
@@ -113,7 +116,7 @@ export const test = base.extend<Options & Fixtures>({
         }
       }
       try {
-        await checkPreconditions(preconditions, driver, live?.context);
+        await checkPreconditions(preconditions, live ? guardDriver(driver, config.timeouts.actionMs) : driver, live?.context);
       } catch (e) {
         setupFailed = true;
         await fail({ step: null, kind: verdictOf(e), message: (e as Error).message, rawText: e instanceof PreconditionError ? e.rawText : undefined });
@@ -126,6 +129,8 @@ export const test = base.extend<Options & Fixtures>({
         pickLimit: config.pickLimit,
         settleMs: dry ? 0 : config.timeouts.settleMs,
         checkpoints: scenario.checkpoints,
+        steps: scenario.steps.map((s) => s.id),
+        actionMs: dry ? undefined : config.timeouts.actionMs,
         step: (title, body) => test.step(title, body),
         record: (r: CheckpointRecord) => attachJson('checkpoint', r),
         fail,

@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { files } from '../core/config';
+import { ConditionError } from '../core/verdicts';
 
 /** A run id: the UTC timestamp YYYYMMDDTHHMMSSZ and four hex characters. */
 export function newRunId(now = new Date()): string {
@@ -39,7 +40,7 @@ export async function withLock<T>(root: string, slug: string, fn: () => Promise<
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
     if (Date.now() - fs.statSync(lock).mtimeMs < STALE_MS) {
-      throw new Error(`${lock} is held by another run; wait for it to finish, or delete the file if no run is active.`);
+      throw new ConditionError(`Another run of ${slug} holds ${path.relative(root, lock)} (pid ${fs.readFileSync(lock, 'utf8').trim() || 'unknown'}); wait for it to finish and run the command again, or delete the file if no run is active.`, 'INFRA_FAIL');
     }
     fs.writeFileSync(lock, `${process.pid}\n`);
   }

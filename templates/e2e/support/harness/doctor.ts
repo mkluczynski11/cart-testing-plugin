@@ -1,5 +1,6 @@
 // qa-harness doctor: environment, file integrity (R4–R7) and the driver's conformance (R13).
 // Implements design 6.1 (doctor), 6.3 (HARNESS_MODIFIED, SCENARIO_CHANGED, VERIFICATION_STALE) and order N, 6.4.
+import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { inspectTestFile } from '../core/compiler';
@@ -12,7 +13,34 @@ import { lintDriver } from './lint';
 import { manifestChanges, writeManifest } from './manifest';
 import { inspectDriver } from './need';
 
-const ORDER: Verdict[] = ['INFRA_FAIL', 'HARNESS_MODIFIED', 'SCENARIO_CHANGED', 'VERIFICATION_STALE', 'LINT_FAIL'];
+const ORDER: Verdict[] = ['INFRA_FAIL', 'HARNESS_MODIFIED', 'SPEC_INVALID', 'SCENARIO_CHANGED', 'VERIFICATION_STALE', 'LINT_FAIL'];
+
+/** Scenario slugs of a root: specs/*.md without the intent reviews (specs/<slug>.intent.md). */
+export function scenarioSlugs(root: string): string[] {
+  const dir = path.join(root, 'specs');
+  return fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => f.endsWith('.md') && !f.endsWith('.intent.md')).map((f) => f.slice(0, -3)).sort() : [];
+}
+
+/**
+ * Type-check the driver and the rules file with the root's own TypeScript, when the root has a tsconfig.json and
+ * TypeScript is installed for it. The first compiler message about either file, or null; 'skipped' without a compiler.
+ */
+export function typeCheck(root: string, app: string): string | null | 'skipped' {
+  const tsconfig = path.join(root, 'tsconfig.json');
+  let tsc: string;
+  try {
+    tsc = path.join(path.dirname(require.resolve('typescript/package.json', { paths: [root] })), 'bin', 'tsc');
+  } catch {
+    return 'skipped';
+  }
+  if (!fs.existsSync(tsconfig)) return 'skipped';
+  // The compiler runs without the loader hooks of the calling process (tsx, Playwright), as a tester would run it.
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  delete env.NODE_OPTIONS;
+  const r = spawnSync(process.execPath, [tsc, '--noEmit', '--pretty', 'false', '-p', tsconfig], { cwd: root, encoding: 'utf8', timeout: 120_000, env });
+  const mine = `${r.stdout}${r.stderr}`.split('\n').filter((l) => /error TS\d+/.test(l) && (l.includes(`${app}.driver.ts`) || l.includes(`${app}.pricing.ts`)));
+  return mine[0]?.trim() ?? null;
+}
 
 function browserInstalled(): boolean {
   // A dynamic require keeps the CLI start fast when doctor is not run.
@@ -24,6 +52,7 @@ export function doctor(root: string, write: boolean): CommandResult {
   if (write) return { verdict: 'PASS', lines: [`Wrote support/core/MANIFEST.json with ${writeManifest()} files. Do this only in the plugin repo.`] };
   const found: Array<{ verdict: Verdict; line: string }> = [];
   const ok: string[] = [];
+  const notes: string[] = [];
   const major = Number(process.versions.node.split('.')[0]);
   if (major < 20) found.push({ verdict: 'INFRA_FAIL', line: `Node ${process.versions.node} is older than 20; install Node 20 or later.` });
   if (!browserInstalled()) found.push({ verdict: 'INFRA_FAIL', line: 'The Playwright Chromium browser is not installed; run npx playwright install chromium.' });
@@ -36,10 +65,14 @@ export function doctor(root: string, write: boolean): CommandResult {
   const config = loadConfig(root);
   const rulesFile = files.pricing(root, config.app);
   const rulesSha = fs.existsSync(rulesFile) ? fileHash(rulesFile) : '';
-  const specsDir = path.join(root, 'specs');
-  const slugs = fs.existsSync(specsDir) ? fs.readdirSync(specsDir).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3)).sort() : [];
-  for (const slug of slugs) {
-    const data = readScenarioFile(root, slug).data;
+  for (const slug of scenarioSlugs(root)) {
+    let data: unknown;
+    try {
+      data = readScenarioFile(root, slug).data;
+    } catch (e) {
+      found.push({ verdict: 'SPEC_INVALID', line: `${rel(root, files.scenario(root, slug))} cannot be read (${(e as Error).message.split('\n')[0]}); fix its YAML front matter.` });
+      continue;
+    }
     const exFile = files.example(root, slug);
     const ex = fs.existsSync(exFile) ? JSON.parse(fs.readFileSync(exFile, 'utf8')) as ExampleFile : undefined;
     const state = freezeState(data, ex?.confirmed, rulesSha);
@@ -55,7 +88,8 @@ export function doctor(root: string, write: boolean): CommandResult {
       const stale = [v.testSha256 !== fileHash(test) && 'the test', v.driverSha256 !== (fs.existsSync(driver) ? fileHash(driver) : null) && 'the driver', v.rulesSha256 !== rulesSha && 'the rules file'].filter(Boolean);
       if (stale.length) found.push({ verdict: 'VERIFICATION_STALE', line: `${slug}: ${stale.join(', ')} changed after verification; run qa-harness verify ${slug}.` });
     }
-    ok.push(`${slug}: ${state === 'frozen' ? 'confirmed' : state === 'not-confirmed' ? 'draft' : 'changed'}, test ${origin}`);
+    if (origin === 'edited by hand') notes.push(`${slug}: the test was edited by hand; compile ${slug} shows the difference, and the report says so.`);
+    else if (state === 'frozen' || state === 'not-confirmed') ok.push(`${slug}: ${state === 'frozen' ? 'confirmed' : 'draft'}, test ${origin}`);
   }
 
   const driverFile = files.driver(root, config.app);
@@ -72,11 +106,15 @@ export function doctor(root: string, write: boolean): CommandResult {
   }
   try {
     loadPricing(root, config.app);
-    ok.push(`rules file ${rel(root, rulesFile)} loads`);
+    ok.push(`rules file ${rel(root, rulesFile)} loads and stays within the vocabulary of design 9.2`);
   } catch (e) {
     found.push({ verdict: 'LINT_FAIL', line: `The rules file cannot be used: ${(e as Error).message}` });
   }
+  const typed = typeCheck(root, config.app);
+  if (typed === 'skipped') notes.push('no TypeScript compiler installed for this root, so the driver and the rules file were not type-checked.');
+  else if (typed) found.push({ verdict: 'LINT_FAIL', line: `tsc: ${typed}` });
+  else ok.push(`tsc: the driver and the rules file type-check`);
 
   const verdict = ORDER.find((v) => found.some((f) => f.verdict === v)) ?? 'PASS';
-  return { verdict, lines: [...found.map((f) => `${f.verdict}: ${f.line}`), ...ok.map((l) => `ok: ${l}`)] };
+  return { verdict, lines: [...found.map((f) => `${f.verdict}: ${f.line}`), ...notes.map((l) => `note: ${l}`), ...ok.map((l) => `ok: ${l}`)] };
 }
