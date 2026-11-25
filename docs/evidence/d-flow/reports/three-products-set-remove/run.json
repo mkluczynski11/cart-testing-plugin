@@ -1,0 +1,1437 @@
+{
+  "meta": {
+    "runId": "20261125T025707Z-5ccd",
+    "slug": "three-products-set-remove",
+    "scenarioSha256": "d1d829e77f23b900d681dcfa4372a9fef451b219dc44d06aded9163fe1ac8881",
+    "testSha256": "dabab9d55f3565abf4b3f51241208b5176466b2482fbda8468aab5700238c1b7",
+    "testOrigin": "compiled",
+    "timestamp": "2026-11-25T02:57:09Z",
+    "baseURL": "https://practicesoftwaretesting.com",
+    "browser": "chromium",
+    "locale": "en-US",
+    "priceSource": "ui",
+    "pluginVersion": "0.1.0",
+    "gitSha": "02c8f60",
+    "mode": "live",
+    "defect": null,
+    "checkpoints": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "S6"
+    ]
+  },
+  "verdict": "PASS",
+  "repeats": [
+    {
+      "n": 1,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Combination Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "14.15",
+            "adjustments": [],
+            "total": "14.15",
+            "totalExact": "283/20",
+            "currency": "USD",
+            "composition": "$14.15 = subtotal $14.15"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "14.15",
+              "rawText": "$14.15"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 268,
+          "screenshot": "S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "26.16",
+            "adjustments": [],
+            "total": "26.16",
+            "totalExact": "654/25",
+            "currency": "USD",
+            "composition": "$26.16 = subtotal $26.16"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "26.16",
+              "rawText": "$26.16"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 233,
+          "screenshot": "S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "add Bolt Cutters, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 1,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "74.57",
+            "adjustments": [],
+            "total": "74.57",
+            "totalExact": "7457/100",
+            "currency": "USD",
+            "composition": "$74.57 = subtotal $74.57"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "74.57",
+              "rawText": "$74.57"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 237,
+          "screenshot": "S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "set quantity of Combination Pliers to 2",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 1,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "88.72",
+            "adjustments": [],
+            "total": "88.72",
+            "totalExact": "2218/25",
+            "currency": "USD",
+            "composition": "$88.72 = subtotal $88.72"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "88.72",
+              "rawText": "$88.72"
+            }
+          },
+          "result": "pass",
+          "reads": 21,
+          "elapsedMs": 112,
+          "screenshot": "S4.png"
+        },
+        {
+          "step": "S5",
+          "action": "set quantity of Bolt Cutters to 4",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 4,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "233.95",
+            "adjustments": [],
+            "total": "233.95",
+            "totalExact": "4679/20",
+            "currency": "USD",
+            "composition": "$233.95 = subtotal $233.95"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 4,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "193.64",
+                  "rawText": "$193.64"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "233.95",
+              "rawText": "$233.95"
+            }
+          },
+          "result": "pass",
+          "reads": 27,
+          "elapsedMs": 122,
+          "screenshot": "S5.png"
+        },
+        {
+          "step": "S6",
+          "action": "remove Pliers",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 4,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "221.94",
+            "adjustments": [],
+            "total": "221.94",
+            "totalExact": "11097/50",
+            "currency": "USD",
+            "composition": "$221.94 = subtotal $221.94"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 4,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "193.64",
+                  "rawText": "$193.64"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "221.94",
+              "rawText": "$221.94"
+            }
+          },
+          "result": "pass",
+          "reads": 24,
+          "elapsedMs": 113,
+          "screenshot": "S6.png"
+        }
+      ],
+      "durationMs": 7156
+    },
+    {
+      "n": 2,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Combination Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "14.15",
+            "adjustments": [],
+            "total": "14.15",
+            "totalExact": "283/20",
+            "currency": "USD",
+            "composition": "$14.15 = subtotal $14.15"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "14.15",
+              "rawText": "$14.15"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 267,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat1/S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "26.16",
+            "adjustments": [],
+            "total": "26.16",
+            "totalExact": "654/25",
+            "currency": "USD",
+            "composition": "$26.16 = subtotal $26.16"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "26.16",
+              "rawText": "$26.16"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 238,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat1/S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "add Bolt Cutters, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 1,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "74.57",
+            "adjustments": [],
+            "total": "74.57",
+            "totalExact": "7457/100",
+            "currency": "USD",
+            "composition": "$74.57 = subtotal $74.57"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "74.57",
+              "rawText": "$74.57"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 239,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat1/S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "set quantity of Combination Pliers to 2",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 1,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "88.72",
+            "adjustments": [],
+            "total": "88.72",
+            "totalExact": "2218/25",
+            "currency": "USD",
+            "composition": "$88.72 = subtotal $88.72"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "88.72",
+              "rawText": "$88.72"
+            }
+          },
+          "result": "pass",
+          "reads": 25,
+          "elapsedMs": 110,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat1/S4.png"
+        },
+        {
+          "step": "S5",
+          "action": "set quantity of Bolt Cutters to 4",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 4,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "233.95",
+            "adjustments": [],
+            "total": "233.95",
+            "totalExact": "4679/20",
+            "currency": "USD",
+            "composition": "$233.95 = subtotal $233.95"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 4,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "193.64",
+                  "rawText": "$193.64"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "233.95",
+              "rawText": "$233.95"
+            }
+          },
+          "result": "pass",
+          "reads": 27,
+          "elapsedMs": 116,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat1/S5.png"
+        },
+        {
+          "step": "S6",
+          "action": "remove Pliers",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 4,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "221.94",
+            "adjustments": [],
+            "total": "221.94",
+            "totalExact": "11097/50",
+            "currency": "USD",
+            "composition": "$221.94 = subtotal $221.94"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 4,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "193.64",
+                  "rawText": "$193.64"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "221.94",
+              "rawText": "$221.94"
+            }
+          },
+          "result": "pass",
+          "reads": 27,
+          "elapsedMs": 118,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat1/S6.png"
+        }
+      ],
+      "durationMs": 6918
+    },
+    {
+      "n": 3,
+      "result": "pass",
+      "status": "passed",
+      "error": null,
+      "checkpoints": [
+        {
+          "step": "S1",
+          "action": "add Combination Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "14.15",
+            "adjustments": [],
+            "total": "14.15",
+            "totalExact": "283/20",
+            "currency": "USD",
+            "composition": "$14.15 = subtotal $14.15"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "14.15",
+              "rawText": "$14.15"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 273,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat2/S1.png"
+        },
+        {
+          "step": "S2",
+          "action": "add Pliers, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "26.16",
+            "adjustments": [],
+            "total": "26.16",
+            "totalExact": "654/25",
+            "currency": "USD",
+            "composition": "$26.16 = subtotal $26.16"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "26.16",
+              "rawText": "$26.16"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 233,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat2/S2.png"
+        },
+        {
+          "step": "S3",
+          "action": "add Bolt Cutters, 1 unit",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 1,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 1,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "74.57",
+            "adjustments": [],
+            "total": "74.57",
+            "totalExact": "7457/100",
+            "currency": "USD",
+            "composition": "$74.57 = subtotal $74.57"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "74.57",
+              "rawText": "$74.57"
+            }
+          },
+          "result": "pass",
+          "reads": 1,
+          "elapsedMs": 240,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat2/S3.png"
+        },
+        {
+          "step": "S4",
+          "action": "set quantity of Combination Pliers to 2",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 1,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "88.72",
+            "adjustments": [],
+            "total": "88.72",
+            "totalExact": "2218/25",
+            "currency": "USD",
+            "composition": "$88.72 = subtotal $88.72"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "88.72",
+              "rawText": "$88.72"
+            }
+          },
+          "result": "pass",
+          "reads": 28,
+          "elapsedMs": 122,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat2/S4.png"
+        },
+        {
+          "step": "S5",
+          "action": "set quantity of Bolt Cutters to 4",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Pliers",
+              "qty": 1,
+              "unitPrice": "$12.01",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 4,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "233.95",
+            "adjustments": [],
+            "total": "233.95",
+            "totalExact": "4679/20",
+            "currency": "USD",
+            "composition": "$233.95 = subtotal $233.95"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Pliers",
+                "qty": 1,
+                "unitPrice": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                },
+                "lineTotal": {
+                  "value": "12.01",
+                  "rawText": "$12.01"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 4,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "193.64",
+                  "rawText": "$193.64"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "233.95",
+              "rawText": "$233.95"
+            }
+          },
+          "result": "pass",
+          "reads": 28,
+          "elapsedMs": 116,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat2/S5.png"
+        },
+        {
+          "step": "S6",
+          "action": "remove Pliers",
+          "ledger": [
+            {
+              "name": "Combination Pliers",
+              "qty": 2,
+              "unitPrice": "$14.15",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            },
+            {
+              "name": "Bolt Cutters",
+              "qty": 4,
+              "unitPrice": "$48.41",
+              "attrs": {
+                "co2_rating": "D"
+              }
+            }
+          ],
+          "expected": {
+            "empty": false,
+            "subtotal": "221.94",
+            "adjustments": [],
+            "total": "221.94",
+            "totalExact": "11097/50",
+            "currency": "USD",
+            "composition": "$221.94 = subtotal $221.94"
+          },
+          "displayed": {
+            "empty": false,
+            "lines": [
+              {
+                "name": "Combination Pliers",
+                "qty": 2,
+                "unitPrice": {
+                  "value": "14.15",
+                  "rawText": "$14.15"
+                },
+                "lineTotal": {
+                  "value": "28.30",
+                  "rawText": "$28.30"
+                }
+              },
+              {
+                "name": "Bolt Cutters",
+                "qty": 4,
+                "unitPrice": {
+                  "value": "48.41",
+                  "rawText": "$48.41"
+                },
+                "lineTotal": {
+                  "value": "193.64",
+                  "rawText": "$193.64"
+                }
+              }
+            ],
+            "adjustments": [],
+            "total": {
+              "label": "Total",
+              "value": "221.94",
+              "rawText": "$221.94"
+            }
+          },
+          "result": "pass",
+          "reads": 31,
+          "elapsedMs": 132,
+          "screenshot": "artifacts/three-products-set-remove--4ce2a-ird-and-removing-the-second-live-repeat2/S6.png"
+        }
+      ],
+      "durationMs": 7044
+    }
+  ],
+  "errors": []
+}

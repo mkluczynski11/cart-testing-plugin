@@ -285,3 +285,65 @@ evidence that must survive is copied into `docs/evidence/` as the order asks.
   `run` once more (6 repeats) rather than inventing a flag.
 - **`setup` defaults from the starter pack** (stage 2).
 
+## Stage 4 — the whole flow on the live Toolshop
+
+`date -u`: `Wed Nov 25 02:49:17 UTC 2026` (minute 37 of the box). Scratch repo `flow-1` under the session's scratch
+directory, not `.sandbox/flow-1` (stage 3 finding); default model (`claude-opus-5-5`); command line as the order
+writes it, `--max-turns 15` for setup and 60 for the flows. The clone of step 4 is `.sandbox/clone-1` (no Claude Code
+there, so the location does not matter).
+
+| # | Session / command | Outcome | Turns | Duration | Cost | Live invocations |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1a | F1 `/qa:setup toolshop https://practicesoftwaretesting.com` | `VERDICT: PASS`, starter pack installed, selftest 12/12 | 3 | 65 s | $0.23 | 0 |
+| 1b | F2 `/qa:new-test "<request of section 1>" --yes` | **`VERIFIED`**, run `20261125T025220Z-a326` promoted with `review.md`; `specs/two-products-change-remove.intent.md` `INTENT_OK`; readback below | 20 | 235 s | $1.16 | 2 (`run`, `verify`) |
+| 2 | F3 `/qa:new-test "Add three different products. Set the first to 2 units and the third to 4. Remove the second. Check the total after every change." --yes` | **`VERIFIED`**, run promoted; `git status --short -- e2e/app e2e/support` empty | 18 | 298 s | $1.32 | 2 (`run`, `verify`) |
+| 3 | F4 `/qa:new-test "Check that the cart works."` | one question, no file (`git status` identical before and after) | 3 | 11 s | $0.26 | 0 |
+| 4a | clone: `cd e2e && npm run qa -- run two-products-change-remove` (the readback's "Rerun" line, verbatim, from the clone root) | `VERDICT: PASS`, G3 3/3 | — | 23 s | — | 1 |
+| 4b | clone: `npm run qa -- verify two-products-change-remove` in `e2e/` | `VERDICT: PASS`, G4 4 caught | — | 58 s | — | 1 |
+
+No run ended `INFRA_FAIL` and no session hit its turn limit, so no resumption was needed. Live invocations against
+the site in this stage: 6 of 10.
+
+Readback of run 1 (F2), in full:
+
+```text
+PASS 3/3 · test verified
+Products: Combination Pliers ($14.15, co2_rating D) · Pliers ($12.01, co2_rating D)
+
+Step  Shopper's action                    Expected  Displayed  Result
+S1   add Combination Pliers, 1 unit         $14.15    "$14.15"   match
+S2   add Pliers, 1 unit                     $26.16    "$26.16"   match
+S3   set quantity of Combination Pliers to 3 $54.46    "$54.46"   match
+S4   remove Pliers                          $42.45    "$42.45"   match
+
+Evidence: intent review without remarks; defects 12/12 applicable, each in the right place; live controls 4/4; report review without remarks.
+Scope: The total was read from the row "Total". In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart; only the label-based control skew-total shows that the driver reads the total.
+Scenario gap:
+- rule-never is not applicable with the products of this run: Add a step at which rule eco-discount is in force.
+- rule-wrong-rate is not applicable with the products of this run: Add a step at which rule eco-discount is in force.
+- rule-boundary is not applicable with the products of this run: Add a step at which the cart sits exactly at the threshold of rule eco-discount.
+- round-down is not applicable with the products of this run: No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation.
+Rules used: eco-discount · observed (docs/toolshop-facts.md#h1, 2026-11-25; cart.component.ts @ae7caec) · live: confirmed · not in force in this run
+Rerun: cd e2e && npm run qa -- run two-products-change-remove
+Files: e2e/specs/two-products-change-remove.md, e2e/specs/two-products-change-remove.intent.md, e2e/tests/two-products-change-remove.spec.ts, e2e/reports/two-products-change-remove/
+```
+
+Run 3 (F4), in full: "I haven't written anything yet. "Check that the cart works" doesn't say what the shopper does or
+what the test should check, so I can't build a scenario from it. For example: "add two different products, change the
+quantity of one to 3, remove the other, and check the total after each step". What should the shopper do in the cart
+(add, change quantity, remove, and which products), and should the total be checked after every step or only at the
+end?"
+
+What the sessions did (from the transcripts): F2 ran `doctor`, wrote the scenario, `example` (twice: a first fix of its
+own description), `example --confirm`, `intent` (missing) → `test-verifier` (intent) → `intent` `PASS` → `compile` →
+`run --dry` `PASS` → `need` `PASS` → `run` `PASS` → `test-verifier` (run: `intent`, `verify` `PASS`, `review.md`) →
+`report --promote` → readback. One call was refused by `guard-bash`: `qa-harness --help` (the guard read `--help` as
+a subcommand; fixed after stage 4). The compiled test of run 1 is the baseline test of order N
+(`examples/toolshop/tests/cart-total-add-change-remove.spec.ts`) line for line, except for the title.
+
+Evidence committed in `docs/evidence/d-flow/`: `specs/` (scenarios, examples, intent reviews), `tests/`, the promoted
+files of `reports/<slug>/` for both scenarios (no `runs/`), `F1…F4.answer.txt` (the final answer of every session) and
+`C1-clone-verify.txt`.
+
+Check: four outcomes as expected (two `VERIFIED`, one question without files, both clone commands green).
+

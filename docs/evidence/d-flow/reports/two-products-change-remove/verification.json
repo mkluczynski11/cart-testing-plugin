@@ -1,0 +1,280 @@
+{
+  "runId": "20261125T025220Z-a326",
+  "slug": "two-products-change-remove",
+  "scenarioSha256": "b292f3cc0f2e653fda45b5d82d1a0dd6054717321efefd5ca45ad65fbced0eca",
+  "rulesSha256": "70f0378857ffcfb424e3ade87f132726d36f99ef12eed20d39a2eb933a132274",
+  "testSha256": "e703b211591204a1801c1a4e2aa53c27bd3313a26d66fc1c8fe6a03eb022f349",
+  "driverSha256": "382d9e8915d5274eb200d89ef1273f1578fe76343221efc1bdbcb9e2f480ac12",
+  "testOrigin": "compiled",
+  "gates": {
+    "dry": "PASS",
+    "G3": "PASS",
+    "G2live": "PASS",
+    "G4": "PASS"
+  },
+  "defects": [
+    {
+      "defect": "lost-add",
+      "origin": "default",
+      "operator": "no-effect",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "lost-qty",
+      "origin": "default",
+      "operator": "no-effect",
+      "expected": "S3",
+      "result": "detected",
+      "firstRed": "S3"
+    },
+    {
+      "defect": "lost-remove",
+      "origin": "default",
+      "operator": "no-effect",
+      "expected": "S4",
+      "result": "detected",
+      "firstRed": "S4"
+    },
+    {
+      "defect": "qty-wrong-line",
+      "origin": "default",
+      "operator": "wrong-target",
+      "expected": "S3",
+      "result": "detected",
+      "firstRed": "S3"
+    },
+    {
+      "defect": "remove-wrong-line",
+      "origin": "default",
+      "operator": "wrong-target",
+      "expected": "S4",
+      "result": "detected",
+      "firstRed": "S4"
+    },
+    {
+      "defect": "stale-total",
+      "origin": "default",
+      "operator": "stale-value",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "total-off-by-cent",
+      "origin": "default",
+      "operator": "skew-value",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "line-ignores-qty",
+      "origin": "default",
+      "operator": "ignore-factor",
+      "expected": "S3",
+      "result": "detected",
+      "firstRed": "S3"
+    },
+    {
+      "defect": "rule-never",
+      "origin": "default",
+      "operator": "rule-never",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "rule-always",
+      "origin": "default",
+      "operator": "rule-always",
+      "expected": "S2",
+      "result": "detected",
+      "firstRed": "S2"
+    },
+    {
+      "defect": "rule-wrong-rate",
+      "origin": "default",
+      "operator": "rule-rate",
+      "expected": "S1",
+      "result": "detected",
+      "firstRed": "S1"
+    },
+    {
+      "defect": "rule-boundary",
+      "origin": "default",
+      "operator": "rule-boundary",
+      "expected": "S2",
+      "result": "detected",
+      "firstRed": "S2"
+    },
+    {
+      "defect": "round-down",
+      "origin": "default",
+      "operator": "round-mode",
+      "expected": null,
+      "result": "not-applicable",
+      "firstRed": null,
+      "hint": "No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation."
+    }
+  ],
+  "gaps": [
+    "rule-never is not applicable with the products of this run: Add a step at which rule eco-discount is in force.",
+    "rule-wrong-rate is not applicable with the products of this run: Add a step at which rule eco-discount is in force.",
+    "rule-boundary is not applicable with the products of this run: Add a step at which the cart sits exactly at the threshold of rule eco-discount.",
+    "round-down is not applicable with the products of this run: No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation."
+  ],
+  "verdict": "PASS",
+  "livePass": {
+    "defects": [
+      {
+        "defect": "lost-add",
+        "origin": "default",
+        "operator": "no-effect",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "lost-qty",
+        "origin": "default",
+        "operator": "no-effect",
+        "expected": "S3",
+        "result": "detected",
+        "firstRed": "S3"
+      },
+      {
+        "defect": "lost-remove",
+        "origin": "default",
+        "operator": "no-effect",
+        "expected": "S4",
+        "result": "detected",
+        "firstRed": "S4"
+      },
+      {
+        "defect": "qty-wrong-line",
+        "origin": "default",
+        "operator": "wrong-target",
+        "expected": "S3",
+        "result": "detected",
+        "firstRed": "S3"
+      },
+      {
+        "defect": "remove-wrong-line",
+        "origin": "default",
+        "operator": "wrong-target",
+        "expected": "S4",
+        "result": "detected",
+        "firstRed": "S4"
+      },
+      {
+        "defect": "stale-total",
+        "origin": "default",
+        "operator": "stale-value",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "total-off-by-cent",
+        "origin": "default",
+        "operator": "skew-value",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "line-ignores-qty",
+        "origin": "default",
+        "operator": "ignore-factor",
+        "expected": "S3",
+        "result": "detected",
+        "firstRed": "S3"
+      },
+      {
+        "defect": "rule-never",
+        "origin": "default",
+        "operator": "rule-never",
+        "expected": null,
+        "result": "not-applicable",
+        "firstRed": null,
+        "hint": "Add a step at which rule eco-discount is in force."
+      },
+      {
+        "defect": "rule-always",
+        "origin": "default",
+        "operator": "rule-always",
+        "expected": "S1",
+        "result": "detected",
+        "firstRed": "S1"
+      },
+      {
+        "defect": "rule-wrong-rate",
+        "origin": "default",
+        "operator": "rule-rate",
+        "expected": null,
+        "result": "not-applicable",
+        "firstRed": null,
+        "hint": "Add a step at which rule eco-discount is in force."
+      },
+      {
+        "defect": "rule-boundary",
+        "origin": "default",
+        "operator": "rule-boundary",
+        "expected": null,
+        "result": "not-applicable",
+        "firstRed": null,
+        "hint": "Add a step at which the cart sits exactly at the threshold of rule eco-discount."
+      },
+      {
+        "defect": "round-down",
+        "origin": "default",
+        "operator": "round-mode",
+        "expected": null,
+        "result": "not-applicable",
+        "firstRed": null,
+        "hint": "No amount at a checkpoint has a fraction of a cent above one half; other products or quantities would expose truncation."
+      }
+    ],
+    "products": "A = Combination Pliers 14.15, B = Pliers 12.01"
+  },
+  "controls": [
+    {
+      "control": "skew-total",
+      "result": "caught",
+      "activated": true,
+      "target": "row \"Total\": <tr _ngcontent-ng-c2879330868=\"\"><td _ngcontent-ng-c2879330868=\"\" class=\"col-md-5\"></td><td _ngcontent-ng-c2879330868=\"\" class=\"col-md-2\"></td><td _ngcontent-ng-c2879330868=\"\" class=\"col-md-2 text-end\"><strong _ngcontent-ng-c2879330868=\"\">Total</strong></td><td _ngcontent-ng-c2879330868=\"\" data-test",
+      "shownAtRead": "the driver read \"$14.16\" at S1, \"$26.17\" at S2, \"$54.47\" at S3, \"$42.46\" at S4",
+      "reactedAt": "S1",
+      "expected": "every checkpoint with a total red by exactly +$0.01"
+    },
+    {
+      "control": "drift-price",
+      "result": "caught",
+      "activated": true,
+      "target": "GET **/carts/*: 7 request(s) intercepted, the first line's price raised in 7, first GET /carts/01m889xj61d6ve2njyvxvcmse1",
+      "shownAtRead": "total \"$14.16\" at S1, expected $14.15",
+      "reactedAt": "S1",
+      "expected": "first red at S1"
+    },
+    {
+      "control": "lost-update",
+      "result": "caught",
+      "activated": true,
+      "target": "PUT **/carts/*/product/quantity: 1 request(s) intercepted, first PUT /carts/01m889xv2gtv9tzqar17xab6hn/product/quantity",
+      "shownAtRead": "total \"$26.16\" at S3, expected $54.46",
+      "reactedAt": "S3",
+      "expected": "first red at S3"
+    },
+    {
+      "control": "lost-remove",
+      "result": "caught",
+      "activated": true,
+      "target": "DELETE **/carts/*/product/*: 1 request(s) intercepted, first DELETE /carts/01m889y2w4bvf8t40erkcfwyq4/product/01M886XEKPNC3DN06XH39W9YBT",
+      "shownAtRead": "total \"$54.46\" at S4, expected $42.45",
+      "reactedAt": "S4",
+      "expected": "first red at S4"
+    }
+  ]
+}

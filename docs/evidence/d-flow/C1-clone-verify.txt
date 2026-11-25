@@ -1,0 +1,17 @@
+
+> qa-e2e@0.1.0 qa
+> tsx support/harness/cli.ts verify two-products-change-remove
+
+Verify 20261125T030107Z-f30c of two-products-change-remove: gates G0–G4
+G0 ok: no forbidden pattern; the test is the untouched compilation of the confirmed scenario
+G1 ok: green on the healthy reference cart; ledger trace equals cart_after; totals equal the approved example
+G2 13 defects: 12 detected where expected, 0 late, 0 missed, 1 not applicable
+G3 live, 3 repeat(s) on https://practicesoftwaretesting.com: 3/3 pass; 3/3 repeats ended PASS
+G2 again on the products of this run: 13 defects: 9 detected where expected, 0 late, 0 missed, 4 not applicable
+G4 live controls: 4 caught, 0 missed, 0 not applicable, 0 not bound
+   skew-total   caught         activated yes; first red S1; expected every checkpoint with a total red by exactly +$0.01
+   drift-price  caught         activated yes; first red S1; expected first red at S1
+   lost-update  caught         activated yes; first red S3; expected first red at S3
+   lost-remove  caught         activated yes; first red S4; expected first red at S4
+Evidence: reports/two-products-change-remove/runs/20261125T030107Z-f30c/
+VERDICT: PASS
