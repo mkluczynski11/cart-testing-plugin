@@ -1,0 +1,23 @@
+{
+  "name": "qa-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scenario-driven cart tests: validator, ledger, compiler and dry gates.",
+  "bin": {
+    "qa-harness": "support/harness/cli.ts"
+  },
+  "scripts": {
+    "test:unit": "playwright test --project unit",
+    "qa": "tsx support/harness/cli.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^20.19.43",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "yaml": "^2.9.1"
+  }
+}

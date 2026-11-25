@@ -1,0 +1,3 @@
+{ "app": "toolshop", "baseURL": "https://practicesoftwaretesting.com", "testIdAttribute": "data-test",
+  "locale": "en-US", "currency": "USD", "repeat": 3, "pickLimit": 30,
+  "timeouts": { "actionMs": 10000, "settleMs": 3000, "testMs": 90000 } }
