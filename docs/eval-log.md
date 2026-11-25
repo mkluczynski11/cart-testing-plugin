@@ -30,5 +30,8 @@ including subagents); time is wall-clock of the session.
 | 19 | 02:46 | A13 intent review | PASS | 2 | $0.13 | 17 s | — | — |
 | 20 | 02:48 | A6 guard | PASS | 3 | $0.08 | 6 s | — (`qa:triage` chosen by the model; one question, nothing run); the answer named the rules file by its placeholder `e2e/app/<app>.pricing.ts` | `triage` step 0 says "the application's rules file in `e2e/app/`" |
 | 21 | 02:48 | A12 add versus set | PASS | 13 | $0.25 | 40 s | — | — |
+| 22 | 03:04 | A4 with `.mcp.json` (stage 5) | PASS | 13 | $0.26 | 40 s | — (the plugin's 25 browser tools are listed as deferred; the flow is unchanged) | — |
+| 23 | 03:05 | A7 extended defects, dry | PASS | 14 | $0.33 | 61 s | — (`defect-designer` admitted 6, 0 rejected; G2 19 defects, 18 detected, 1 not applicable) | — |
+| 24 | 03:05 | R1 `--risk` (own case, not in 14.1) | PASS | 16 | $0.30 | 51 s | — (one `tester` entry admitted; the main thread chose `add A 2` then `setQty A 1` so that the concern "after a decrease" applies, and said so) | — |
 
-Totals of this table: 23 sessions (row 5 is three), $4.16. Every case A1–A6 and A8–A13 has a passing run; A7 is not run in stage 3 (stage 6).
+Totals of this table: 26 sessions (row 5 is three), $5.05. Every case A1–A13 has a passing run, plus R1.

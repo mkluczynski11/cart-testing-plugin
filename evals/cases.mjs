@@ -144,6 +144,42 @@ export const CASES = [
     ],
   },
   {
+    id: 'A7', title: 'extended defects, dry', maxTurns: 50,
+    prompt: `/qa:new-test "${REFERENCE}" --yes --dry --defects extended`,
+    checks: [
+      ['defect-designer ran', (f) => subagent(f, 'qa:defect-designer') >= 1 || 'not invoked'],
+      ['the defects file was written before the test file', (f) => {
+        const { slug } = onlyScenario(f);
+        const d = path.join(f.e2e, 'specs', `${slug}.defects.json`);
+        const t = path.join(f.e2e, 'tests', `${slug}.spec.ts`);
+        if (!fs.existsSync(d) || !fs.existsSync(t)) return `defects ${fs.existsSync(d)}, test ${fs.existsSync(t)}`;
+        return fs.statSync(d).mtimeMs < fs.statSync(t).mtimeMs || 'the test is older than the defects file';
+      }],
+      ['every entry passes the admission check', (f) => {
+        const { slug } = onlyScenario(f);
+        const r = spawnSync(path.join(pluginRoot, 'bin', 'qa-harness'), ['defects', 'check', slug], { cwd: f.repo, encoding: 'utf8' });
+        return / 0 rejected\./.test(r.stdout) && /VERDICT: PASS/.test(r.stdout) || r.stdout.trim().split('\n').slice(0, 3).join(' | ');
+      }],
+      ['G0-G2 green with the additional defects', (f) => dryGreen(f)],
+    ],
+  },
+  {
+    id: 'R1', title: 'a tester concern through --risk (not in design 14.1)', maxTurns: 40,
+    prompt: `/qa:new-test "${REFERENCE}" --yes --dry --risk "the total does not refresh after the quantity of a product is decreased"`,
+    checks: [
+      ['the defects file has a tester entry, admitted', (f) => {
+        const { slug } = onlyScenario(f);
+        const d = path.join(f.e2e, 'specs', `${slug}.defects.json`);
+        if (!fs.existsSync(d)) return 'no defects file';
+        const tester = JSON.parse(fs.readFileSync(d, 'utf8')).filter((e) => e.origin === 'tester');
+        const r = spawnSync(path.join(pluginRoot, 'bin', 'qa-harness'), ['defects', 'check', slug], { cwd: f.repo, encoding: 'utf8' });
+        return (tester.length >= 1 && / 0 rejected\./.test(r.stdout)) || `tester entries ${tester.length}; ${r.stdout.trim().split('\n')[0]}`;
+      }],
+      ['defect-designer did not run (default mode)', (f) => subagent(f, 'qa:defect-designer') === 0 || 'it ran'],
+      ['G0-G2 green', (f) => dryGreen(f)],
+    ],
+  },
+  {
     id: 'A8', title: 'out-of-scope request', maxTurns: 10,
     prompt: '/qa:new-test "Add a product, use coupon SAVE10 and check the total."',
     checks: [

@@ -65,6 +65,11 @@ A JSON array; never code. Admitted by `qa-harness defects check <slug>`; at most
 
 Operators: `no-effect`, `wrong-target`, `stale-value`, `skew-value`, `ignore-factor`, `rule-never`, `rule-always`,
 `rule-rate`, `rule-boundary`, `round-mode`. `origin` is `tester` (from `--risk`) or `generated` (`defect-designer`).
+`target` is `{ "value": "total" | "subtotal" | "lineTotal" }`, `{ "adjustment": "<rule id of the rules file>" }` or
+`{ "step": "add" | "setQty" | "remove" }` (a kind that occurs in the scenario); `when` is optional,
+`{ "afterStep": "<kind>", "direction": "increase" | "decrease" }`; `why` is one sentence. `defects check` rejects an
+unknown operator, a target the scenario or rules do not have, and an entry that behaves like another at every
+checkpoint.
 `qa-harness defects list <slug>` prints the default defects the harness derives by itself.
 
 ## Run evidence: `reports/<slug>/`

@@ -347,3 +347,58 @@ files of `reports/<slug>/` for both scenarios (no `runs/`), `F1…F4.answer.txt`
 
 Check: four outcomes as expected (two `VERIFIED`, one question without files, both clone commands green).
 
+## Stage 5 — the page-reading agent and triage
+
+`date -u`: `Wed Nov 25 03:02:39 UTC 2026`.
+
+Built: `agents/app-mapper.md` (`tools: Read, Grep, Glob, Write, Edit, Bash, mcp__plugin_qa_browser__*`, model sonnet,
+`maxTurns: 40`, `skills: [qa:contracts, qa:map-app-flow, qa:repair-locator]`), `skills/map-app-flow`,
+`skills/repair-locator`, `.mcp.json` with the launcher `scripts/mcp-browser.mjs`. The launcher (stage 1 showed that
+`${CLAUDE_PROJECT_DIR}` is substituted in `args`) reads `e2e/qa.config.json` and starts the pinned
+`@playwright/mcp@0.0.86` with `--headless --isolated --browser chromium --test-id-attribute <testIdAttribute>
+--allowed-origins <origin of baseURL>[;browserAllowedOrigins…] --executable-path <the Chromium setup installed>`.
+Before setup it exits with one sentence (no e2e/, no application). `new-test` step 6 and the routing table already
+route to it (`mode: build` / `mode: repair`, then `qa-harness run <slug> --repair driver`, R9).
+
+Fixture: a tester repo set up by `qa-harness init --app control --base-url … --test-id-attribute data-qa --locale
+de-DE --currency EUR`, with `control.driver.ts` and `control.pricing.ts` copied from the harness's control app
+(imports pointed at `../support/core/`), a map I wrote from the driver (`app/control.map.md`), `repeat: 1` and the
+selftest's timeouts, and scenario `control-equal` taken through `example --confirm`, an intent file written by me
+(marked as such), `compile` and `run` → `PASS` (G3 1/1, 4 checkpoints). The control app is started by
+`.sandbox/start-control.ts` from `.sandbox/stage5-session.sh`, which writes its address into the case repo's config,
+runs one session (default model) and kills the server; `pgrep` found no server left after each check.
+
+| Case | Session | Outcome | Turns | Duration | Cost |
+| --- | --- | --- | --- | --- | --- |
+| a, first fixture: `lineRow(name).getByTestId('line-qty')` → `'line-quantity'` in `setQuantity`, then `/qa:triage control-equal` | G-a | **not the expected path**: `run` → `INFRA_FAIL` (`locator.fill: Timeout 5000ms exceeded`); triage stopped by 6.3 ("never `app-mapper`") and named the driver line as the probable cause | 14 | 90 s | $0.63 |
+| a, second fixture: `home()`'s wait `getByTestId('summary').getByTestId('total')` → `'grand-total'`, then `/qa:triage control-equal` | G-a2 | **as expected**: `run` → `LOCATOR_FAIL` ("readCart: the product list or the summary total did not appear within 5000 ms") → `app-mapper` (`repair-locator`: `browser_navigate`, `browser_evaluate`, 2 Edits, `doctor`) restored the locator and updated the map → `qa-harness run control-equal --repair driver` → `PASS`; `git status`: only `app/control.driver.ts` and `app/control.map.md` changed, scenario and test untouched | 6 | 51 s | $0.34 |
+| b: the `remove` action deleted from the driver, then `/qa:new-test control-equal` | G-b | **as expected**: resumed at step 4 (`intent` current) → `compile`, `run --dry` `PASS` → `need` `LINT_FAIL` "Missing actions: remove" → `app-mapper` (`map-app-flow`: `browser_navigate`, `browser_snapshot` ×2, `browser_click` ×2, `browser_network_requests`, `browser_find`; Edits to driver and map; `need` and `doctor`) → `need` `PASS` → `run` `PASS` → `test-verifier` `VERIFIED` (4/4 controls) → promoted | 15 | 247 s | $1.24 |
+| c: rules file without the `rabatt` rule, `control-discount` (3 × the first product, above the threshold) confirmed and compiled against it, then `/qa:triage control-discount` | G-c | **as expected**: `run` → `UNMODELED_ADJUSTMENT` at S1 (expected "74,70 €", displayed "67,23 €", row "Rabatt" "-7,47 €"); the answer ends with the question "is the "Rabatt" row … an application bug, or a pricing rule that's missing from the rules file? If it's a rule, give it in one sentence: its condition and its amount."; `git status` clean | 4 | 37 s | $0.29 |
+
+Why case a needed a second fixture: the control driver wraps only the response wait and the status check of an action
+in `LocatorError`; a click or fill on a missing element throws Playwright's own timeout, which the harness classifies
+`INFRA_FAIL` (request 6 to the harness). The skill did the right thing with the verdict it got. The second fixture
+breaks a locator the driver does wrap, which is what design 14.2 B5 means by a broken locator.
+
+A4 with `.mcp.json` present: `PASS` (13 turns, $0.26, 40 s, against 4 turns, $0.27, 43 s before). The 25 tools
+`mcp__plugin_qa_browser__*` are listed as deferred in the session, so they add no schema tokens until used; the JSON
+output shows no start-up time or cost for the server. The flow did not change. The first start of a session on a new
+machine downloads the server through `npx -y` (about 20 s on this machine, measured with the launcher alone).
+
+Check: a (second fixture), b, c as the order expects; a with the first fixture recorded above.
+
+## Stage 6 — what is left
+
+`date -u`: `Wed Nov 25 03:05:52 UTC 2026`.
+
+Every level A case of stage 3 had already run. With well over 30 minutes left: `agents/defect-designer.md`
+(`tools: Read, Grep, Glob, Write, Bash`, sonnet, `maxTurns: 15`, `skills: [qa:contracts, qa:design-defects]`; Bash
+limited by the guard to `defects list` and `defects check`), `skills/design-defects` (inventory, subtract defaults,
+four lenses, record, select up to 8 with at most 2 per lens, admission, result; an empty list is valid), the
+`target`/`when` grammar of the defects file in `contracts`, and two eval cases:
+
+| Case | Result | Turns | Cost | Time | Notes |
+| --- | --- | --- | --- | --- | --- |
+| A7 extended defects (`--yes --dry --defects extended`) | PASS | 14 | $0.33 | 61 s | `defect-designer` ran; `specs/<slug>.defects.json` (6 entries, 0 rejected) older than the test file; G2 19 defects, 18 detected, 1 not applicable |
+| R1 `--risk "the total does not refresh after the quantity of a product is decreased"` (own case) | PASS | 16 | $0.30 | 51 s | one `origin: tester` entry admitted by `defects check`; `defect-designer` not started in default mode |
+
