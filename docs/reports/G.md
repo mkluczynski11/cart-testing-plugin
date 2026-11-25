@@ -418,7 +418,7 @@ Total: 20 sessions, about $6.04.
 
 ## Live invocations
 
-Against https://practicesoftwaretesting.com, headless, one at a time, all in stage 4: **4 of 8**.
+Against https://practicesoftwaretesting.com, headless, one at a time: **6 of 8** (1–4 in stage 4, 5–6 in stage 5).
 
 | # | UTC | Invocation | Result |
 | --- | --- | --- | --- |
@@ -426,14 +426,14 @@ Against https://practicesoftwaretesting.com, headless, one at a time, all in sta
 | 2 | 12:33:49 | L3 `qa-harness verify two-products-change-remove` (test-verifier), run `20261125T123349Z-fee3`, promoted | `PASS`, G4 4/4 |
 | 3 | 12:36:28 | L4 `qa-harness run wood-saw-raise-remove-other`, run `20261125T123628Z-1fac` | `PASS` 3/3 |
 | 4 | 12:37:01 | L4 `qa-harness verify wood-saw-raise-remove-other` (test-verifier), run `20261125T123701Z-8ba1`, promoted | `PASS`, G4 4/4 |
+| 5 | 12:41:37 | clone, `e2e/`: `npx playwright test tests/two-products-change-remove.spec.ts` (the plain line of "Run it again") | `2 passed (5.7s)`, exit 0 |
+| 6 | 12:41:51 | clone, `e2e/`: `npm run qa -- run two-products-change-remove` (the first line of "Run it again"), run `20261125T124152Z-3cc8` | `VERDICT: PASS`, 3/3, exit 0 |
 
 The dry runs, setup's selftest, the evals (A10 uses `127.0.0.1`) and my two `example` calls on scratch copies use no
 browser on the live site.
 
 ## Not done
 
-- The plain `npx playwright test` line and the `npm run qa -- run` line of "Run it again" were not run from a clone in
-  this order (order E ran the same commands from a clone and both worked; their form did not change).
 - `qa-harness example` without `--confirm` dropping the `confirmed` record of a confirmed scenario (stage 4,
   observation): not changed, outside the two texts this order changes.
 - A third is never worded "a third" in practice: the rules vocabulary takes only decimal shares, and no finite decimal
@@ -452,3 +452,50 @@ browser on the live site.
 | 5 exit checks, report | 12:41 | see the last commit | — |
 
 Stages 3 and 4 overlapped while nested sessions ran. Stage 4 started at minute 15, before minute 40.
+
+## Stage 5 — exit checks
+
+`date -u`: `Wed Nov 25 12:41:06 UTC 2026`. On commit `4e56139` (the code of all stages), clean tree.
+
+Rerun lines of the readback, from a `git clone` of the scratch repo (at `61ce58b`) without Claude Code, `npm ci` in
+`e2e/` (`added 16 packages`), then in `e2e/`:
+
+```text
+$ npx playwright test tests/two-products-change-remove.spec.ts
+Running 2 tests using 1 worker
+
+  ✓  1 [dry] › tests/two-products-change-remove.spec.ts:9:1 › Two different products, change the quantity of one, remove the other, total checked after each step (101ms)
+  ✓  2 [live] › tests/two-products-change-remove.spec.ts:9:1 › Two different products, change the quantity of one, remove the other, total checked after each step (5.0s)
+
+  2 passed (5.7s)
+
+$ npm run qa -- run two-products-change-remove
+…
+G3 live, 3 repeat(s) on https://practicesoftwaretesting.com: 3/3 pass; 3/3 repeats ended PASS
+…
+G2 again on the products of this run: 13 defects: 9 detected where expected, 0 late, 0 missed, 4 not applicable
+Evidence: reports/two-products-change-remove/runs/20261125T124152Z-3cc8/
+VERDICT: PASS
+```
+
+Exit checks of order F, on `4e56139`, last line of each (`templates/e2e` unless noted):
+
+| Check | Last line |
+| --- | --- |
+| `npm ci` | `added 16 packages in 814ms` |
+| `npx tsc --noEmit` | exit 0, no output |
+| `npm run typecheck:toolshop` | exit 0 |
+| `npm run test:unit` | `202 passed (6.1s)` |
+| `npm run qa -- selftest` | `VERDICT: PASS` (`13/13 rows passed in 77.9 s.`) |
+| `npm run qa:toolshop -- doctor` | `VERDICT: PASS` |
+| `qa:toolshop -- run two-products-change-remove --dry`, `run wood-saw-raise-remove-other --dry` | `VERDICT: PASS`, `VERDICT: PASS` |
+| root: `node --test scripts/` | `ℹ tests 16`, `ℹ fail 0` (with `neutrality.test.mjs` and `transcript.test.mjs`) |
+| root: `node scripts/check-contracts.mjs` | `ok: skills/contracts/driver.md quotes templates/e2e/support/core/types.ts exactly.` |
+| root: `claude plugin validate .` | `✔ Validation passed` |
+| root: `grep -rniE "toolshop\|practicesoftwaretesting\|pliers\|wood saw" skills agents` | no output |
+| R15: `git grep -I -i` for `/Users/`, `/private/tmp`, the home folder name, `cookie:`, `authorization:`, `bearer <value>`, `x-api-key:` over `examples/` and `docs/` | no hit in `examples/`; in `docs/` only the search patterns quoted in orders E, F, V and reports E, F, N, V, and a scratch path in prose in report D (from order D, not touched here) |
+| `grep -c '<!--'` `README.md`, `docs/reference.md` | `0`, `0` |
+| `wc -l README.md` | `250` |
+| `git status --short` after the last commit | (no output; checked after the commit below) |
+
+The time box: started 12:15:20, last check 12:42:42, minute 27 of 70; no stage was cut.
