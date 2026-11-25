@@ -24,13 +24,13 @@ const HELP: Array<[string, string]> = [
   ['defects list|check <slug>', 'list the default defects; admit or reject specs/<slug>.defects.json'],
   ['run <slug> [--dry] [--repair driver|test]', 'gates G0–G2 on the reference cart, or G0–G3 live'],
   ['verify <slug>', 'gates G0–G4: the live run and the live controls, in a new run directory'],
-  ['report <slug> [--promote <runId>]', 'write report.md of the latest run; --promote puts a run in the repo'],
+  ['report <slug> [--promote <id> [--as-evidence]]', 'report.md of the latest run; --promote puts a verified run in the repo'],
 ];
 
 const SLUG = /^[a-z0-9][a-z0-9-]*$/;
 
 function usage(problem: string): CommandResult {
-  return { verdict: 'SPEC_INVALID', lines: [problem, 'usage: qa-harness <subcommand> [--root <dir>]', ...HELP.map(([c, d]) => `  ${c.padEnd(42)} ${d}`)] };
+  return { verdict: 'SPEC_INVALID', lines: [problem, 'usage: qa-harness <subcommand> [--root <dir>]', ...HELP.map(([c, d]) => `  ${c.padEnd(46)} ${d}`)] };
 }
 
 async function main(argv: string[]): Promise<CommandResult> {
@@ -57,6 +57,7 @@ async function main(argv: string[]): Promise<CommandResult> {
   const force = has('--force');
   const dry = has('--dry');
   const writeManifest = has('--write-manifest');
+  const asEvidence = has('--as-evidence');
   const [command, slug, ...rest] = args;
   const needSlug = () => (slug && SLUG.test(slug) && rest.length === 0 ? slug : undefined);
   switch (command) {
@@ -77,7 +78,12 @@ async function main(argv: string[]): Promise<CommandResult> {
       return run(root, s, { dry, repair });
     }
     case 'verify': { const s = needSlug(); return s ? verify(root, s) : usage('verify needs one scenario slug.'); }
-    case 'report': { const s = needSlug(); return s ? report(root, s, promote) : usage('report needs one scenario slug.'); }
+    case 'report': {
+      const s = needSlug();
+      if (!s) return usage('report needs one scenario slug.');
+      if (asEvidence && !promote) return usage('--as-evidence goes with --promote <runId>.');
+      return report(root, s, promote, asEvidence);
+    }
     default: return usage(`Unknown subcommand "${command}".`);
   }
 }

@@ -10,6 +10,7 @@ import { describeRule, type PricingModule } from '../core/pricing';
 import { readScenarioFile } from '../core/scenario';
 import type { Verdict } from '../core/verdicts';
 import { loadPricing, rel, type CommandResult } from './common';
+import { intentReview, runReviewVerdict } from './intent';
 import { withLock } from './run-dir';
 
 /** What verification.json holds (design 8.5); written by run and verify. */
@@ -60,8 +61,25 @@ function scopeLine(cps: CheckpointRecord[]): string {
     : `The total was read from the row ${rows}. In this run it always equalled the subtotal or a line total, so the live run alone cannot tell those fields apart; only the label-based control skew-total shows that the driver reads the total.`;
 }
 
+/** The two review lines of report.md: the intent review of the scenario and the report review of this run. */
+function reviewLines(root: string, slug: string, runDir: string): string[] {
+  const intent = intentReview(root, slug);
+  const out: string[] = [];
+  if (intent.state === 'current') out.push(`- Intent review: \`${intent.file}\`, verdict ${intent.verdict}, for the confirmed scenario (sha256 ${intent.confirmed?.slice(0, 12)}…).`);
+  else if (intent.state === 'stale') out.push(`- Intent review: \`${intent.file}\`, verdict ${intent.verdict}, is STALE: it reviews scenario ${intent.reviewed?.slice(0, 12)}…, the confirmed scenario is ${intent.confirmed?.slice(0, 12)}….`);
+  else if (intent.state === 'unreadable') out.push(`- Intent review: \`${intent.file}\` has no scenario_sha256 or verdict line; it does not count.`);
+  else out.push(`- **Not available:** the intent review (\`${intent.file}\` ${intent.state === 'missing' ? 'does not exist' : 'needs a confirmed scenario'}; test-verifier writes it).`);
+  const review = runReviewVerdict(runDir);
+  out.push(review
+    ? `- Report review: \`review.md\` of this run, verdict ${review}.`
+    : '- **Not available:** the report review (`review.md`, written by test-verifier after `qa-harness verify`); none is part of this run.');
+  return out;
+}
+
+export type ReportOptions = { asEvidence?: boolean };
+
 /** report.md: verdict, products, steps, evidence and its absence, scope, gaps, rules, rerun (11.2, 11.4). */
-export function buildReport(root: string, slug: string, runDir: string, screens: string): string {
+export function buildReport(root: string, slug: string, runDir: string, screens: string, opts: ReportOptions = {}): string {
   const run = readJson<RunRecord>(path.join(runDir, 'run.json'));
   const ver = readJson<Verification>(path.join(runDir, 'verification.json'));
   const config = loadConfig(root);
@@ -75,6 +93,7 @@ export function buildReport(root: string, slug: string, runDir: string, screens:
   const shown = repeats.find((r) => r.result === 'fail') ?? repeats[0];
   const cps = shown?.checkpoints ?? [];
   const out: string[] = [];
+  if (opts.asEvidence) out.push(`**Evidence of a mismatch, not a verified test:** run \`${path.basename(runDir)}\` ended ${verdict} and was promoted with --as-evidence (design 8.5).`, '');
   out.push(`# ${scenario.title}`, '');
   out.push(`**${verdict}${repeats.length ? ` ${passCount}/${repeats.length}` : ''}** · scenario \`${slug}\` · run \`${path.basename(runDir)}\`${run?.meta.timestamp ? ` · ${run.meta.timestamp}` : ''} · ${config.baseURL} · Chromium, ${config.locale}`, '');
   out.push(`The tester asked: "${scenario.request.replace(/\s+/g, ' ').trim()}"`, '');
@@ -110,7 +129,7 @@ export function buildReport(root: string, slug: string, runDir: string, screens:
     for (const c of ver.controls) out.push(`| ${c.control} | ${c.result} | ${c.activated === null ? '—' : c.activated ? 'yes' : 'no'} | ${readableTarget(c.target)} | ${c.shownAtRead ?? '—'} | ${c.reactedAt ?? '—'} | ${c.expected}${c.note ? ` (${c.note})` : ''} |`);
     out.push('');
   } else out.push('- **Not available:** live controls G4 were not run (`qa-harness verify` runs them after a green G3).');
-  out.push('- **Not available:** the intent review and the report review are written by an agent, not by the harness; none is part of this run.');
+  out.push(...reviewLines(root, slug, runDir));
   if (cps.length) out.push('', '## Scope', '', scopeLine(cps));
   out.push('', '## Scenario gaps', '');
   out.push(...((ver?.gaps ?? []).length ? (ver?.gaps ?? []).map((x) => `- ${x}`) : ['None: every default defect is applicable in this scenario.']));
@@ -153,18 +172,46 @@ export function latestRun(root: string, slug: string): string | undefined {
 
 const TRACKED = ['report.md', 'run.json', 'verification.json', 'review.md'];
 
-/** Replace the tracked set in reports/<slug>/ with the complete set of one run, never a mix (8.5, 6.5). */
-export async function promote(root: string, slug: string, runId: string): Promise<string[]> {
+const EVIDENCE_VERDICTS: ReadonlySet<Verdict> = new Set<Verdict>(['ORACLE_MISMATCH', 'UNMODELED_ADJUSTMENT']);
+
+/**
+ * May this run go into the repo? (design 8.5) Only a live run whose verification.json is PASS through G4; with
+ * --as-evidence also a live run that ended ORACLE_MISMATCH or UNMODELED_ADJUSTMENT. A refusal carries the run's own
+ * verdict when that is not PASS, and NO_TESTS_RUN when there is no verified live run (dry, no G4, no record).
+ */
+export function promotionRefusal(root: string, slug: string, runId: string, asEvidence: boolean): CommandResult | undefined {
   const runDir = path.join(files.runs(root, slug), runId);
-  if (!fs.existsSync(path.join(runDir, 'run.json')) && !fs.existsSync(path.join(runDir, 'verification.json'))) {
-    throw new Error(`run ${runId} of ${slug} has no run.json; name a run directory under ${rel(root, files.runs(root, slug))}/.`);
+  const ver = readJson<Verification>(path.join(runDir, 'verification.json'));
+  const run = readJson<RunRecord>(path.join(runDir, 'run.json'));
+  const own = (v: Verdict | null | undefined): Verdict => (v && v !== 'PASS' ? v : 'NO_TESTS_RUN');
+  const refuse = (verdict: Verdict, why: string): CommandResult => ({ verdict, lines: [`Run ${runId} of ${slug} was not promoted: ${why}`, `The tracked files in ${rel(root, files.reports(root, slug))}/ are unchanged.`] });
+  if (!ver) {
+    return refuse(own(run?.verdict), fs.existsSync(runDir)
+      ? 'it has no verification.json, so nothing says it was verified; run qa-harness verify and promote that run.'
+      : `there is no such run directory under ${rel(root, files.runs(root, slug))}/; name one that qa-harness verify created.`);
   }
+  const live = ver.gates.G3 !== undefined;
+  if (asEvidence) {
+    if (live && EVIDENCE_VERDICTS.has(ver.verdict)) return undefined;
+    return refuse(own(ver.verdict), `--as-evidence admits only a live run that ended ORACLE_MISMATCH or UNMODELED_ADJUSTMENT; this ${live ? 'live' : 'dry'} run ended ${ver.verdict}.`);
+  }
+  if (ver.verdict !== 'PASS') {
+    return refuse(ver.verdict, `it ended ${ver.verdict}; only a live run verified through G4 is promoted.${live && EVIDENCE_VERDICTS.has(ver.verdict) ? ' To keep this amount mismatch as evidence, the tester adds --as-evidence.' : ''}`);
+  }
+  if (!live) return refuse('NO_TESTS_RUN', `it is a dry run (gates G0–G2 on the reference cart); only a live run verified through G4 is promoted.`);
+  if (ver.gates.G4 !== 'PASS') return refuse('NO_TESTS_RUN', `its live controls G4 did not run; run qa-harness verify ${slug} and promote the run it creates.`);
+  return undefined;
+}
+
+/** Replace the tracked set in reports/<slug>/ with the complete set of one run, never a mix (8.5, 6.5). Call after promotionRefusal. */
+export async function promote(root: string, slug: string, runId: string, opts: ReportOptions = {}): Promise<string[]> {
+  const runDir = path.join(files.runs(root, slug), runId);
   const target = files.reports(root, slug);
   return withLock(root, slug, () => {
     const staging = path.join(target, `.promote-${runId}`);
     fs.rmSync(staging, { recursive: true, force: true });
     fs.mkdirSync(path.join(staging, 'screens'), { recursive: true });
-    fs.writeFileSync(path.join(staging, 'report.md'), buildReport(root, slug, runDir, 'screens/'));
+    fs.writeFileSync(path.join(staging, 'report.md'), buildReport(root, slug, runDir, 'screens/', opts));
     for (const f of TRACKED.slice(1)) if (fs.existsSync(path.join(runDir, f))) fs.copyFileSync(path.join(runDir, f), path.join(staging, f));
     const shots = fs.readdirSync(runDir).filter((f) => f.endsWith('.png'));
     for (const f of shots) fs.copyFileSync(path.join(runDir, f), path.join(staging, 'screens', f));
@@ -179,14 +226,23 @@ export async function promote(root: string, slug: string, runId: string): Promis
   });
 }
 
-export async function report(root: string, slug: string, promoteId: string | undefined): Promise<CommandResult> {
+/** The verdict of a run directory: verification.json first, then run.json. */
+function runVerdict(runDir: string): Verdict {
+  return readJson<Verification>(path.join(runDir, 'verification.json'))?.verdict ?? readJson<RunRecord>(path.join(runDir, 'run.json'))?.verdict ?? 'NO_TESTS_RUN';
+}
+
+export async function report(root: string, slug: string, promoteId: string | undefined, asEvidence = false): Promise<CommandResult> {
   if (promoteId) {
-    const placed = await promote(root, slug, promoteId);
-    const lines = readback(root, slug, path.join(files.runs(root, slug), promoteId));
-    return { verdict: 'PASS', lines: [...lines.slice(0, 11), `Promoted run ${promoteId} to ${rel(root, files.reports(root, slug))}/: ${placed.join(', ')}.`] };
+    const refusal = promotionRefusal(root, slug, promoteId, asEvidence);
+    if (refusal) return refusal;
+    const runDir = path.join(files.runs(root, slug), promoteId);
+    const placed = await promote(root, slug, promoteId, { asEvidence });
+    const lines = readback(root, slug, runDir);
+    const head = asEvidence ? [`Promoted as evidence of a mismatch, not a verified test (--as-evidence).`] : [];
+    return { verdict: runVerdict(runDir), lines: [...head, ...lines.slice(0, 11 - head.length), `Promoted run ${promoteId} to ${rel(root, files.reports(root, slug))}/: ${placed.join(', ')}.`] };
   }
   const runDir = latestRun(root, slug);
   if (!runDir) return { verdict: 'NO_TESTS_RUN', lines: [`${slug} has no run yet; run qa-harness run ${slug} first.`] };
   fs.writeFileSync(path.join(runDir, 'report.md'), buildReport(root, slug, runDir, ''));
-  return { verdict: 'PASS', lines: [...readback(root, slug, runDir), `Wrote ${rel(root, path.join(runDir, 'report.md'))}.`] };
+  return { verdict: runVerdict(runDir), lines: [...readback(root, slug, runDir), `Wrote ${rel(root, path.join(runDir, 'report.md'))}.`] };
 }
