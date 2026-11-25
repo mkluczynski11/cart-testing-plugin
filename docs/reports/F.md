@@ -423,3 +423,181 @@ TypeScript compiler is installed for that root); `run two-products-qty-remove --
 wood-saw-qty-remove-other --dry` `PASS` (11/0/0/2) from the plugin repo; R15 search (`/Users/`, cookie,
 authorization, bearer, set-cookie, x-api-key, token, the user name, `private/tmp`) over `examples/` and `docs/`: hits only
 in the prose of the design, the orders and earlier reports, none in `examples/`.
+
+## Exit criteria
+
+`date -u`: `Wed Nov 25 10:30 UTC 2026`, on `7ca8bd3`, commands exactly as the order writes them:
+
+```text
+$ npm ci && npx tsc --noEmit && npm run typecheck:toolshop && npm run test:unit        (templates/e2e)
+found 0 vulnerabilities
+  188 passed (4.5s)
+[exit=0]
+$ npm run qa -- selftest
+… 13 rows, the last: integrity          PASS  support/core and support/harness match support/core/MANIFEST.json
+13/13 rows passed in 77.7 s.
+VERDICT: PASS
+$ npm run qa:toolshop -- doctor
+note: no TypeScript compiler installed for this root, so the driver and the rules file were not type-checked.
+ok: Node 24.16.0, Chromium installed
+ok: support/core and support/harness match the manifest
+ok: two-products-qty-remove: confirmed, test compiled
+ok: wood-saw-qty-remove-other: confirmed, test compiled
+ok: driver app/toolshop.driver.ts satisfies CartDriver and stays within the UI
+ok: rules file app/toolshop.pricing.ts loads and stays within the vocabulary of design 9.2
+VERDICT: PASS
+$ node --test scripts/ && node scripts/check-contracts.mjs && claude plugin validate .   (repo root)
+ℹ tests 14
+ℹ pass 14
+ℹ fail 0
+ok: skills/contracts/driver.md quotes templates/e2e/support/core/types.ts exactly.
+✔ Validation passed
+[exit=0]
+$ grep -rniE "toolshop|practicesoftwaretesting|pliers|wood saw" skills agents
+(no output, exit 1)
+$ git status --short
+(no output)
+```
+
+`claude plugin validate .` also prints its separate directory check (the README has no marketplace install line); the
+README is the final session's file. Plus: the replay table (stage 3, no survivor; repeated on the final tree below),
+the eval table (stage 5, 14/14), the outcomes of stage 6 (two `VERIFIED`, one refused promotion, four green commands
+in the clone without Claude Code, one live repair).
+
+F10 shown able to fail with V's own experiment (`expectedPlace` returning `null`, manifest regenerated, then restored,
+`git status --short` empty): `reference cart     FAIL  cart-total-add-change-remove: 0 detected of 0 applicable (13
+defects); expected 12 of 12 (13)` (and `guarantees FAIL … expected DEFECT_LATE, got PASS`), `9/13 rows passed`.
+
+## Findings and requests: what changed, what guards it
+
+| Finding / request | What changed | Test that guards it | Red line before the fix |
+| --- | --- | --- | --- |
+| V B1 | `report --promote` admits only a live run `PASS` through G4; refusal keeps the set byte for byte | `unit/promotion.spec.ts` (8 refusals, 1 admission); replay #28 | `"verdict": "PASS"`, `"unchanged": false` (expected `NO_TESTS_RUN`, `true`) |
+| design 8.5 exception | `--as-evidence` for a live `ORACLE_MISMATCH`/`UNMODELED_ADJUSTMENT`; first line of `report.md` says so; verdict kept | `promotion.spec.ts` "--as-evidence puts an amount mismatch …", "… does not admit a dry run", "… LOCATOR_FAIL" | `"evidence": false, "verdict": "PASS"` |
+| V F6 | `report` ends with the reported run's verdict | `promotion.spec.ts` "report without --promote ends with the verdict of the run it reports" | `Expected: "ORACLE_MISMATCH" Received: "PASS"` |
+| D request 3 | `report.md` names the intent review and the report review with verdicts | `promotion.spec.ts` "report.md of a promoted verified run names …" | `"intent": false, "none": true, "review": false` |
+| V F4 | driver calls limited to 3 × `actionMs`; locator timeout/hang → `LOCATOR_FAIL`, other exception → `UNDETERMINED`, environment → `INFRA_FAIL`; step and method named | `unit/driver-calls.spec.ts` (6) | `"kind": "INFRA_FAIL", "method": false, "step": null`; hangs: `Test timeout of 5000ms exceeded.` |
+| D request 6 | Playwright `TimeoutError` in an unwrapped action → `LOCATOR_FAIL` | `driver-calls.spec.ts` "Playwright's own timeout …"; selftest control page "a missing element in setQuantity LOCATOR_FAIL at S3" | `"kind": "INFRA_FAIL"`, `"step": "S2"` (D saw `INFRA_FAIL` on the control app) |
+| V F3 | held lock `INFRA_FAIL`, no `qa.config.json` `SPEC_INVALID`, file in the way `FILE_CONFLICT`, each with its own sentence | `unit/conditions.spec.ts` (3) | `"verdict": "plain error"`; compile threw `EEXIST` |
+| V F2 | `doctor`: one `SPEC_INVALID` line per unreadable scenario | `conditions.spec.ts` "doctor reports an unreadable scenario …" | doctor threw ("plain error") |
+| D request 1 | `doctor` skips `specs/*.intent.md` | `conditions.spec.ts` "doctor does not read specs/<slug>.intent.md …" | `"ok: cart-total-add-change-remove.intent: draft, test not compiled"` |
+| V N4 | problems as `note:`/findings, not `ok:` | `conditions.spec.ts` "doctor prints a hand-edited test …" | `"ok: cart-total-add-change-remove: confirmed, test edited by hand"` |
+| V F1 | rules checked against 9.2 on load, `LINT_FAIL` naming rule id and key | `conditions.spec.ts` "a rules file with an unknown condition …" | `"named": false, "verdict": "none"` |
+| V open question 7 | `tsc` in `doctor` with the root's own TypeScript | `conditions.spec.ts` "doctor type-checks the rules file …" | `Expected: true Received: false` |
+| V F10 | "reference cart" asserts applicable/detected/total | selftest row "reference cart" | (no test existed) V's experiment: `0 detected of 0 applicable (13 defects); expected 12 of 12 (13)` |
+| V F11 (#10, 16, 18, 19, O2) | tests only | unit checkpoint/classification; selftest guarantees | replay table: each red |
+| V F12 (#20, 25, 26, 27, O5, O6) | tests only | selftest row "guarantees"; `conditions.spec.ts` (lock) | replay table: each red |
+| V O1 | goto rule asserted by its text | `lint.spec.ts` "goto to a relative address is reported by the goto rule" | replay: red |
+| V F9 | exact origin, computed members, `setTimeout` | `lint.spec.ts` (3) | `Received string: ""` |
+| V F5 | positional (LCS) diff with line numbers | `compiler.spec.ts` (2) | `Expected: > 0 Received: 0`; `Received string: ""` |
+| V F7 | `--repair driver` needs a live run; green repair closes the episode | `unit/attempts.spec.ts` (2); live in stage 6 (attempts.json archived) | `ENOENT … reference.driver.ts` (admission ran); `+ 2, "LIMIT_REACHED"` |
+| V F8 | cause line quotes the row's raw text; non-amount in its field's layer | `checkpoint.spec.ts` (2) | `layer: adjustments · row "Green discount (5%)" does not agree with rule green-discount`; `Expected: "total" Received: "labels"` |
+| D request 7 | no total finding when an unmodeled adjustment's displayed rows add up | `checkpoint.spec.ts` "an unmodeled adjustment whose rows add up …" | `Expected substring: not "not the subtotal minus the adjustments"` |
+| V N2 | lab `?? ''` instead of `!` | `typecheck:toolshop` (no behaviour) | — |
+| V N3 | `run.json` `meta.gitDirty`, new files included | `unit/reporter.spec.ts` (2) | `TypeError: (0 , _reporter.gitState) is not a function`; then `Expected: true Received: false` (untracked) |
+| D request 2 | `intent` in the harness; `intentSha256` in `verification.json`; `doctor` on a stale review | `unit/intent.spec.ts` (5); eval A4 | `TypeError: … intentCommand is not a function`; `Received: undefined`; `Expected: true Received: false` |
+| D request 4 | `browserAllowedOrigins` in config; Toolshop pack sets the API origin | `intent.spec.ts` "qa.config.json keeps browserAllowedOrigins …"; stage 6 setup | `+ undefined, undefined` |
+| D readback flaw | gaps from the same G2 pass as the counts | skill text; stage 6 L2b readback (4 gaps = the 4 not-applicable of `livePass`) | — (skill) |
+| D ambiguity 4 | `app-mapper` ends `PASS` | stage 6 L4: `app-mapper` last line `VERDICT: PASS` | — (agent card) |
+| order: routing | rows for refused promotion, `UNDETERMINED`/`LOCATOR_FAIL` naming a method | stage 6 L4 (`LOCATOR_FAIL` → `app-mapper` → `run --repair driver`) | — (skill) |
+
+## Not done, reverted, or done differently
+
+- Nothing was reverted.
+- Not in this order, kept as known limits: N1 (15 lines plus `VERDICT`), N5 (USD and EUR only), N6 (a thrown read inside
+  a checkpoint is retried silently); D request 5 (readback headline flag).
+- The Playwright HTML report of the promoted run of 2 was not copied into `examples/` (absolute local paths in its
+  data; stage 6).
+- The replay of stage 3 ran on the stage 3 commit `a8054d5`; a second replay on the final tree is below.
+- Stage 6 started at minute 25, in parallel with the stage 5 eval run, not after it; no live call overlapped another.
+- Step 2 was resumed with `/qa:new-test <slug> --yes` (the resumption form of the same command), not by retyping the
+  request.
+- `doctor` type-checks only where TypeScript resolves from the root; for `examples/toolshop` (no `node_modules` of
+  its own) it prints a `note:` and skips, so `qa:toolshop -- doctor` does not type-check; `typecheck:toolshop` does.
+- The limit of a driver call is 3 × `actionMs` (my reading of "its actionMs limit": one call chains up to three waits
+  of `actionMs`); recorded in design 18.
+
+## Nested sessions
+
+All headless, `--permission-mode auto`, never `--dangerously-skip-permissions`; cost is `total_cost_usd`. No session
+ended with a usage-limit message.
+
+| # | Purpose | Model | Turns | Duration | Cost |
+| --- | --- | --- | --- | --- | --- |
+| E25–E38 | level A cases A1–A13 and R1, once each (`evals/run.mjs --jobs 4`) | sonnet (+ agents) | 1–18 | 5–78 s | $2.99 in all |
+| L1 | `/qa:setup toolshop https://practicesoftwaretesting.com` | default (opus) | 3 | 106 s | $0.23 |
+| L2 | `/qa:new-test "<request of step 2>" --yes` → `INFRA_FAIL` | default (opus) | 12 | 120 s | $0.63 |
+| L2b | `/qa:new-test two-products-qty-remove --yes` (resume) → `VERIFIED` | default (opus) | 10 | 139 s | $0.59 |
+| L3 | `/qa:new-test "<request of step 3>" --yes` → `VERIFIED` | default (opus) | 15 | 176 s | $0.86 |
+| L4 | `/qa:triage two-products-qty-remove` (broken locator) | opus + sonnet (`app-mapper`) | 6 | 128 s | $0.42 |
+
+Total: 19 sessions, about $5.72.
+
+Live invocations against the site: 12 of 12 (table in stage 6).
+
+## Hand-over for the final session
+
+### From an empty repo to a verified test (what each step prints now)
+
+The owner installs the plugin first (`claude plugin marketplace add <repo>`, `claude plugin install qa@cart-testing`;
+not run in this order: the sessions used `--plugin-dir`).
+
+```text
+$ git init my-shop-tests && cd my-shop-tests && claude
+> /qa:setup toolshop https://practicesoftwaretesting.com
+```
+
+prints (L1, 106 s): "The harness setup for **toolshop** finished with `VERDICT: PASS`." — `e2e/` with 83 files from the
+template, `qa.config.json` (toolshop, https://practicesoftwaretesting.com, `data-test`, en-US, USD, `default` defects),
+3 starter files in `e2e/app/`, dependencies and Chromium installed, the self-check passed; next:
+`/qa:new-test "<what the shopper does and what to check>"`; commit `e2e/`.
+
+```text
+$ git add e2e && git commit -m "qa setup"
+> /qa:new-test "Add two different products to the cart. Change the quantity of one, then remove the other. Check that the cart shows the correct total after each change."
+```
+
+without `--yes` it shows the confirmation and asks; with `--yes` (L2b, after one `INFRA_FAIL` of the live site and
+its resume) it ends with the readback now in `examples/toolshop/reports/two-products-qty-remove/readback.txt`:
+`PASS 3/3 · test verified`, Combination Pliers $14.15 · Pliers $12.01, S1 $14.15, S2 $26.16, S3 $54.46, S4 $42.45 all
+`match`, intent review without remarks, defects 9/9, controls 4/4, report review, scope, four gaps from the live
+pass, rules, `Rerun: cd e2e && npm run qa -- run two-products-qty-remove`, the files.
+
+```text
+$ git add e2e && git commit -m "verified cart test"
+$ cd e2e && npm run qa -- run two-products-qty-remove        # without the plugin: PASS, G3 3/3, ≈20 s
+$ npm run qa -- verify two-products-qty-remove               # in e2e/: PASS, G4 "4 caught, 0 missed", ≈55 s
+$ qa-harness report two-products-qty-remove --promote <a dry run id>
+Run … was not promoted: it is a dry run (gates G0–G2 on the reference cart); only a live run verified through G4 is promoted.
+The tracked files in reports/two-products-qty-remove/ are unchanged.
+VERDICT: NO_TESTS_RUN
+```
+
+### Known limits to name in the README
+
+- Currencies USD and EUR only (N5); the output budget is 15 lines plus the `VERDICT` line (N1); a single failing read
+  inside a checkpoint is retried until `settleMs` without a trace (N6).
+- An environment failure is not retried: the flow stops and the same command resumes it (stage 6: 1 of 12 live
+  invocations ended `INFRA_FAIL`, the API listing unanswered for 10 s).
+- A driver call may take at most 3 × `actionMs` before it is `LOCATOR_FAIL`.
+- `doctor` type-checks only when TypeScript is installed for the root.
+- `--as-evidence` is the tester's flag; the plugin never promotes a red run.
+- `claude plugin eval` cannot run the harness cases (no plugin `bin/` in its sandbox); `node evals/run.mjs --root <dir
+  outside the worktree>` runs them. In this environment nested sessions cannot Write inside a git worktree.
+- The Playwright HTML report stays in `runs/<runId>/html/` (outside the repo); its data holds absolute local paths.
+- The first session after installation downloads `@playwright/mcp` through `npx -y` (time not measured).
+
+### Three candidate observations for the README's "one decision"
+
+1. **The harness, not an agent, decides what enters the repo.** Before order F a dry run that ended `DEFECT_LATE`
+   replaced the verified evidence with `VERDICT: PASS` (V B1: set hash `88efaca0c0b7` → `6b2834eb882c`); now the same
+   request ends `NO_TESTS_RUN`, exit 1, set hash `d7c197330069` before and after (stage 6, step 4), and 8 unit tests plus
+   mutation #28 hold it.
+2. **The defects are re-judged on the products the live run actually chose.** For the first request the stub prices
+   made 12 of 13 default defects applicable; on the live products (no eco-rated product in the cart) only 9 of 13 were
+   (`G2 again on the products of this run: 13 defects: 9 detected where expected, 0 late, 0 missed, 4 not applicable`),
+   and the readback reports 9/9 with the four gaps, not 12/12.
+3. **A live run alone could not prove the driver reads the total; a control does.** In `two-products-qty-remove` the
+   total always equalled the subtotal or a line total ("the live run alone cannot tell those fields apart"); only
+   `skew-total` (caught at S1 in every verification) shows the driver reads the "Total" row. With the eco rule in force
+   (`wood-saw-qty-remove-other`), "At S1, S3, S4 it differed from the subtotal and from every line total".
