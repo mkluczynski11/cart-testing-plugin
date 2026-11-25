@@ -48,7 +48,7 @@ Another scenario is another sentence. The page driver is reused.
 
 | Option of `new-test` | Effect |
 | --- | --- |
-| `--yes` | Show the confirmation, do not wait for an answer. |
+| `--yes` | Do not wait for the confirmation. |
 | `--dry` | Stop before the application is opened. |
 | `--defects extended` | Design additional defects for this scenario. |
 | `--risk "<concern>"` | Add one defect described by the tester. |

@@ -1,8 +1,8 @@
 # Reference
 
-This document lists the commands, options, files and verdicts of the `qa` plugin as the code on this branch
-implements them. `README.md` covers installation and use. Paths in `e2e/` are given relative to the e2e root
-(`e2e/` after `/qa:setup`).
+This document lists the commands, options, files and verdicts of the `qa` plugin as the code implements them.
+`README.md` covers installation and use. Paths in `e2e/` are given relative to the e2e root (`e2e/` after
+`/qa:setup`).
 
 ## Commands
 
@@ -17,7 +17,7 @@ The plugin has four commands. Their arguments come from `argument-hint` in `skil
 | | `--locale <l>` | `en-US` | Written to `locale`. |
 | | `--currency <c>` | `USD` | Written to `currency`. `USD` or `EUR`. |
 | `/qa:new-test` | `"<request>"` | — | Creates, runs and verifies a test (see Workflow). |
-| | `--yes` | off | The confirmation is shown; the question "Confirm?" is not asked. |
+| | `--yes` | off | Do not wait for the confirmation. |
 | | `--dry` | off | Stops after the dry gates (step 5). The test is not verified. |
 | | `--defects extended` | the `defects` field | Runs step 3b for this test. |
 | | `--risk "<concern>"` | none | Adds one defect with origin `tester`. |
@@ -437,7 +437,7 @@ and the Playwright HTML report in `html/`.
 | `testIdAttribute` | `data-testid` | attribute behind `getByTestId` |
 | `locale` | `en-US` | amount format |
 | `currency` | `USD` | `USD` or `EUR` |
-| `browserDriver` | `mcp` | `mcp` or `cli`; no code on this branch reads it |
+| `browserDriver` | `mcp` | `mcp` or `cli`; no code reads it |
 | `priceSource` | `ui` | `ui` or `api`; recorded in `run.json`. A test uses its scenario's `price_source`, compiled into `test.use` |
 | `defects` | `default` | `default` or `extended` |
 | `repeat` | `3` | repeats of the live run G3 |
