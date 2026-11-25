@@ -383,7 +383,7 @@ breaks a locator the driver does wrap, which is what design 14.2 B5 means by a b
 A4 with `.mcp.json` present: `PASS` (13 turns, $0.26, 40 s, against 4 turns, $0.27, 43 s before). The 25 tools
 `mcp__plugin_qa_browser__*` are listed as deferred in the session, so they add no schema tokens until used; the JSON
 output shows no start-up time or cost for the server. The flow did not change. The first start of a session on a new
-machine downloads the server through `npx -y` (about 20 s on this machine, measured with the launcher alone).
+machine downloads the server through `npx -y`; that time was not measured.
 
 Check: a (second fixture), b, c as the order expects; a with the first fixture recorded above.
 

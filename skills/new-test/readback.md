@@ -24,8 +24,10 @@ Rerun: <the "Rerun:" line of the `report --promote` output, verbatim>
 Files: e2e/specs/<slug>.md, e2e/specs/<slug>.intent.md, e2e/tests/<slug>.spec.ts, e2e/reports/<slug>/
 ```
 
-Counts: "defects" from `verification.json` (`defects[]` with `result` other than `not-applicable`; detected = `result:
-detected`); "live controls" from `controls[]` (`result: caught`). The table rows and "Rerun" are copied, not retyped.
+Counts (design 10.2: the readback's numbers come from the second G2 pass, on the products of the live run): "defects"
+from `verification.json` `livePass.defects[]` (or `defects[]` when there is no `livePass`): applicable = `result` other
+than `not-applicable`, detected = `result: detected`; "live controls" from `controls[]` (`result: caught`). The table
+rows and "Rerun" are copied, not retyped.
 
 ## Dry (`--dry`)
 
