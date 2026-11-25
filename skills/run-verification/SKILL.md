@@ -18,8 +18,9 @@ run directory that `qa-harness verify <slug>` creates: `run.json`, `verification
 
 1. Run `qa-harness intent <slug>`. Unless it ends `PASS` the intent review is missing or stale: stop with
    `REWORK`, addressee the scenario ("intent review missing or stale for the confirmed scenario").
-2. Run `qa-harness verify <slug>` once. It computes G0–G4 from scratch in a new run directory and prints its path
-   (`Evidence: reports/<slug>/runs/<runId>/`). Read that directory's `verification.json` and `report.md`.
+2. Run `qa-harness verify <slug>` once, with the Bash `timeout: 600000` (it takes minutes). It computes G0–G4 from
+   scratch in a new run directory and prints its path (`Evidence: reports/<slug>/runs/<runId>/`). Read that
+   directory's `verification.json` and `report.md`.
 3. If `verify` did not end `PASS`, read its verdict and the evidence lines it printed, and classify by the routing of
    `new-test` (`${CLAUDE_PLUGIN_ROOT}/skills/new-test/routing.md`), `CONTROL_MISSED` and `FLAKY` only by their
    recorded facts:

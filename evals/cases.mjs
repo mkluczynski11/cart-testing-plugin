@@ -76,10 +76,14 @@ const compiledWithCheckpoints = (n) => (f) => {
   const count = (text.match(/shopper\.checkTotal\(/g) ?? []).length;
   return count === n || `${count} checkpoints`;
 };
+/** G0-G2 green: the newest run directory of the scenario records a green dry verdict (written by the harness). */
 const dryGreen = (f) => {
   const { slug } = onlyScenario(f);
-  const runs = harnessCalls(f, new RegExp(`qa-harness run ${slug} --dry`));
-  return verdictOf(runs[runs.length - 1]) === 'PASS' || `run --dry verdicts: ${runs.map(verdictOf).join(', ') || 'none'}`;
+  const runs = path.join(f.e2e, 'reports', slug, 'runs');
+  const ids = fs.existsSync(runs) ? fs.readdirSync(runs).filter((d) => fs.existsSync(path.join(runs, d, 'verification.json'))).sort() : [];
+  if (!ids.length) return 'no run directory with verification.json';
+  const v = JSON.parse(fs.readFileSync(path.join(runs, ids[ids.length - 1], 'verification.json'), 'utf8'));
+  return (v.gates?.dry === 'PASS' && v.verdict === 'PASS') || `dry ${v.gates?.dry}, verdict ${v.verdict}`;
 };
 const compiledByHarness = (f) => harnessCalls(f, /qa-harness compile /).some((c) => verdictOf(c) === 'PASS') || 'no qa-harness compile ended PASS';
 const noTestWritten = (f) => !f.calls.some((c) => ['Write', 'Edit'].includes(c.name) && /\/tests\//.test(String(c.input?.file_path ?? ''))) || 'the model wrote under tests/';

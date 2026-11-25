@@ -31,8 +31,8 @@ name or an address. Ask nothing else: the other values have defaults.
    expected. If it ends `VERDICT: INFRA_FAIL`, report the failing line and stop.
 2. Run `qa-harness init --app <app> --base-url <base-url>` plus the optional flags exactly as given. It copies the
    `e2e/` template (never overwriting drivers, scenarios, tests or reports), adds a starter pack when the plugin has
-   one for `<app>`, writes `e2e/qa.config.json`, installs the dependencies and Chromium, and runs `selftest`. It takes
-   about two minutes; run it once and wait for the `VERDICT:` line.
+   one for `<app>`, writes `e2e/qa.config.json`, installs the dependencies and Chromium, and runs `selftest`. It
+   takes about two minutes: give the Bash call `timeout: 600000`, run it once and wait for the `VERDICT:` line.
 3. Read only the `VERDICT:` line and the lines above it.
 
 ## Output

@@ -30,8 +30,9 @@ The tester asks for a new cart test in plain words, or gives the slug of a scena
 ## Steps
 
 Every `qa-harness` call prints at most 15 lines and ends `VERDICT: <name>`. After each call read the verdict and look
-it up in `routing.md`; continue only on the reaction it gives. Run calls one at a time and never repeat a call whose
-premise has not changed.
+it up in `routing.md`; continue only on the reaction it gives. Run calls one at a time, in the foreground, and never
+repeat a call whose premise has not changed. `run` and `verify` open a browser and take minutes: give those Bash
+calls `timeout: 600000`. Call agents in the foreground and wait for their answer.
 
 0. **Preflight.** `qa-harness doctor`. If it says setup has not run, tell the tester to run
    `/qa:setup <app> <base-url>` and stop. Read `e2e/qa.config.json` (`app`, `priceSource`, `defects`) and

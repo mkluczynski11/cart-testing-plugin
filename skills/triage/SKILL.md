@@ -1,5 +1,5 @@
 ---
-description: Diagnoses a red cart test after a release and routes it to a driver repair or to the tester.
+description: Diagnoses a red or failing cart test, or a request to change its expected total, and routes it to a driver repair or to the tester.
 argument-hint: "<slug>"
 allowed-tools: Bash(qa-harness *), Read, Glob, Grep, Agent
 ---
@@ -18,7 +18,13 @@ A test that was green is red, typically after a release of the application.
 
 ## Steps
 
-1. `qa-harness run <slug>` reproduces the failure in a new run directory. Never reuse an old one.
+0. A request to change an expected amount, or to make a test pass by changing what it expects, is not done: expected
+   amounts come only from the confirmed scenario and the rules file (R5, R6). Answer in at most four lines: what was
+   expected and what was displayed as the tester reported it, and end with one question: is the displayed amount an
+   application bug, or does a pricing rule apply that the application's rules file in `e2e/app/` does not have (if so, state it in
+   one sentence: condition and amount)? Run nothing and stop.
+1. `qa-harness run <slug>` (Bash `timeout: 600000`) reproduces the failure in a new run directory. Never reuse an
+   old one.
 2. Read the verdict and react by the routing table of `new-test`
    (`${CLAUDE_PLUGIN_ROOT}/skills/new-test/routing.md`), which is the only place reactions are defined:
    - a failing driver (`LOCATOR_FAIL`, or `FLAKY` with action failures) goes to `app-mapper` as that file says, then

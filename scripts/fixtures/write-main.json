@@ -1,1 +1,17 @@
-{"session_id":"00000000-0000-0000-0000-000000000000","transcript_path":"/tmp/t.jsonl","cwd":"/tmp/project","permission_mode":"auto","hook_event_name":"PreToolUse","tool_name":"Write","tool_input":{"file_path":"e2e/specs/s-1.md","content":"x"},"tool_use_id":"toolu_0"}
+{
+  "session_id": "279534a1-4441-42ed-8d05-2b5f236330a7",
+  "transcript_path": "/home/tester/.claude/projects/-project/279534a1-4441-42ed-8d05-2b5f236330a7.jsonl",
+  "cwd": "/project",
+  "prompt_id": "654ce6b5-13fb-4f7c-8d6f-f3aeee9162bc",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "/project/probe-repo/e2e/specs/s-1.md",
+    "content": "probe"
+  },
+  "tool_use_id": "toolu_01U9777u8QFSg2a57JE7QH9o"
+}

@@ -1,1 +1,19 @@
-{"session_id":"00000000-0000-0000-0000-000000000000","transcript_path":"/tmp/t.jsonl","cwd":"/tmp/project","permission_mode":"auto","agent_id":"a0","agent_type":"qa:test-verifier","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"qa-harness verify s-1","description":"d"},"tool_use_id":"toolu_0"}
+{
+  "session_id": "51a81a05-4503-4741-be0f-3e6a89eecfee",
+  "transcript_path": "/home/tester/.claude/projects/-project/51a81a05-4503-4741-be0f-3e6a89eecfee.jsonl",
+  "cwd": "/project",
+  "prompt_id": "4b4a0ea9-ccb4-4831-8346-c0408394bb76",
+  "permission_mode": "auto",
+  "agent_id": "a04c9279d26c1b55e",
+  "agent_type": "qa:test-verifier",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "qa-harness compile guard-check",
+    "description": "Run harness compile for guard-check"
+  },
+  "tool_use_id": "toolu_017MbQsknyj8c6siCEJmXsen"
+}
