@@ -51,8 +51,9 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
    `--defects extended` was given; fix a rejected entry once, or report it as a risk no operator covers. Fill the
    template of `intake.md` from the `example` output, the first line of `defects check` (verbatim) and the rules file,
    listing every choice you made. Without `--yes`: show it, ask "Confirm? (ok / correction)" and end your turn; on "ok"
-   continue, on a correction go back to step 2. With `--yes`: show it and continue. Then
-   `qa-harness example <slug> --confirm`.
+   continue, on a correction go back to step 2. With `--yes`: the text of the message that calls
+   `qa-harness example <slug> --confirm` is the filled template, its last line "Confirmed by --yes."; `--yes` skips
+   the question, never the confirmation. Then `qa-harness example <slug> --confirm`.
 3a. **Intent review.** Run `qa-harness intent <slug>`; if it ends `PASS`, the review is current: go on. Otherwise call
    the Agent tool with `subagent_type: "qa:test-verifier"` and this prompt, nothing from the conversation:
    `mode: intent` / `slug: <slug>` / `request (verbatim): <the tester's words>` / `root: e2e`.
@@ -85,7 +86,8 @@ calls `timeout: 600000`. Call agents in the foreground and wait for their answer
 
 ## Output
 
-The readback of `readback.md`, or one question, or one refusal. Nothing else.
+The confirmation of step 3 (also with `--yes`), then the readback of `readback.md`; or one question; or one refusal.
+Nothing else.
 
 ## Stop
 

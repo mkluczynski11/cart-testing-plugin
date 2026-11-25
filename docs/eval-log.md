@@ -58,3 +58,26 @@ Run 10:03–10:15 UTC with `node evals/run.mjs --root <session scratch>/ev --job
 | 38 | 10:03–10:15 | R1 a tester concern through --risk (not in design 14.1) | PASS | 18 | $0.31 | 66 s | ok the defects file has a tester entry, admitted; ok defect-designer did not run (default mode); ok G0-G2 green | — |
 
 Totals of this run: 14 sessions, $2.99; 14 of 14 pass.
+
+Order E, stage 1: A4, A7 and R1 with one new check each (the confirmation shows the first line of
+`qa-harness defects check`). Four rounds 11:26–11:36 UTC with `node evals/run.mjs --root <session scratch>/ev --jobs 3
+A4 A7 R1`, sonnet; between rounds only `skills/new-test/SKILL.md` changed (step 3 and "Output"). The harness printed
+the line in every session; no session showed the confirmation under `--yes`. G2 of A7: 19/18/0/0/1, 17/16/0/0/1,
+18/17/0/0/1, 17/16/0/0/1 (defects, detected, late, missed, not applicable).
+
+| # | UTC | Case | Result | Turns | Cost | Time | Checks | Changed because of it |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 39 | round 1 | A4 reference scenario, dry | FAIL | 16 | $0.29 | 51 s | 6 of 7 ok; FAIL: the confirmation counts the defects by origin and names report.md | step 3: `--yes` writes the template as a message |
+| 40 | round 1 | R1 a tester concern through --risk | FAIL | 17 | $0.32 | 56 s | 3 of 4 ok; FAIL: the confirmation names the tester defect | as above |
+| 41 | round 1 | A7 extended defects, dry | FAIL | 15 | $0.37 | 68 s | 4 of 5 ok; FAIL: the confirmation names the generated defects still to come | as above |
+| 42 | round 2 | A4 reference scenario, dry | FAIL | 14 | $0.25 | 42 s | 6 of 7 ok; same FAIL | "Output" names the confirmation |
+| 43 | round 2 | R1 a tester concern through --risk | FAIL | 16 | $0.31 | 56 s | 3 of 4 ok; same FAIL | as above |
+| 44 | round 2 | A7 extended defects, dry | FAIL | 15 | $0.35 | 71 s | 4 of 5 ok; same FAIL | as above |
+| 45 | round 3 | A4 reference scenario, dry | FAIL | 14 | $0.26 | 45 s | 6 of 7 ok; same FAIL | step 3: the template is the text of the message that confirms |
+| 46 | round 3 | R1 a tester concern through --risk | FAIL | 4 | $0.29 | 49 s | 3 of 4 ok; same FAIL | as above |
+| 47 | round 3 | A7 extended defects, dry | FAIL | 16 | $0.35 | 77 s | 4 of 5 ok; same FAIL | as above |
+| 48 | round 4 | A4 reference scenario, dry | FAIL | 13 | $0.27 | 45 s | 6 of 7 ok; same FAIL | — (left to the owner, report E) |
+| 49 | round 4 | R1 a tester concern through --risk | FAIL | 18 | $0.30 | 55 s | 3 of 4 ok; same FAIL | — |
+| 50 | round 4 | A7 extended defects, dry | FAIL | 16 | $0.35 | 63 s | 4 of 5 ok; same FAIL | — |
+
+Totals of order E: 12 sessions, $3.71; every check other than the new one passed in all 12.
